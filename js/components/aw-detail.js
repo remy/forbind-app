@@ -211,8 +211,8 @@ class AwDetail extends AwElement {
           this.actions.backToList();
         },
       }, [
-        el('span', { 'aria-hidden': 'true', text: '‹ ' }),
-        el('span', { text: state.filters.tags[0] ?? 'Endpoints' }),
+        el('span', { 'aria-hidden': 'true', text: '‹' }),
+        el('span', { text: `Back to ${state.filters.tags[0] ?? 'the endpoint list'}` }),
       ]),
       el('span', { class: 'detail-back__end' }, [
         el('button', {
@@ -244,14 +244,19 @@ class AwDetail extends AwElement {
                 el('span', { class: 'visually-hidden', text: op.method }),
               ]),
           el('h2', { class: 'detail__path', text: op.path }),
-          el('span', { class: 'detail__actions' }, [
-            el('button', {
-              type: 'button',
-              class: 'btn btn--filled btn--md',
-              text: 'Try it',
-              onclick: () => this.actions.openTryIt(op.id),
-            }),
-          ]),
+          // In the tabbed layouts Try it is one of the tabs, and on a phone it
+          // is also the sticky action — a third copy in the header would be
+          // three controls doing one job.
+          roomy || this.#narrow
+            ? null
+            : el('span', { class: 'detail__actions' }, [
+                el('button', {
+                  type: 'button',
+                  class: 'btn btn--filled btn--md',
+                  text: 'Try it',
+                  onclick: () => this.actions.openTryIt(op.id),
+                }),
+              ]),
         ]),
         op.summary && !roomy ? el('p', { class: 'detail__lede', text: op.summary }) : null,
         chips.length ? el('div', { class: 'detail__chips' }, chips) : null,

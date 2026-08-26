@@ -258,13 +258,50 @@ function pickContent(doc, content) {
     keys.find((k) => k.includes('json')) ??
     keys[0];
   const media = content[preferred] ?? {};
-  const resolved = deref(doc, media.schema);
+  const named = namedSchema(doc, media.schema);
   return {
     contentType: preferred,
     schema: media.schema ?? null,
-    schemaName: resolved.name,
+    schemaName: named.name,
+    // Everything reachable a couple of levels in, so that searching for a
+    // schema name finds the operations that return it inside an envelope.
+    schemaNames: named.all,
     example: media.example ?? (media.examples ? Object.values(media.examples)[0]?.value : undefined),
   };
+}
+
+/**
+ * The schema a payload is "of".
+ *
+ * A response is very often not a bare `$ref` but an array of one, or a paging
+ * envelope with the interesting type nested inside. Reporting `null` for those
+ * would mean `Booking` matching nothing when someone searches for it, and no
+ * link to jump to, so the wrapper is looked through.
+ *
+ * @returns {{name: string|null, all: string[]}}
+ */
+function namedSchema(doc, node, depth = 0) {
+  if (!node || typeof node !== 'object' || depth > 2) return { name: null, all: [] };
+  const direct = deref(doc, node);
+  if (direct.name) return { name: direct.name, all: [direct.name] };
+
+  const schema = direct.value;
+  const nested = [];
+  let primary = null;
+  const candidates = [
+    schema.items,
+    ...(schema.properties ? Object.values(schema.properties) : []),
+    ...(Array.isArray(schema.oneOf) ? schema.oneOf : []),
+    ...(Array.isArray(schema.anyOf) ? schema.anyOf : []),
+    ...(Array.isArray(schema.allOf) ? schema.allOf : []),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const found = namedSchema(doc, candidate, depth + 1);
+    if (found.name && primary === null) primary = found.name;
+    nested.push(...found.all);
+  }
+  return { name: primary, all: [...new Set(nested)] };
 }
 
 function normaliseServers(doc) {
@@ -372,7 +409,8 @@ function splitSwagger2Parameters(doc, parameters) {
         description: param.description ?? '',
         contentType: 'application/json',
         schema: param.schema ?? null,
-        schemaName: deref(doc, param.schema).name,
+        schemaName: namedSchema(doc, param.schema).name,
+        schemaNames: namedSchema(doc, param.schema).all,
       };
     } else if (param.in === 'formData') {
       formFields.push(param);
@@ -498,11 +536,18 @@ export function normalise(doc, sourceName = 'schema') {
       const responses = responseEntries
         .map(([code, responseRaw]) => {
           const response = deref(doc, responseRaw).value;
-          const picked = isV2
-            ? (response.schema
-                ? { contentType: 'application/json', schema: response.schema, schemaName: deref(doc, response.schema).name }
-                : null)
-            : pickContent(doc, response.content);
+          let picked = null;
+          if (isV2 && response.schema) {
+            const named = namedSchema(doc, response.schema);
+            picked = {
+              contentType: 'application/json',
+              schema: response.schema,
+              schemaName: named.name,
+              schemaNames: named.all,
+            };
+          } else if (!isV2) {
+            picked = pickContent(doc, response.content);
+          }
           return {
             code,
             description: String(response.description ?? '').trim(),
@@ -763,15 +808,44 @@ export function parseText(raw, deps) {
   }
 }
 
-/** JSON.parse reports a character offset; turn it into line/column. */
+/**
+ * Turn a JSON.parse message into a place in the file.
+ *
+ * V8 phrases this two ways depending on where the parse gave up: sometimes
+ * "at position 11 (line 3 column 1)", sometimes just the offending token and a
+ * quoted excerpt. Both are handled, and neither is required — a message with
+ * no location still produces a usable error, just without the line.
+ */
 function locateJsonError(source, error) {
-  const match = /position (\d+)/.exec(error.message ?? '');
-  if (!match) return { line: null, column: null, snippet: null };
-  const offset = Number(match[1]);
-  const before = source.slice(0, offset);
-  const line = before.split('\n').length;
-  const column = offset - before.lastIndexOf('\n');
-  return { line, column, snippet: lineAt(source, line - 1) };
+  const message = error.message ?? '';
+
+  const lineColumn = /line (\d+) column (\d+)/.exec(message);
+  if (lineColumn) {
+    const line = Number(lineColumn[1]);
+    return { line, column: Number(lineColumn[2]), snippet: lineAt(source, line - 1) };
+  }
+
+  const position = /position (\d+)/.exec(message);
+  if (position) {
+    const offset = Number(position[1]);
+    const before = source.slice(0, offset);
+    const line = before.split('\n').length;
+    return { line, column: offset - before.lastIndexOf('\n'), snippet: lineAt(source, line - 1) };
+  }
+
+  // "Unexpected token 'x', \"…excerpt…\" is not valid JSON": find the excerpt.
+  const excerpt = /"((?:[^"\\]|\\.)*)" is not valid JSON/.exec(message);
+  if (excerpt) {
+    const needle = excerpt[1].replace(/\\(.)/g, '$1').replace(/\.\.\.$/, '');
+    const offset = source.indexOf(needle.slice(0, 40));
+    if (offset >= 0) {
+      const before = source.slice(0, offset);
+      const line = before.split('\n').length;
+      return { line, column: offset - before.lastIndexOf('\n'), snippet: lineAt(source, line - 1) };
+    }
+  }
+
+  return { line: null, column: null, snippet: null };
 }
 
 function lineAt(source, index) {

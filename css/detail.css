@@ -94,6 +94,8 @@
 
 @media (forced-colors: active) {
   .tab[aria-selected='true'] { border-bottom: 3px solid Highlight; }
+  .field-row input:focus-visible,
+  .field-row textarea:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
 }
 
 /* --- fact grid ----------------------------------------------------------- */
@@ -319,9 +321,14 @@ table.params .col-notes { font-family: var(--font-sans); color: var(--ink-70); }
     border: var(--rule-w) solid var(--ink);
     border-bottom-width: var(--rule-w);
     flex-wrap: nowrap;
+    /* More sections than fit scroll inside the control rather than pushing
+       the page sideways. */
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
   .tabs--segmented .tab {
-    flex: 1;
+    flex: 1 0 auto;
+    min-width: 0;
     text-align: center;
     justify-content: center;
     border-left: var(--rule-w) solid var(--ink);

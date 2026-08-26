@@ -18,8 +18,8 @@ function haystack(op) {
     tags: op.tags.join(' ').toLowerCase(),
     params: op.parameters.map((p) => p.name).join(' ').toLowerCase(),
     schemas: [
-      op.requestBody?.schemaName,
-      ...op.responses.map((r) => r.schemaName),
+      ...(op.requestBody?.schemaNames ?? [op.requestBody?.schemaName]),
+      ...op.responses.flatMap((r) => r.schemaNames ?? [r.schemaName]),
     ].filter(Boolean).join(' ').toLowerCase(),
     codes: op.responses.map((r) => r.code).join(' '),
     scopes: op.scopes.join(' ').toLowerCase(),

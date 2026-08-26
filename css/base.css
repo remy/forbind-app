@@ -63,6 +63,9 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
 @media (forced-colors: active) {
   :focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
   .focus-inset:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; box-shadow: none; }
+  /* Wherever a ring is drawn with box-shadow — which forced colours discard —
+     an outline stands in for it. */
+  .field:focus-within { outline: 2px solid Highlight; outline-offset: -2px; }
 }
 
 /* --- screen-reader-only ------------------------------------------------- */

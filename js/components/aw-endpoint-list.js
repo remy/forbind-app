@@ -196,8 +196,8 @@ class AwEndpointList extends AwElement {
     const out = [];
     groups.forEach((group, index) => {
       out.push(
-        el('li', { role: 'presentation' }, [
-          el('h3', {
+        el('li', { class: 'group-item' }, [
+          el('h2', {
             class: `group-head${index === 0 ? ' group-head--first' : ''}`,
             text: `${group.name} — ${group.operations.length}`,
           }),
@@ -218,7 +218,7 @@ class AwEndpointList extends AwElement {
     ].filter(Boolean);
 
     return [
-      el('li', { role: 'presentation' }, [
+      el('li', {}, [
         el('div', { class: 'empty' }, [
           el('p', { class: 'empty__title', text: 'No endpoints match' }),
           el('p', {

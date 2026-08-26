@@ -100,7 +100,7 @@ export default async function handler(request) {
 
 export const config = { path: '/api/fetch-schema' };
 
-class BlockedUrlError extends Error {}
+export class BlockedUrlError extends Error {}
 
 /**
  * Reject anything that is not a plain public http(s) URL. Hostnames that are
@@ -109,7 +109,7 @@ class BlockedUrlError extends Error {}
  * returned as inert text and never interpreted, and that no credential is ever
  * sent to it.
  */
-function assertFetchable(raw) {
+export function assertFetchable(raw) {
   let url;
   try {
     url = new URL(raw);
@@ -129,28 +129,82 @@ function assertFetchable(raw) {
   return url.toString();
 }
 
-function isPrivateHost(host) {
+/**
+ * True for anything that is not a plain public address.
+ *
+ * The URL parser normalises IPv6 before this sees it, so `::ffff:169.254.169.254`
+ * arrives as `::ffff:a9fe:a9fe` — the mapped form has to be un-mapped from the
+ * hex groups rather than matched as dotted quad text. Getting that wrong is
+ * how a guard like this gets walked straight past to a metadata endpoint.
+ *
+ * @param {string} host a hostname with any surrounding brackets already removed
+ */
+export function isPrivateHost(host) {
+  if (!host) return true;
   if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) {
     return true;
   }
-  if (host === '::1' || host === '0.0.0.0') return true;
-  // IPv4-mapped IPv6, e.g. ::ffff:169.254.169.254
-  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(host);
-  const candidate = mapped ? mapped[1] : host;
 
-  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(candidate);
-  if (v4) {
-    const [a, b] = v4.slice(1).map(Number);
-    if (a === 10 || a === 127 || a === 0) return true;
-    if (a === 169 && b === 254) return true;         // link-local, incl. cloud metadata
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    if (a === 192 && b === 168) return true;
-    if (a === 100 && b >= 64 && b <= 127) return true; // carrier-grade NAT
+  const v4 = parseIPv4(host);
+  if (v4) return isPrivateIPv4(v4);
+
+  const groups = parseIPv6(host);
+  if (groups) {
+    // ::ffff:a.b.c.d — an IPv4 address wearing an IPv6 coat.
+    if (groups.slice(0, 5).every((g) => g === 0) && groups[5] === 0xffff) {
+      return isPrivateIPv4([groups[6] >> 8, groups[6] & 0xff, groups[7] >> 8, groups[7] & 0xff]);
+    }
+    if (groups.every((g) => g === 0)) return true;                       // ::
+    if (groups.slice(0, 7).every((g) => g === 0) && groups[7] === 1) return true; // ::1
+    if ((groups[0] & 0xfe00) === 0xfc00) return true;                    // fc00::/7 unique-local
+    if ((groups[0] & 0xffc0) === 0xfe80) return true;                    // fe80::/10 link-local
     return false;
   }
-  // Unique-local and link-local IPv6.
-  if (/^f[cd][0-9a-f]{2}:/.test(host) || /^fe[89ab][0-9a-f]:/.test(host)) return true;
+
   return false;
+}
+
+function parseIPv4(host) {
+  const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!match) return null;
+  const parts = match.slice(1).map(Number);
+  return parts.every((n) => n <= 255) ? parts : null;
+}
+
+function isPrivateIPv4([a, b]) {
+  if (a === 10 || a === 127 || a === 0) return true;
+  if (a === 169 && b === 254) return true;            // link-local, incl. cloud metadata
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;  // carrier-grade NAT
+  return false;
+}
+
+/** @returns {number[]|null} eight 16-bit groups, or null if this is not IPv6. */
+function parseIPv6(host) {
+  if (!host.includes(':')) return null;
+  let text = host;
+
+  // A trailing dotted quad, e.g. ::ffff:169.254.169.254 before normalisation.
+  const tail = /:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/.exec(text);
+  if (tail) {
+    const quad = parseIPv4(tail[1]);
+    if (!quad) return null;
+    const hex = `${((quad[0] << 8) | quad[1]).toString(16)}:${((quad[2] << 8) | quad[3]).toString(16)}`;
+    text = `${text.slice(0, tail.index)}:${hex}`;
+  }
+
+  const [head, rest, extra] = text.split('::');
+  if (extra !== undefined) return null;
+  const toGroups = (part) => (part ? part.split(':').map((g) => Number.parseInt(g, 16)) : []);
+  const left = toGroups(head);
+  const right = rest === undefined ? [] : toGroups(rest);
+  if ([...left, ...right].some((g) => Number.isNaN(g) || g > 0xffff)) return null;
+
+  if (rest === undefined) return left.length === 8 ? left : null;
+  const fill = 8 - left.length - right.length;
+  if (fill < 0) return null;
+  return [...left, ...Array(fill).fill(0), ...right];
 }
 
 /** Read the body but stop at the cap rather than buffering an unbounded stream. */

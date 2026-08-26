@@ -66,7 +66,10 @@ class AwPalette extends AwElement {
       onkeydown: (event) => this.#onKeyDown(event),
     });
 
-    this.#listbox = el('ul', {
+    // A listbox may contain groups, and a group may contain options — but a
+    // <li> may not be a group, so the whole structure is divs carrying roles
+    // rather than a list carrying roles it is not allowed to have.
+    this.#listbox = el('div', {
       class: 'palette__results',
       id: 'palette-listbox',
       role: 'listbox',
@@ -159,18 +162,16 @@ class AwPalette extends AwElement {
         groupItems.push(this.#renderOption(item, index));
       }
       children.push(
-        el('li', { role: 'group', 'aria-label': group.label }, [
+        el('div', { role: 'group', 'aria-label': group.label }, [
           el('span', { class: 'palette__group-label', text: group.label, 'aria-hidden': 'true' }),
-          el('ul', { role: 'none' }, groupItems),
+          ...groupItems,
         ]),
       );
     }
 
     if (!children.length) {
       children.push(
-        el('li', { role: 'presentation' }, [
-          el('p', { class: 'palette__empty', text: query ? `Nothing matches “${query}”.` : 'Type to search.' }),
-        ]),
+        el('p', { class: 'palette__empty', text: query ? `Nothing matches “${query}”.` : 'Type to search.' }),
       );
     }
 
@@ -184,7 +185,7 @@ class AwPalette extends AwElement {
   #renderOption(item, index) {
     const id = `palette-option-${index}`;
     return el(
-      'li',
+      'div',
       {
         class: 'palette__option',
         id,

@@ -83,7 +83,9 @@ class AwApp extends AwElement {
   }
 
   #renderImport() {
-    return el('div', { class: 'app', 'data-density': 'dense' }, [el('aw-import', {})]);
+    return el('div', { class: 'app', 'data-density': 'dense' }, [
+      el('main', { id: 'main', 'aria-label': 'Load a schema' }, [el('aw-import', {})]),
+    ]);
   }
 
   #renderBrowser(state, small) {
@@ -95,7 +97,9 @@ class AwApp extends AwElement {
         `allyway — ${state.schema.title}${state.schema.version ? ` ${state.schema.version}` : ''}`,
       ]),
       el('aw-topbar', {}),
-      el('aw-meta-strip', {}),
+      // The roomy IA folds the schema meta into the header row rather than
+      // giving it a strip of its own, as drawn in 1b.
+      roomy ? null : el('aw-meta-strip', {}),
     ]);
 
     const rail = el(

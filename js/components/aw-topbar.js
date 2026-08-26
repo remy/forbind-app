@@ -36,7 +36,18 @@ class AwTopbar extends AwElement {
         el('a', { class: 'wordmark', href: '#/', text: 'ALLYWAY' }),
         !roomy && el('span', { class: 'topbar__divider', 'aria-hidden': 'true' }),
         search,
+        roomy && schema
+          ? el('span', { class: 'searchblock__meta', text: `${schema.sourceName} · ${schema.operations.length} endpoints` })
+          : null,
         el('div', { class: 'topbar__right' }, [
+          roomy
+            ? el('button', {
+                type: 'button',
+                class: 'link-quiet',
+                text: 'Replace schema',
+                onclick: () => this.actions.replaceSchema(),
+              })
+            : null,
           version,
           el('button', {
             type: 'button',
@@ -141,12 +152,6 @@ class AwSearchBlock extends AwElement {
 
     replace(this, [
       el('div', { class: 'searchblock' }, [
-        el('div', { class: 'searchblock__row' }, [
-          el('span', {
-            class: 'searchblock__meta',
-            text: schema ? `${schema.sourceName} · ${schema.operations.length} endpoints` : '',
-          }),
-        ]),
         el('div', { class: 'searchblock__field' }, [
           el('label', { class: 'visually-hidden', for: 'search', text: 'Search endpoints, parameters and schemas' }),
           input,
@@ -186,7 +191,7 @@ class AwMetaStrip extends AwElement {
         el('span', { class: 'meta-strip__name', text: schema.sourceName }),
         ...facts.flatMap((fact) => [
           el('span', { class: 'dot', 'aria-hidden': 'true', text: '·' }),
-          el('span', { text: fact }),
+          el('span', { class: 'meta-strip__fact', text: fact }),
         ]),
         el('span', { class: 'meta-strip__end' }, [
           el('button', {

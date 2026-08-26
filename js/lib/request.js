@@ -278,7 +278,6 @@ function compactJson(body) {
 
 /** @param {BuiltRequest} request */
 export function toFetch(request) {
-  if (request.headers.length) init.headers = Object.fromEntries(request.headers);
   const lines = [`await fetch(${JSON.stringify(request.url)}, {`];
   lines.push(`  method: ${JSON.stringify(request.method)},`);
   if (request.headers.length) {
