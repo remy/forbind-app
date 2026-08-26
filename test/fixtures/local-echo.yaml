@@ -1,0 +1,18 @@
+# A one-operation schema pointed at allyway's own dev server, so the try-it
+# path can be exercised end to end without a cross-origin request in the way.
+openapi: 3.1.0
+info:
+  title: Local Echo
+  version: 1.0.0
+servers:
+  - url: http://localhost:8181
+tags:
+  - name: Files
+paths:
+  /samples/bookings-api.v2.yaml:
+    get:
+      summary: Fetch the bundled sample over HTTP
+      tags: [Files]
+      responses:
+        "200":
+          description: The sample schema

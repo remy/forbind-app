@@ -1,0 +1,242 @@
+/* ---------------------------------------------------------------------------
+   allyway design tokens
+   ---------------------------------------------------------------------------
+   Every size is expressed in rem so that a browser's text-size setting (not
+   just page zoom) scales the whole interface, including pane widths and
+   control heights. 1rem === the user's preferred font size; the px values
+   quoted in comments are what that resolves to at the 16px default.
+
+   Radius is 0 everywhere. The only box-shadow in the system is a focus ring.
+   Depth is hairlines and fills.
+--------------------------------------------------------------------------- */
+
+:root {
+  /* --- type families ---------------------------------------------------- */
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  /* --- type scale (px at a 16px root) ----------------------------------- */
+  --t-26: 1.625rem;
+  --t-24: 1.5rem;
+  --t-22: 1.375rem;
+  --t-20: 1.25rem;
+  --t-19: 1.1875rem;
+  --t-17: 1.0625rem;
+  --t-16: 1rem;
+  --t-15: 0.9375rem;
+  --t-14: 0.875rem;
+  --t-13-5: 0.84375rem;
+  --t-13: 0.8125rem;
+  --t-12-5: 0.78125rem;
+  --t-12: 0.75rem;
+  --t-11-5: 0.71875rem;
+  --t-11: 0.6875rem;
+  --t-10-5: 0.65625rem;
+  --t-10: 0.625rem;
+  --t-9-5: 0.59375rem;
+
+  /* --- line heights ----------------------------------------------------- */
+  --lh-tight: 1.2;
+  --lh-row: 1.35;
+  --lh-body: 1.6;
+  --lh-prose: 1.7;
+  --lh-code: 1.75;
+
+  /* --- letter spacing --------------------------------------------------- */
+  --ls-label: 0.1em;   /* small uppercase mono labels */
+  --ls-label-sm: 0.08em;
+  --ls-wordmark: 0.14em;
+
+  /* --- spacing ---------------------------------------------------------- */
+  --s-3: 0.1875rem;
+  --s-4: 0.25rem;
+  --s-5: 0.3125rem;
+  --s-6: 0.375rem;
+  --s-7: 0.4375rem;
+  --s-8: 0.5rem;
+  --s-9: 0.5625rem;
+  --s-10: 0.625rem;
+  --s-12: 0.75rem;
+  --s-13: 0.8125rem;
+  --s-14: 0.875rem;
+  --s-16: 1rem;
+  --s-18: 1.125rem;
+  --s-20: 1.25rem;
+  --s-22: 1.375rem;
+  --s-24: 1.5rem;
+  --s-26: 1.625rem;
+  --s-28: 1.75rem;
+  --s-32: 2rem;
+
+  /* --- control heights -------------------------------------------------- */
+  --h-24: 1.5rem;
+  --h-26: 1.625rem;
+  --h-28: 1.75rem;
+  --h-30: 1.875rem;
+  --h-32: 2rem;
+  --h-34: 2.125rem;
+  --h-36: 2.25rem;
+  --h-44: 2.75rem;   /* minimum touch target */
+  --h-46: 2.875rem;
+  --h-48: 3rem;
+  --h-52: 3.25rem;
+
+  /* --- structural widths ------------------------------------------------ */
+  --w-rail: 13.5rem;      /* 216px tag rail */
+  --w-list: 25.125rem;    /* 402px dense endpoint list */
+  --w-list-roomy: 32.5rem;/* 520px roomy endpoint list */
+
+  /* --- rules ------------------------------------------------------------ */
+  --rule-w: 1px;
+  --rule-w-strong: 1.5px;
+
+  /* --- motion ----------------------------------------------------------- */
+  --dur: 120ms;
+  --ease: cubic-bezier(0.2, 0, 0.13, 1);
+}
+
+/* ---------------------------------------------------------------------------
+   Colour — light (the palette the mocks were drawn in)
+--------------------------------------------------------------------------- */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --ink: #0f0f0e;
+  --paper: #fbfbf9;
+  --paper-alt: #f3f2ed;
+  --ink-70: #3f3f38;
+  --ink-55: #56564f;
+
+  --rule-strong: #0f0f0e;
+  --rule: #d8d7d1;
+  --rule-soft: #e6e5df;
+  --rule-softer: #eceae4;
+  --border-quiet: #a9a8a2;
+  --divider-quiet: #c9c8c2;
+
+  --accent: #1a3fb8;
+  --accent-hover: #0f2775;
+  --accent-tint: #e9ecf7;
+
+  --field-bg: #ffffff;
+
+  /* interaction */
+  --hover-surface: #f3f2ed;
+  --fill-hover: #26261f;
+  --fill-active: #000000;
+
+  /* verbs / status classes: fg is used for both text and border */
+  --get-fg: #0b4f9c;   --get-bg: #dbe4f3;
+  --post-fg: #14603a;  --post-bg: #dff0e6;
+  --patch-fg: #6b4300; --patch-bg: #f7ecd6;
+  --delete-fg: #97161c;--delete-bg: #fae4e3;
+  --neutral-fg: #3f3f38; --neutral-border: #6d6c66; --neutral-bg: #f2f1ec;
+
+  --code-bg: #0f0f0e;
+  --code-fg: #f2f1ec;
+  --code-border: #0f0f0e;
+}
+
+/* ---------------------------------------------------------------------------
+   Colour — dark. Roles are preserved, not hues: "ink" is still text and
+   borders, "paper" is still the background. Every pair below was checked to
+   clear WCAG AA at the size it is used.
+--------------------------------------------------------------------------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ink: #f2f1ec;
+  --paper: #121210;
+  --paper-alt: #1c1c18;
+  --ink-70: #cfcec7;
+  --ink-55: #b0afa8;
+
+  --rule-strong: #f2f1ec;
+  --rule: #3c3c35;
+  --rule-soft: #2e2e28;
+  --rule-softer: #282822;
+  --border-quiet: #6d6c66;
+  --divider-quiet: #4a4a43;
+
+  --accent: #a8bcff;
+  --accent-hover: #d0daff;
+  --accent-tint: #1d2440;
+
+  --field-bg: #080807;
+
+  --hover-surface: #24241f;
+  --fill-hover: #dcdbd4;
+  --fill-active: #ffffff;
+
+  --get-fg: #a8c7f0;   --get-bg: #15233a;
+  --post-fg: #8fd9ae;  --post-bg: #10251a;
+  --patch-fg: #e9c47e; --patch-bg: #2a2010;
+  --delete-fg: #f3aba7;--delete-bg: #2e1614;
+  --neutral-fg: #cfcec7; --neutral-border: #6d6c66; --neutral-bg: #24241f;
+
+  --code-bg: #080807;
+  --code-fg: #f2f1ec;
+  --code-border: #3c3c35;
+}
+
+/* Auto: follow the operating system. data-theme="auto" is also the state when
+   no explicit choice has been made. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    color-scheme: dark;
+
+    --ink: #f2f1ec;
+    --paper: #121210;
+    --paper-alt: #1c1c18;
+    --ink-70: #cfcec7;
+    --ink-55: #b0afa8;
+
+    --rule-strong: #f2f1ec;
+    --rule: #3c3c35;
+    --rule-soft: #2e2e28;
+    --rule-softer: #282822;
+    --border-quiet: #6d6c66;
+    --divider-quiet: #4a4a43;
+
+    --accent: #a8bcff;
+    --accent-hover: #d0daff;
+    --accent-tint: #1d2440;
+
+    --field-bg: #080807;
+
+    --hover-surface: #24241f;
+    --fill-hover: #dcdbd4;
+    --fill-active: #ffffff;
+
+    --get-fg: #a8c7f0;   --get-bg: #15233a;
+    --post-fg: #8fd9ae;  --post-bg: #10251a;
+    --patch-fg: #e9c47e; --patch-bg: #2a2010;
+    --delete-fg: #f3aba7;--delete-bg: #2e1614;
+    --neutral-fg: #cfcec7; --neutral-border: #6d6c66; --neutral-bg: #24241f;
+
+    --code-bg: #080807;
+    --code-fg: #f2f1ec;
+    --code-border: #3c3c35;
+  }
+}
+
+/* People who ask their OS for more contrast get the hairlines darkened and the
+   quiet greys pulled toward the ink. Nothing moves; only contrast changes. */
+@media (prefers-contrast: more) {
+  :root {
+    --ink-70: var(--ink);
+    --ink-55: var(--ink);
+    --rule: var(--ink);
+    --rule-soft: var(--ink);
+    --rule-softer: var(--ink);
+    --border-quiet: var(--ink);
+    --divider-quiet: var(--ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 0ms;
+  }
+}

@@ -1,0 +1,35 @@
+# allyway deploys as static files. There is no build step: what is in the repo
+# is what the browser loads.
+[build]
+  publish = "."
+  command = ""
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# The one server-side endpoint: fetching a schema from a URL the browser is not
+# allowed to read cross-origin. Declared in the function itself via `config.path`
+# as well, this redirect keeps the older Netlify runtimes pointing at it too.
+[[redirects]]
+  from = "/api/fetch-schema"
+  to = "/.netlify/functions/fetch-schema"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), interest-cohort=()"
+    # `connect-src *` is load-bearing: the try-it panel sends requests straight
+    # from the browser to whatever host the schema declares, with no proxy in
+    # between. Everything else is locked to this origin, and there is no inline
+    # script or inline style anywhere in the app.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src *; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'"
+
+[[headers]]
+  for = "/assets/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

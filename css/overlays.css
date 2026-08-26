@@ -1,0 +1,358 @@
+/* ---------------------------------------------------------------------------
+   allyway — dialogs and the import screen
+--------------------------------------------------------------------------- */
+
+dialog {
+  border: var(--rule-w-strong) solid var(--rule-strong);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0;
+  max-width: min(100vw - 2rem, 44rem);
+  max-height: calc(100dvh - 4rem);
+  overflow: auto;
+}
+dialog::backdrop { background: rgb(15 15 14 / 0.55); }
+:root[data-theme='dark'] dialog::backdrop { background: rgb(0 0 0 / 0.7); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) dialog::backdrop { background: rgb(0 0 0 / 0.7); }
+}
+
+.sheet { padding: var(--s-26) var(--s-28); width: min(37.5rem, 100%); }
+.sheet__head { display: flex; align-items: baseline; gap: var(--s-12); flex-wrap: wrap; }
+.sheet__head h2 { font: 600 var(--t-20) / var(--lh-tight) var(--font-sans); }
+.sheet__esc { margin-left: auto; font: 400 var(--t-12) / 1.4 var(--font-mono); color: var(--ink-55); }
+.sheet__lede { margin-top: var(--s-10); font: 400 var(--t-12-5) / var(--lh-body) var(--font-sans); color: var(--ink-70); }
+.sheet__actions { display: flex; gap: var(--s-10); margin-top: var(--s-20); flex-wrap: wrap; }
+
+@media (max-width: 40rem) {
+  .sheet { padding: var(--s-18) var(--s-16); }
+  dialog { max-width: 100vw; width: 100vw; max-height: 100dvh; height: auto; }
+}
+
+/* --- provenance / inset panel ------------------------------------------- */
+.inset {
+  padding: var(--s-11, 0.6875rem) var(--s-13);
+  border: var(--rule-w) solid var(--rule);
+  background: var(--paper-alt);
+}
+.inset__value { margin-top: var(--s-8); font: 500 var(--t-13) / 1.4 var(--font-mono); }
+.inset__value .quiet { font-weight: 400; color: var(--ink-70); }
+
+/* --- credential field ---------------------------------------------------- */
+.cred {
+  display: flex;
+  align-items: stretch;
+  margin-top: var(--s-7);
+  border: var(--rule-w-strong) solid var(--ink);
+  background: var(--field-bg);
+}
+.cred:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.cred input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--s-10) var(--s-12);
+  border: 0;
+  background: transparent;
+  font: 400 var(--t-12-5) / 1.4 var(--font-mono);
+  color: var(--ink);
+}
+.cred input:focus-visible { outline: none; }
+.cred__toggle {
+  padding: var(--s-10) var(--s-12);
+  border: 0;
+  border-left: var(--rule-w) solid var(--rule);
+  background: transparent;
+  color: var(--ink);
+  font: 500 var(--t-11) / 1.4 var(--font-sans);
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: var(--h-44);
+}
+.cred__toggle:hover { background: var(--hover-surface); }
+
+.help { margin-top: var(--s-8); font: 400 var(--t-11-5) / 1.55 var(--font-sans); color: var(--ink-55); }
+
+/* --- verify result ------------------------------------------------------- */
+.verdict {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-12);
+  flex-wrap: wrap;
+  margin-top: var(--s-20);
+  padding: var(--s-11, 0.6875rem) var(--s-13);
+  border: var(--rule-w) solid currentColor;
+  font: 400 var(--t-12) / 1.5 var(--font-sans);
+}
+.verdict__word { flex: none; font: 600 var(--t-10) / 1.6 var(--font-mono); letter-spacing: var(--ls-label-sm); }
+.verdict--valid { color: var(--post-fg); background: var(--post-bg); }
+.verdict--invalid { color: var(--delete-fg); background: var(--delete-bg); }
+.verdict--unknown { color: var(--patch-fg); background: var(--patch-bg); }
+.verdict--checking { color: var(--ink-70); background: var(--paper-alt); border-color: var(--rule); }
+
+/* --- radio / checkbox groups (options) ----------------------------------- */
+fieldset { border: var(--rule-w) solid var(--rule); padding: var(--s-12) var(--s-14); margin: 0; }
+fieldset + fieldset { margin-top: var(--s-16); }
+legend { padding: 0 var(--s-6); font: 600 var(--t-10) / 1 var(--font-mono); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--ink-55); }
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-10);
+  padding: var(--s-8) 0;
+  min-height: var(--h-36);
+  cursor: pointer;
+}
+.choice input { width: 1rem; height: 1rem; margin-top: 0.2rem; accent-color: var(--accent); flex: none; }
+.choice__text { display: grid; gap: var(--s-3); }
+.choice__label { font: 500 var(--t-12-5) / 1.4 var(--font-sans); }
+.choice__hint { font: 400 var(--t-11) / 1.5 var(--font-sans); color: var(--ink-55); }
+
+/* --- command palette ----------------------------------------------------- */
+dialog.palette {
+  width: min(40rem, 100vw - 2rem);
+  max-width: none;
+  margin-top: 8vh;
+  padding: 0;
+}
+.palette__field {
+  display: flex;
+  align-items: center;
+  gap: var(--s-10);
+  padding: var(--s-12) var(--s-14);
+  border-bottom: var(--rule-w-strong) solid var(--rule-strong);
+}
+.palette__field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: 400 var(--t-15) / 1.4 var(--font-mono);
+  color: var(--ink);
+}
+.palette__field input:focus-visible { outline: none; }
+.palette__count { font: 400 var(--t-11-5) / 1.4 var(--font-mono); color: var(--ink-55); white-space: nowrap; }
+
+.palette__results { max-height: min(26rem, 55dvh); overflow-y: auto; }
+.palette__group-label {
+  padding: var(--s-8) var(--s-14) var(--s-5);
+  font: 600 var(--t-9-5) / 1.4 var(--font-mono);
+  letter-spacing: var(--ls-label-sm);
+  text-transform: uppercase;
+  color: var(--ink-55);
+  background: var(--paper-alt);
+  border-bottom: var(--rule-w) solid var(--rule);
+}
+.palette__option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-10);
+  padding: var(--s-9) var(--s-14);
+  border-bottom: var(--rule-w) solid var(--rule-softer);
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  font: 400 var(--t-12-5) / 1.4 var(--font-sans);
+}
+.palette__option:hover { background: var(--hover-surface); }
+/* The active option is tracked with aria-activedescendant; focus itself never
+   leaves the input, so this is the only cue and it must be unmissable. */
+.palette__option[aria-selected='true'] {
+  background: var(--accent-tint);
+  border-left-color: var(--accent);
+}
+.palette__option-path { font: 500 var(--t-12-5) / 1.4 var(--font-mono); overflow-wrap: anywhere; }
+.palette__option-summary { color: var(--ink-55); font-size: var(--t-11-5); }
+.palette__option-kbd { margin-left: auto; flex: none; }
+.palette__empty { padding: var(--s-18) var(--s-14); color: var(--ink-55); font: 400 var(--t-12-5) / 1.6 var(--font-sans); }
+.palette__foot {
+  display: flex;
+  gap: var(--s-14);
+  flex-wrap: wrap;
+  padding: var(--s-8) var(--s-14);
+  border-top: var(--rule-w) solid var(--rule);
+  background: var(--paper-alt);
+  font: 400 var(--t-10-5) / 1.6 var(--font-mono);
+  color: var(--ink-55);
+}
+
+@media (forced-colors: active) {
+  .palette__option { border-left-color: Canvas; }
+  .palette__option[aria-selected='true'] {
+    border-left-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .cred:focus-within,
+  .urlrow:focus-within,
+  .searchblock__field:focus-within,
+  .field:focus-within { outline: 2px solid Highlight; outline-offset: -2px; }
+}
+
+/* ---------------------------------------------------------------------------
+   Import screen (1d)
+--------------------------------------------------------------------------- */
+.import {
+  min-height: 100dvh;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  padding: var(--s-32) var(--s-20);
+  gap: var(--s-24);
+}
+.import__inner { width: 100%; max-width: 27.5rem; }
+.import__inner--wide { max-width: 38.75rem; }
+
+.import h1 {
+  font: 600 var(--t-26) / var(--lh-tight) var(--font-sans);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.import__lede { margin-top: var(--s-12); font: 400 var(--t-13-5) / 1.65 var(--font-sans); color: var(--ink-70); }
+
+.dropzone {
+  margin-top: var(--s-22);
+  padding: var(--s-26) var(--s-20);
+  border: var(--rule-w-strong) dashed var(--ink);
+  background: var(--paper-alt);
+  text-align: center;
+  transition: background-color var(--dur) var(--ease);
+}
+.dropzone[data-dragging='true'] { background: var(--accent-tint); border-color: var(--accent); }
+.dropzone__title { font: 500 var(--t-13) / 1.4 var(--font-sans); }
+.dropzone__or { margin-top: var(--s-12); font: 400 var(--t-11-5) / 1.5 var(--font-mono); color: var(--ink-55); }
+.dropzone__status { margin-top: var(--s-8); font: 400 var(--t-11-5) / 1.5 var(--font-sans); color: var(--ink-70); min-height: 1.5em; }
+
+/* The file input is the control; the label is its visible face. The input is
+   positioned rather than display:none so that it still takes focus, and the
+   ring is drawn on the label. */
+.filepick { display: inline-block; position: relative; margin-top: var(--s-12); }
+.filepick input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.filepick label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--h-34);
+  padding: 0 var(--s-15, 0.9375rem);
+  background: var(--ink);
+  color: var(--paper);
+  font: 600 var(--t-12) / 1 var(--font-sans);
+  cursor: pointer;
+}
+.filepick:hover label { background: var(--fill-hover); }
+.filepick input:focus-visible + label {
+  /* The ringed halo from the mock: a paper gap, then the accent ring. */
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--accent);
+}
+@media (forced-colors: active) {
+  .filepick input:focus-visible + label { outline: 2px solid Highlight; outline-offset: 2px; }
+}
+
+.urlrow { display: flex; margin-top: var(--s-14); border: var(--rule-w) solid var(--ink); }
+.urlrow:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.urlrow input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--s-10) var(--s-12);
+  border: 0;
+  background: var(--field-bg);
+  font: 400 var(--t-12-5) / 1.4 var(--font-mono);
+  color: var(--ink);
+}
+.urlrow input:focus-visible { outline: none; }
+.urlrow button {
+  padding: var(--s-10) var(--s-14);
+  border: 0;
+  border-left: var(--rule-w) solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: 600 var(--t-12) / 1.4 var(--font-sans);
+  cursor: pointer;
+  min-height: var(--h-44);
+}
+.urlrow button:hover { background: var(--hover-surface); }
+
+.import__foot { margin-top: var(--s-14); font: 400 var(--t-11-5) / 1.6 var(--font-sans); color: var(--ink-55); }
+
+/* --- parsed report ------------------------------------------------------- */
+.report__head { display: flex; align-items: baseline; gap: var(--s-10); flex-wrap: wrap; }
+.report__head h2 { font: 600 var(--t-19) / var(--lh-tight) var(--font-mono); overflow-wrap: anywhere; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  margin: var(--s-18) 0 0;
+  border: var(--rule-w) solid var(--ink);
+}
+.stats > div { padding: var(--s-14); border-right: var(--rule-w) solid var(--rule); }
+.stats > div:last-child { border-right: 0; }
+.stats dd { margin: 0; font: 600 var(--t-22) / 1.1 var(--font-mono); }
+.stats dt { margin-top: var(--s-6); font: 400 var(--t-10-5) / 1.3 var(--font-mono); color: var(--ink-55); }
+
+.import .detail__section { margin-top: var(--s-22); }
+.import .label { display: block; margin-bottom: var(--s-10); }
+
+.notes { border: var(--rule-w) solid var(--rule); }
+.notes > li {
+  display: flex;
+  gap: var(--s-12);
+  padding: var(--s-11, 0.6875rem) var(--s-13);
+  border-bottom: var(--rule-w) solid var(--rule-softer);
+  font: 400 var(--t-12) / 1.5 var(--font-sans);
+}
+.notes > li:last-child { border-bottom: 0; }
+.notes code { font-size: 0.95em; overflow-wrap: anywhere; }
+
+.import__error-detail {
+  margin-top: var(--s-12);
+  padding: var(--s-12);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: var(--rule-w) solid var(--code-border);
+  font: 400 var(--t-11-5) / var(--lh-code) var(--font-mono);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* --- live regions -------------------------------------------------------- */
+.live-region {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- noscript ------------------------------------------------------------ */
+.noscript {
+  margin: var(--s-32) auto;
+  max-width: 44rem;
+  padding: var(--s-20);
+  border: var(--rule-w-strong) solid var(--ink);
+}
+.noscript h1 { font: 600 var(--t-20) / var(--lh-tight) var(--font-sans); margin-bottom: var(--s-12); }
+.noscript p { font: 400 var(--t-13) / var(--lh-body) var(--font-sans); }
+
+.auth-field { margin-top: var(--s-18); }
+.auth-field .choice__label { display: block; font: 600 var(--t-11) / 1.4 var(--font-sans); }
+
+.report__head-title { font: 600 var(--t-19) / var(--lh-tight) var(--font-mono); overflow-wrap: anywhere; }
+.import details summary {
+  margin-top: var(--s-12);
+  font: 500 var(--t-12) / 1.5 var(--font-sans);
+  cursor: pointer;
+  min-height: var(--h-36);
+  display: flex;
+  align-items: center;
+}
+
+/* Where the credential is kept is a decision, so it gets a real checkbox with
+   its consequences spelled out under the label. */
+.auth-remember { margin-top: var(--s-16); }
+.auth-remember .choice__hint { max-width: 46ch; }

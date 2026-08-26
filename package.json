@@ -1,0 +1,20 @@
+{
+  "name": "allyway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An accessible OpenAPI browser. No build step: the browser loads the ES modules as written.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test 'test/*.test.mjs'",
+    "test:a11y": "node --test --test-concurrency=1 test/a11y.browser.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "axe-core": "^4.10.2",
+    "playwright": "^1.49.1"
+  }
+}
