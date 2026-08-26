@@ -1,0 +1,444 @@
+/* ---------------------------------------------------------------------------
+   allyway — application shell
+   ---------------------------------------------------------------------------
+   Two densities live here, because both navigation models from the handoff
+   ship:
+
+     [data-density="dense"]  1a — three panes, tag rail, dense table rows
+     [data-density="roomy"]  1b — two panes, no rail, search owns the header
+
+   Breakpoints are in rem, not px, so they respond to a browser text-size
+   preference as well as to page zoom. The panes collapse before the detail
+   pane can be squeezed under ~30rem, and below 48rem the list and the detail
+   become separate pages, as drawn in 1f.
+--------------------------------------------------------------------------- */
+
+.app {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100vh;
+  min-height: 100dvh;
+  border: var(--rule-w-strong) solid var(--rule-strong);
+  border-width: 0;
+}
+
+/* --- top bar (1a) -------------------------------------------------------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-14);
+  min-height: var(--h-52);
+  padding: var(--s-8) var(--s-16);
+  border-bottom: var(--rule-w-strong) solid var(--rule-strong);
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font: 600 var(--t-13) / 1 var(--font-mono);
+  letter-spacing: var(--ls-wordmark);
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.wordmark:hover { color: var(--ink); text-decoration: none; }
+
+.topbar__divider {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--divider-quiet);
+  flex: none;
+}
+
+.topbar__search {
+  flex: 1 1 14rem;
+  max-width: 23.75rem; /* 380px */
+}
+
+.topbar__right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-10);
+  flex-wrap: wrap;
+}
+
+/* The document's own version. Static text, not a menu: the handoff descoped
+   environment switching, and a disclosure caret that discloses nothing is
+   worse than no caret. */
+.version-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-7);
+  height: var(--h-30);
+  padding: 0 var(--s-10);
+  border: var(--rule-w) solid var(--ink);
+  font: 500 var(--t-11-5) / 1 var(--font-mono);
+  white-space: nowrap;
+}
+
+/* --- schema meta strip --------------------------------------------------- */
+.meta-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-10);
+  flex-wrap: wrap;
+  min-height: var(--h-34);
+  padding: var(--s-6) var(--s-16);
+  background: var(--paper-alt);
+  border-bottom: var(--rule-w) solid var(--rule);
+  font: 400 var(--t-11-5) / 1.4 var(--font-mono);
+  color: var(--ink-55);
+}
+.meta-strip__name { color: var(--ink); font-weight: 500; }
+.meta-strip__end { margin-left: auto; display: flex; gap: var(--s-12); align-items: center; }
+.dot { color: var(--ink-55); }
+
+/* --- body grid ----------------------------------------------------------- */
+.shell {
+  display: grid;
+  grid-template-columns: var(--w-rail) var(--w-list) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.rail {
+  border-right: var(--rule-w-strong) solid var(--rule-strong);
+  padding: var(--s-14) 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: var(--w-list) minmax(0, 1fr);
+  grid-column: 2 / -1;
+  min-height: 0;
+}
+
+.pane {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pane--list { border-right: var(--rule-w-strong) solid var(--rule-strong); }
+.pane--detail { overflow-y: auto; }
+
+/* Roomy (1b): no rail, a wider list, and the search block owns the header. */
+[data-density='roomy'] .shell { grid-template-columns: minmax(0, 1fr); }
+[data-density='roomy'] .rail { display: none; }
+[data-density='roomy'] .main {
+  grid-column: 1 / -1;
+  grid-template-columns: var(--w-list-roomy) minmax(0, 1fr);
+}
+
+/* --- responsive ---------------------------------------------------------- */
+
+/* Two panes: the rail folds into a chip row above the list. */
+@media (max-width: 75rem) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail { display: none; }
+  .main { grid-column: 1 / -1; grid-template-columns: var(--w-list) minmax(0, 1fr); }
+}
+
+@media (max-width: 62rem) {
+  .main,
+  [data-density='roomy'] .main { grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); }
+}
+
+/* One column: list and detail become separate pages (1f). */
+@media (max-width: 48rem) {
+  .main,
+  [data-density='roomy'] .main { grid-template-columns: minmax(0, 1fr); }
+  .pane--list { border-right: 0; }
+  .app[data-mobile-view='list'] .pane--detail { display: none; }
+  .app[data-mobile-view='detail'] .pane--list { display: none; }
+  .topbar { min-height: var(--h-44); padding: var(--s-6) var(--s-14); }
+}
+
+/* Only shown when the detail is a pushed page. */
+.detail-back { display: none; }
+@media (max-width: 48rem) {
+  .detail-back {
+    display: flex;
+    align-items: center;
+    gap: var(--s-10);
+    min-height: var(--h-44);
+    padding: var(--s-6) var(--s-14);
+    border-bottom: var(--rule-w-strong) solid var(--rule-strong);
+  }
+  .detail-back__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--h-44);
+    padding: var(--s-8) 0;
+    font: 600 var(--t-12) / 1 var(--font-sans);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .detail-back__link:hover { color: var(--ink); text-decoration: underline; }
+  .detail-back__end { margin-left: auto; }
+}
+
+/* ---------------------------------------------------------------------------
+   Tag rail
+--------------------------------------------------------------------------- */
+.rail__label { padding: 0 var(--s-14) var(--s-9); }
+
+.rail__list { display: flex; flex-direction: column; }
+
+.rail__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-8);
+  width: 100%;
+  padding: var(--s-7) var(--s-14);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 400 var(--t-12-5) / var(--lh-row) var(--font-sans);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--dur) var(--ease);
+}
+.rail__item:hover { background: var(--hover-surface); color: var(--ink); }
+.rail__count { font: 400 var(--t-11) / 1 var(--font-mono); color: var(--ink-55); }
+
+.rail__item[aria-pressed='true'],
+.rail__item[aria-current='true'] {
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+.rail__item[aria-pressed='true'] .rail__count,
+.rail__item[aria-current='true'] .rail__count { color: inherit; }
+.rail__item[aria-pressed='true']:hover,
+.rail__item[aria-current='true']:hover { background: var(--fill-hover); color: var(--paper); }
+
+.rail__divider {
+  margin: var(--s-16) var(--s-14) var(--s-9);
+  padding-top: var(--s-14);
+  border-top: var(--rule-w) solid var(--rule);
+}
+
+.rail__schema {
+  display: block;
+  padding: var(--s-6) var(--s-14);
+  font: 400 var(--t-12) / var(--lh-row) var(--font-mono);
+  color: var(--ink);
+  text-decoration: none;
+}
+.rail__schema:hover { background: var(--hover-surface); color: var(--ink); text-decoration: underline; }
+.rail__schema[aria-current='page'] {
+  background: var(--accent-tint);
+  border-left: 3px solid var(--accent);
+  padding-left: calc(var(--s-14) - 3px);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------------------------
+   Filter bars
+--------------------------------------------------------------------------- */
+.filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-6);
+  padding: var(--s-10) var(--s-12);
+  border-bottom: var(--rule-w) solid var(--rule);
+  align-items: center;
+}
+.filterbar__spacer { margin-left: auto; }
+
+/* The chip row that stands in for the rail once it is gone. */
+.tagbar {
+  display: flex;
+  gap: var(--s-6);
+  padding: var(--s-10) var(--s-12);
+  border-bottom: var(--rule-w) solid var(--rule);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tagbar .chip { flex: none; }
+@media (max-width: 48rem) {
+  .tagbar .chip { min-height: var(--h-44); padding: var(--s-8) var(--s-12); font-size: var(--t-11); }
+}
+
+/* Search-first header (1b) */
+.searchblock { padding: var(--s-18) var(--s-22) var(--s-16); border-bottom: var(--rule-w-strong) solid var(--rule-strong); }
+.searchblock__row { display: flex; align-items: center; gap: var(--s-14); flex-wrap: wrap; }
+.searchblock__meta { font: 400 var(--t-11-5) / 1.4 var(--font-mono); color: var(--ink-55); }
+.searchblock__field {
+  display: flex;
+  align-items: center;
+  gap: var(--s-12);
+  margin-top: var(--s-14);
+  min-height: var(--h-46);
+  padding: 0 var(--s-14);
+  border: var(--rule-w-strong) solid var(--ink);
+  background: var(--field-bg);
+}
+.searchblock__field:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.searchblock__field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: 400 var(--t-15) / 1.3 var(--font-mono);
+  color: var(--ink);
+}
+.searchblock__field input:focus-visible { outline: none; }
+.searchblock__status { font: 400 var(--t-11-5) / 1.3 var(--font-mono); color: var(--ink-55); white-space: nowrap; }
+
+/* ---------------------------------------------------------------------------
+   Endpoint list
+--------------------------------------------------------------------------- */
+.list-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+
+.endpoints { display: flex; flex-direction: column; }
+
+.row {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: var(--s-10);
+  align-items: baseline;
+  padding: var(--s-9) var(--s-12);
+  border-bottom: var(--rule-w) solid var(--rule-soft);
+  border-left: 3px solid transparent;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color var(--dur) var(--ease);
+}
+.row:hover { background: var(--hover-surface); color: var(--ink); text-decoration: none; }
+
+/* The ring is inset so it is never clipped by the pane edge. */
+.row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* Selection is said three ways: a left bar, a tint, and aria-current. */
+.row[aria-current='true'] {
+  background: var(--accent-tint);
+  border-left-color: var(--ink);
+}
+.row[aria-current='true']:hover { background: var(--accent-tint); }
+
+/* The pill sits in its own column and fills it, so the paths line up. */
+.row > .pill { display: block; align-self: start; }
+
+.row__path { display: block; font: 500 var(--t-12-5) / 1.3 var(--font-mono); overflow-wrap: anywhere; }
+.row__summary { display: block; margin-top: var(--s-3); font: 400 var(--t-11-5) / 1.4 var(--font-sans); color: var(--ink-70); }
+.row__head { display: flex; align-items: baseline; gap: var(--s-10); flex-wrap: wrap; }
+.row__head .row__path { margin: 0; }
+
+/* Deprecated rows are listed but stood down — and the word "deprecated" is in
+   the accessible name, because a strikethrough is not announced. */
+.row--deprecated { opacity: 0.62; }
+.row--deprecated .row__path { text-decoration: line-through; }
+.row--deprecated:hover, .row--deprecated:focus-visible { opacity: 1; }
+
+/* Roomy rows (1b) */
+[data-density='roomy'] .row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-7);
+  padding: var(--s-14) var(--s-18);
+}
+[data-density='roomy'] .row[aria-current='true'] { border-left: 4px solid var(--accent); }
+[data-density='roomy'] .row > .pill { display: inline-block; }
+[data-density='roomy'] .row__path { font-size: var(--t-14); }
+[data-density='roomy'] .row__summary { font-size: var(--t-12-5); line-height: 1.55; }
+.row__meta { display: flex; flex-wrap: wrap; gap: var(--s-7); margin-top: var(--s-9); }
+.row__meta .chip {
+  cursor: default;
+  padding: var(--s-3) var(--s-6);
+  font-size: var(--t-10);
+  font-weight: 500;
+  color: var(--ink-70);
+}
+.row__meta .chip:hover { background: transparent; }
+
+.group-head {
+  padding: var(--s-9) var(--s-18);
+  background: var(--paper-alt);
+  border-top: var(--rule-w) solid var(--rule);
+  border-bottom: var(--rule-w) solid var(--rule);
+  font: 600 var(--t-10) / 1.3 var(--font-mono);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--ink-55);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.group-head--first {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+@media (max-width: 48rem) {
+  .row { padding: var(--s-14); grid-template-columns: minmax(0, 1fr); gap: var(--s-6); }
+  .row > .pill { display: inline-block; }
+  .row__head { gap: var(--s-9); }
+  .row__path { font-size: var(--t-13); }
+  .row__summary { font-size: var(--t-12); line-height: 1.5; }
+  .row[aria-current='true'] { border-left: 4px solid var(--accent); }
+}
+
+/* --- the empty result state --------------------------------------------- */
+.empty {
+  padding: var(--s-24) var(--s-18);
+  max-width: 40ch;
+}
+.empty__title { font: 600 var(--t-14) / 1.4 var(--font-sans); margin-bottom: var(--s-8); }
+.empty__body { font: 400 var(--t-12-5) / var(--lh-body) var(--font-sans); color: var(--ink-70); }
+
+/* --- keyboard hint bar --------------------------------------------------- */
+.hintbar {
+  display: flex;
+  gap: var(--s-14);
+  align-items: center;
+  flex-wrap: wrap;
+  min-height: var(--h-30);
+  padding: var(--s-4) var(--s-12);
+  border-top: var(--rule-w) solid var(--rule);
+  background: var(--paper-alt);
+  font: 400 var(--t-10-5) / 1.6 var(--font-mono);
+  color: var(--ink-55);
+}
+.hintbar__count { margin-left: auto; }
+.hintbar kbd {
+  font: inherit;
+  border: 0;
+  padding: 0;
+  color: inherit;
+}
+
+/* --- status bar (small screens) ------------------------------------------ */
+.statusbar {
+  display: none;
+  align-items: center;
+  min-height: var(--h-46);
+  padding: var(--s-8) var(--s-14);
+  border-top: var(--rule-w-strong) solid var(--rule-strong);
+  background: var(--paper-alt);
+  font: 400 var(--t-11) / 1.4 var(--font-mono);
+  color: var(--ink-55);
+}
+@media (max-width: 48rem) {
+  .statusbar { display: flex; }
+  .hintbar { display: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   Forced colours: fills stop conveying anything, so make sure the structural
+   borders survive and selection keeps a border of its own.
+--------------------------------------------------------------------------- */
+@media (forced-colors: active) {
+  .row[aria-current='true'] { border-left-color: Highlight; }
+  .chip[aria-pressed='true'],
+  .rail__item[aria-pressed='true'],
+  .rail__item[aria-current='true'] { border: 1px solid Highlight; }
+  .pill { border: 1px solid currentColor; }
+  .group-head--first { border: 1px solid CanvasText; }
+}

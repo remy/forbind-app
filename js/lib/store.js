@@ -21,12 +21,15 @@ export function initialState() {
     /** 'idle' | 'loading' | 'ready' | 'error' */
     schemaState: 'idle',
     schemaError: null,
+    /** A parsed schema shows its report first; this is the step past it. */
+    browsing: false,
 
     filters: {
       query: '',
       tags: [],
       verbs: [],
       hideDeprecated: false,
+      onlyDeprecated: false,
       scopes: [],
       statusCodes: [],
     },
@@ -49,6 +52,10 @@ export function initialState() {
       scopes: [],
       expiresAt: null,
     },
+
+    /** Overlays. Kept in the store so the palette can open them too. */
+    authOpen: false,
+    optionsOpen: false,
 
     /** Small screens push the detail as its own page. */
     mobileView: 'list',

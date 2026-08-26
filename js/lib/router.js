@@ -18,6 +18,11 @@ export function parseHash(hash = globalThis.location?.hash ?? '') {
   const segments = pathPart.split('/').filter(Boolean);
   const params = new URLSearchParams(queryPart ?? '');
 
+  // `src` is not a filter: it is the schema the rest of the URL is about, so a
+  // link to an operation in a public schema opens that operation for someone
+  // who has never loaded it.
+  const src = params.get('src');
+
   const filters = {
     query: params.get('q') ?? '',
     tags: params.getAll('tag'),
@@ -25,27 +30,30 @@ export function parseHash(hash = globalThis.location?.hash ?? '') {
     scopes: params.getAll('scope'),
     statusCodes: params.getAll('status'),
     hideDeprecated: params.get('deprecated') === 'hide',
+    onlyDeprecated: params.get('deprecated') === 'only',
   };
 
   if (segments[0] === 'op' && segments[1]) {
-    return { view: 'operation', id: decodeURIComponent(segments[1]), filters };
+    return { view: 'operation', id: decodeURIComponent(segments[1]), filters, src };
   }
   if (segments[0] === 'schema' && segments[1]) {
-    return { view: 'schema', id: decodeURIComponent(segments[1]), filters };
+    return { view: 'schema', id: decodeURIComponent(segments[1]), filters, src };
   }
-  if (segments[0] === 'import') return { view: 'import', id: null, filters };
-  return { view: 'browse', id: null, filters };
+  if (segments[0] === 'import') return { view: 'import', id: null, filters, src: null };
+  return { view: 'browse', id: null, filters, src };
 }
 
 /** Build a hash for a target plus the current filters. */
-export function buildHash({ view, id, filters }) {
+export function buildHash({ view, id, filters, src }) {
   const params = new URLSearchParams();
+  if (src) params.set('src', src);
   if (filters?.query) params.set('q', filters.query);
   for (const tag of filters?.tags ?? []) params.append('tag', tag);
   for (const verb of filters?.verbs ?? []) params.append('verb', verb);
   for (const scope of filters?.scopes ?? []) params.append('scope', scope);
   for (const code of filters?.statusCodes ?? []) params.append('status', code);
   if (filters?.hideDeprecated) params.set('deprecated', 'hide');
+  else if (filters?.onlyDeprecated) params.set('deprecated', 'only');
   const query = params.toString();
 
   let path = '/';

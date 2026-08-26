@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>allyway — an accessible API browser</title>
+<meta name="description" content="Load an OpenAPI schema and browse it. Everything happens in your browser: parsing, filtering and snippet generation need no server.">
+<meta name="color-scheme" content="light dark">
+
+<link rel="preload" href="/assets/fonts/ibm-plex-sans-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/ibm-plex-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/fonts/fonts.css">
+<link rel="stylesheet" href="/css/tokens.css">
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/css/detail.css">
+<link rel="stylesheet" href="/css/overlays.css">
+
+<script src="/js/theme-boot.js"></script>
+<script type="module" src="/js/main.js"></script>
+</head>
+<body>
+
+<aw-app></aw-app>
+
+<noscript>
+  <div class="noscript">
+    <h1>allyway needs JavaScript</h1>
+    <p>
+      allyway parses your OpenAPI schema in the browser — there is no server doing it for you,
+      which is what lets it promise that the file never leaves your machine. That means it cannot
+      work with scripting turned off. If that is a blocker for you, the schema you were about to
+      load is still a plain text file, and every part of it that allyway would show you is in there.
+    </p>
+  </div>
+</noscript>
+
+</body>
+</html>

@@ -42,7 +42,7 @@ export async function loadFromUrl(rawUrl, options = {}) {
     const response = await fetchImpl(url, { headers: { Accept: 'application/json, application/yaml, text/yaml, text/plain, */*' } });
     if (response.ok) {
       const text = await response.text();
-      return { text, name: fileNameFromUrl(url), via: 'direct', note: null };
+      return { text, name: fileNameFromUrl(url), via: 'direct', note: null, url };
     }
     directError = `The server answered ${response.status} ${response.statusText}.`;
   } catch (error) {
@@ -63,6 +63,7 @@ export async function loadFromUrl(rawUrl, options = {}) {
         text: payload.text,
         name: fileNameFromUrl(url),
         via: 'relay',
+        url,
         note: `Your browser could not fetch that URL directly (${directError}) so allyway fetched it server-side instead.`,
       };
     }
@@ -101,12 +102,21 @@ export function describeFetchFailure(error) {
   );
 }
 
-export function normaliseUrl(raw) {
+export function normaliseUrl(raw, base = globalThis.location?.href) {
   const value = String(raw ?? '').trim();
   if (!value) throw new SchemaError('Enter a URL first.');
   let url;
   try {
-    url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value}`);
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value)) {
+      url = new URL(value);
+    } else if (value.startsWith('/') || value.startsWith('./') || value.startsWith('../')) {
+      // A same-origin path, which is how the bundled sample and any schema
+      // served next to the app are named.
+      url = new URL(value, base);
+    } else {
+      // A bare host like `api.example.com/openapi.yaml`.
+      url = new URL(`https://${value}`);
+    }
   } catch {
     throw new SchemaError(`“${value}” is not a URL.`);
   }

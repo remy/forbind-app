@@ -74,7 +74,7 @@ export function score(op, query) {
  * @param {object} filters
  */
 export function filterOperations(operations, filters) {
-  const { query, tags, verbs, hideDeprecated, scopes, statusCodes } = filters;
+  const { query, tags, verbs, hideDeprecated, onlyDeprecated, scopes, statusCodes } = filters;
   const tagSet = new Set(tags);
   const verbSet = new Set(verbs);
   const scopeSet = new Set(scopes);
@@ -83,6 +83,7 @@ export function filterOperations(operations, filters) {
   const matched = [];
   for (const op of operations) {
     if (hideDeprecated && op.deprecated) continue;
+    if (onlyDeprecated && !op.deprecated) continue;
     if (tagSet.size && !op.tags.some((tag) => tagSet.has(tag))) continue;
     if (verbSet.size && !verbSet.has(op.method)) continue;
     if (scopeSet.size && !op.scopes.some((scope) => scopeSet.has(scope))) continue;
