@@ -1,0 +1,1931 @@
+# A worked example schema, shipped with allyway so there is something to browse
+# on first run. It describes an imaginary restaurant bookings API.
+openapi: 3.1.0
+info:
+  title: Bookings API
+  version: 2.1.0
+  description: >-
+    A worked example schema shipped with allyway so the browser has something to browse. It is not a
+    real service.
+servers:
+  - url: https://api.bookings.dev
+    description: Production
+tags:
+  - name: Bookings
+    description: Create, amend and cancel bookings.
+  - name: Venues
+    description: Venues, their tables and their opening hours.
+  - name: Availability
+    description: Search for slots and hold one while a customer decides.
+  - name: Payments
+    description: Take, refund and void payments against a booking.
+  - name: Customers
+    description: Customer records and marketing consent.
+  - name: Webhooks
+    description: Subscribe to event notifications.
+security:
+  - bearerAuth: []
+paths:
+  /v2/bookings:
+    get:
+      summary: List bookings for the authenticated account
+      description: Returns bookings newest first. Narrow with `venueId`, a date range, or a status.
+      operationId: getV2Bookings
+      tags:
+        - Bookings
+      parameters:
+        - name: venueId
+          in: query
+          required: false
+          description: Only bookings at this venue.
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          description: Inclusive start of the arrival-date range.
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: false
+          description: Inclusive end of the arrival-date range.
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          required: false
+          description: Filter by booking status.
+          schema:
+            type: string
+            enum:
+              - held
+              - pending
+              - confirmed
+              - cancelled
+        - name: customerId
+          in: query
+          required: false
+          description: Only bookings for this customer.
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from the previous page.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: A page of bookings.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                  - data
+        "401":
+          description: The bearer token was not accepted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.read
+      x-rate-limit: 120/min
+      x-since: v2.0
+    post:
+      summary: Create a booking against a held slot
+      description: >-
+        Creates a booking from a slot hold. The hold must be less than ten minutes old and belong to
+        the same account. Retrying with the same `Idempotency-Key` returns the original booking
+        rather than creating a second one.
+      operationId: postV2Bookings
+      tags:
+        - Bookings
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique key per logical request. Replaying it returns the original result.
+          schema:
+            type: string
+            maxLength: 64
+            example: 01J9F2K3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingCreate"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "409":
+          description: Hold expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Invalid party size
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.write
+      x-rate-limit: 60/min
+      x-idempotent: Yes — 24h window
+      x-since: v2.0
+  /v2/bookings/{bookingId}:
+    get:
+      summary: Retrieve a single booking
+      operationId: getV2BookingsBookingId}
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking to read.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The booking.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "404":
+          description: No booking with that id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.read
+    patch:
+      summary: Amend party size, notes or arrival time
+      operationId: patchV2BookingsBookingId}
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking to amend.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                partySize:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                notes:
+                  type: string
+                  maxLength: 500
+                arrivesAt:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: The amended booking.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "409":
+          description: The new party size does not fit the held table.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.write
+    delete:
+      summary: Cancel a booking
+      operationId: deleteV2BookingsBookingId}
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking to cancel.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+        - name: reason
+          in: query
+          required: false
+          description: Recorded against the cancellation.
+          schema:
+            type: string
+            enum:
+              - customer
+              - venue
+              - no-show
+      responses:
+        "204":
+          description: Cancelled.
+        "409":
+          description: Already cancelled.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.write
+  /v2/bookings/{bookingId}/confirm:
+    post:
+      summary: Confirm a pending booking
+      operationId: postV2BookingsBookingIdConfirm
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking to confirm.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The confirmed booking.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "409":
+          description: The booking is not in a confirmable state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.write
+  /v2/bookings/{bookingId}/lines:
+    get:
+      summary: List line items on a booking
+      operationId: getV2BookingsBookingIdLines
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking to read.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The line items.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BookingLine"
+      security:
+        - bearerAuth:
+            - bookings.read
+    post:
+      summary: Add a line item to a booking
+      operationId: postV2BookingsBookingIdLines
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking to add to.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingLine"
+      responses:
+        "201":
+          description: The created line.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingLine"
+        "422":
+          description: Unknown product code.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.write
+  /v2/bookings/{bookingId}/lines/{lineId}:
+    delete:
+      summary: Remove a line item
+      operationId: deleteV2BookingsBookingIdLinesLineId}
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+        - name: lineId
+          in: path
+          required: true
+          description: The line to remove.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "204":
+          description: Removed.
+        "404":
+          description: No such line.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.write
+  /v2/bookings/search:
+    get:
+      summary: Search bookings by free text
+      description: Deprecated in 2.1 — superseded by the filters on `GET /v2/bookings`.
+      operationId: getV2BookingsSearch
+      tags:
+        - Bookings
+      deprecated: true
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Free text.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching bookings.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                  - data
+      security:
+        - bearerAuth:
+            - bookings.read
+  /v2/bookings/{bookingId}/notes:
+    patch:
+      operationId: patchV2BookingsBookingIdNotes
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  maxLength: 500
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+      security:
+        - bearerAuth:
+            - bookings.write
+  /v2/bookings/{bookingId}/reschedule:
+    post:
+      summary: Move a booking to a different slot
+      operationId: postV2BookingsBookingIdReschedule
+      tags:
+        - Bookings
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: The booking to move.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique key per logical request. Replaying it returns the original result.
+          schema:
+            type: string
+            maxLength: 64
+            example: 01J9F2K3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - holdId
+              properties:
+                holdId:
+                  type: string
+                  description: A hold on the new slot.
+      responses:
+        "200":
+          description: The rescheduled booking.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "409":
+          description: The new hold has expired.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - bookings.write
+  /v2/venues:
+    get:
+      summary: List venues on the account
+      operationId: getV2Venues
+      tags:
+        - Venues
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from the previous page.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: A page of venues.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Venue"
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                  - data
+      security:
+        - bearerAuth:
+            - venues.read
+    post:
+      summary: Create a venue
+      operationId: postV2Venues
+      tags:
+        - Venues
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Venue"
+      responses:
+        "201":
+          description: The created venue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Venue"
+        "422":
+          description: Missing address fields.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - venues.write
+  /v2/venues/{venueId}:
+    get:
+      summary: Retrieve a venue
+      operationId: getV2VenuesVenueId}
+      tags:
+        - Venues
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          description: The venue to read.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The venue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Venue"
+        "404":
+          description: No venue with that id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - venues.read
+    patch:
+      summary: Update venue details
+      operationId: patchV2VenuesVenueId}
+      tags:
+        - Venues
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          description: The venue to update.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Venue"
+      responses:
+        "200":
+          description: The updated venue.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Venue"
+      security:
+        - bearerAuth:
+            - venues.write
+    delete:
+      summary: Archive a venue
+      operationId: deleteV2VenuesVenueId}
+      tags:
+        - Venues
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          description: The venue to archive.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "204":
+          description: Archived.
+        "409":
+          description: The venue has future bookings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - venues.write
+  /v2/venues/{venueId}/tables:
+    get:
+      summary: List tables at a venue
+      operationId: getV2VenuesVenueIdTables
+      tags:
+        - Venues
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          description: The venue.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The tables.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    seats:
+                      type: integer
+                      minimum: 1
+                      maximum: 20
+      security:
+        - bearerAuth:
+            - venues.read
+    post:
+      summary: Add a table to a venue
+      operationId: postV2VenuesVenueIdTables
+      tags:
+        - Venues
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          description: The venue.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - seats
+              properties:
+                seats:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+                label:
+                  type: string
+                  maxLength: 24
+      responses:
+        "201":
+          description: The created table.
+          content:
+            application/json:
+              schema:
+                type: object
+      security:
+        - bearerAuth:
+            - venues.write
+  /v2/venues/{venueId}/opening-hours:
+    get:
+      summary: Opening hours by weekday
+      operationId: getV2VenuesVenueIdOpeningHours
+      tags:
+        - Venues
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          description: The venue.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: Opening hours.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    weekday:
+                      type: integer
+                      minimum: 0
+                      maximum: 6
+                    opens:
+                      type: string
+                    closes:
+                      type: string
+      security:
+        - bearerAuth:
+            - venues.read
+    patch:
+      operationId: patchV2VenuesVenueIdOpeningHours
+      tags:
+        - Venues
+      parameters:
+        - name: venueId
+          in: path
+          required: true
+          description: The venue.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+      security:
+        - bearerAuth:
+            - venues.write
+  /v2/availability:
+    get:
+      summary: Search available slots
+      description: Returns bookable slots for a venue on a date, filtered by party size.
+      operationId: getV2Availability
+      tags:
+        - Availability
+      parameters:
+        - name: venueId
+          in: query
+          required: true
+          description: The venue to search.
+          schema:
+            type: string
+        - name: date
+          in: query
+          required: true
+          description: The date to search.
+          schema:
+            type: string
+            format: date
+        - name: partySize
+          in: query
+          required: true
+          description: How many covers.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 20
+      responses:
+        "200":
+          description: Available slots.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilitySlot"
+        "422":
+          description: Party size out of range.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - availability.read
+      x-rate-limit: 600/min
+      x-since: v2.0
+  /v2/availability/holds:
+    post:
+      summary: Hold a slot for 10 minutes before booking
+      operationId: postV2AvailabilityHolds
+      tags:
+        - Availability
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique key per logical request. Replaying it returns the original result.
+          schema:
+            type: string
+            maxLength: 64
+            example: 01J9F2K3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - venueId
+                - slotId
+                - partySize
+              properties:
+                venueId:
+                  type: string
+                  description: ULID
+                slotId:
+                  type: string
+                partySize:
+                  type: integer
+                  minimum: 1
+                  maximum: 20
+      responses:
+        "201":
+          description: The hold.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  holdId:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+        "409":
+          description: The slot was taken while you were deciding.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - availability.write
+      x-idempotent: Yes — 10 min window
+      x-since: v2.0
+  /v2/availability/holds/{holdId}:
+    get:
+      summary: Retrieve a hold
+      operationId: getV2AvailabilityHoldsHoldId}
+      tags:
+        - Availability
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          description: The hold to read.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The hold.
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: The hold has expired or never existed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - availability.read
+    delete:
+      summary: Release a hold early
+      operationId: deleteV2AvailabilityHoldsHoldId}
+      tags:
+        - Availability
+      parameters:
+        - name: holdId
+          in: path
+          required: true
+          description: The hold to release.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "204":
+          description: Released.
+      security:
+        - bearerAuth:
+            - availability.write
+  /v2/availability/calendar:
+    get:
+      summary: Month-at-a-glance availability
+      description: Deprecated in 2.1 — superseded by `GET /v2/availability`, which is cheaper per call.
+      operationId: getV2AvailabilityCalendar
+      tags:
+        - Availability
+      deprecated: true
+      parameters:
+        - name: venueId
+          in: query
+          required: true
+          description: The venue.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A calendar.
+          content:
+            application/json:
+              schema:
+                type: object
+      security:
+        - bearerAuth:
+            - availability.read
+  /v2/payments:
+    get:
+      summary: List payments
+      operationId: getV2Payments
+      tags:
+        - Payments
+      parameters:
+        - name: bookingId
+          in: query
+          required: false
+          description: Only payments against this booking.
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from the previous page.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: A page of payments.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Payment"
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                  - data
+      security:
+        - bearerAuth:
+            - payments.read
+    post:
+      summary: Take a payment against a booking
+      operationId: postV2Payments
+      tags:
+        - Payments
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique key per logical request. Replaying it returns the original result.
+          schema:
+            type: string
+            maxLength: 64
+            example: 01J9F2K3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Payment"
+      responses:
+        "201":
+          description: The payment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "402":
+          description: The card was declined.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Amount does not match the booking total.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - payments.write
+      x-rate-limit: 30/min
+      x-idempotent: Yes — 24h window
+      x-since: v2.0
+  /v2/payments/{paymentId}:
+    get:
+      summary: Retrieve a payment
+      operationId: getV2PaymentsPaymentId}
+      tags:
+        - Payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: The payment to read.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The payment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "404":
+          description: No payment with that id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - payments.read
+    patch:
+      summary: Update payment metadata
+      operationId: patchV2PaymentsPaymentId}
+      tags:
+        - Payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: The payment.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metadata:
+                  type: object
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+      security:
+        - bearerAuth:
+            - payments.write
+  /v2/payments/{paymentId}/refunds:
+    post:
+      summary: Refund a payment in full or in part
+      operationId: postV2PaymentsPaymentIdRefunds
+      tags:
+        - Payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: The payment to refund.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: A unique key per logical request. Replaying it returns the original result.
+          schema:
+            type: string
+            maxLength: 64
+            example: 01J9F2K3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amountMinor:
+                  type: integer
+                  minimum: 1
+                  description: Omit to refund in full.
+                reason:
+                  type: string
+                  maxLength: 200
+      responses:
+        "201":
+          description: The refund.
+          content:
+            application/json:
+              schema:
+                type: object
+        "409":
+          description: Already fully refunded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - payments.write
+    get:
+      summary: List refunds against a payment
+      operationId: getV2PaymentsPaymentIdRefunds
+      tags:
+        - Payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: The payment.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The refunds.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+      security:
+        - bearerAuth:
+            - payments.read
+  /v2/payments/{paymentId}/void:
+    post:
+      summary: Void an uncaptured payment
+      operationId: postV2PaymentsPaymentIdVoid
+      tags:
+        - Payments
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          description: The payment to void.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: Voided.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "409":
+          description: The payment has already been captured.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - payments.write
+  /v2/payments/methods:
+    get:
+      operationId: getV2PaymentsMethods
+      tags:
+        - Payments
+      responses:
+        "200":
+          description: The accepted payment methods.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+      security:
+        - bearerAuth:
+            - payments.read
+  /v2/customers:
+    get:
+      summary: List customers
+      operationId: getV2Customers
+      tags:
+        - Customers
+      parameters:
+        - name: email
+          in: query
+          required: false
+          description: Exact match on email address.
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from the previous page.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: A page of customers.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Customer"
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                  - data
+      security:
+        - bearerAuth:
+            - customers.read
+    post:
+      summary: Create a customer record
+      operationId: postV2Customers
+      tags:
+        - Customers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Customer"
+      responses:
+        "201":
+          description: The created customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "409":
+          description: A customer with that email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - customers.write
+  /v2/customers/{customerId}:
+    get:
+      summary: Retrieve a customer
+      operationId: getV2CustomersCustomerId}
+      tags:
+        - Customers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: The customer to read.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+        "404":
+          description: No customer with that id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - customers.read
+    patch:
+      summary: Update a customer
+      operationId: patchV2CustomersCustomerId}
+      tags:
+        - Customers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: The customer to update.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Customer"
+      responses:
+        "200":
+          description: The updated customer.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+      security:
+        - bearerAuth:
+            - customers.write
+    delete:
+      summary: Erase a customer under right-to-erasure
+      description: Removes personal data and detaches the customer from past bookings. This cannot be undone.
+      operationId: deleteV2CustomersCustomerId}
+      tags:
+        - Customers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: The customer to erase.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "202":
+          description: Erasure scheduled.
+        "409":
+          description: The customer has a booking in the next 24 hours.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - customers.write
+  /v2/customers/{customerId}/bookings:
+    get:
+      summary: List a customer's bookings
+      operationId: getV2CustomersCustomerIdBookings
+      tags:
+        - Customers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: The customer.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from the previous page.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: A page of bookings.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Booking"
+                  nextCursor:
+                    type: string
+                    nullable: true
+                required:
+                  - data
+      security:
+        - bearerAuth:
+            - customers.read
+            - bookings.read
+  /v2/customers/{customerId}/consent:
+    patch:
+      summary: Update marketing consent
+      operationId: patchV2CustomersCustomerIdConsent
+      tags:
+        - Customers
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: The customer.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - marketing
+              properties:
+                marketing:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+      security:
+        - bearerAuth:
+            - customers.write
+  /v2/webhooks:
+    get:
+      summary: List webhook subscriptions
+      operationId: getV2Webhooks
+      tags:
+        - Webhooks
+      responses:
+        "200":
+          description: The subscriptions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WebhookSubscription"
+      security:
+        - bearerAuth:
+            - webhooks.read
+    post:
+      summary: Subscribe to an event type
+      operationId: postV2Webhooks
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookSubscription"
+      responses:
+        "201":
+          description: The subscription.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+        "422":
+          description: The endpoint did not answer the verification challenge.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - webhooks.write
+  /v2/webhooks/{webhookId}:
+    get:
+      summary: Retrieve a subscription
+      operationId: getV2WebhooksWebhookId}
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          description: The subscription.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: The subscription.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+        "404":
+          description: No such subscription.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth:
+            - webhooks.read
+    patch:
+      operationId: patchV2WebhooksWebhookId}
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          description: The subscription.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookSubscription"
+      responses:
+        "200":
+          description: Updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookSubscription"
+      security:
+        - bearerAuth:
+            - webhooks.write
+    delete:
+      summary: Unsubscribe
+      operationId: deleteV2WebhooksWebhookId}
+      tags:
+        - Webhooks
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          description: The subscription to remove.
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "204":
+          description: Unsubscribed.
+      security:
+        - bearerAuth:
+            - webhooks.write
+  /v2/webhooks/deliveries:
+    get:
+      summary: List recent webhook deliveries
+      description: Deprecated in 2.1 — use the events export, which retains 30 days rather than 24 hours.
+      operationId: getV2WebhooksDeliveries
+      tags:
+        - Webhooks
+      deprecated: true
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          description: Opaque cursor from the previous page.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Page size.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        "200":
+          description: Recent deliveries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+      security:
+        - bearerAuth:
+            - webhooks.read
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: A JWT issued by the account’s OAuth server, sent in the `Authorization` header.
+  schemas:
+    Booking:
+      type: object
+      required:
+        - id
+        - venueId
+        - status
+        - partySize
+        - arrivesAt
+      properties:
+        id:
+          type: string
+          description: ULID
+        venueId:
+          type: string
+          description: ULID
+        customer:
+          $ref: "#/components/schemas/Customer"
+        status:
+          type: string
+          enum:
+            - held
+            - pending
+            - confirmed
+            - cancelled
+        partySize:
+          type: integer
+          minimum: 1
+          maximum: 20
+        arrivesAt:
+          type: string
+          format: date-time
+        lines:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingLine"
+        notes:
+          type: string
+          maxLength: 500
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+    BookingCreate:
+      type: object
+      required:
+        - venueId
+        - holdId
+        - partySize
+        - customer
+      properties:
+        venueId:
+          type: string
+          description: ULID
+          example: 01J8QW
+        holdId:
+          type: string
+          description: Expires after 10 min
+          example: h_92k
+        partySize:
+          type: integer
+          minimum: 1
+          maximum: 20
+          example: 4
+        customer:
+          $ref: "#/components/schemas/Customer"
+        notes:
+          type: string
+          maxLength: 500
+    BookingLine:
+      type: object
+      required:
+        - productCode
+        - quantity
+      properties:
+        id:
+          type: string
+          readOnly: true
+        productCode:
+          type: string
+          maxLength: 32
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 99
+        amountMinor:
+          type: integer
+          description: Minor units, e.g. pence.
+    Venue:
+      type: object
+      required:
+        - name
+        - timezone
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        timezone:
+          type: string
+          example: Europe/London
+        address:
+          type: string
+          maxLength: 240
+        capacity:
+          type: integer
+          minimum: 1
+    AvailabilitySlot:
+      type: object
+      required:
+        - slotId
+        - startsAt
+        - seats
+      properties:
+        slotId:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        seats:
+          type: integer
+          minimum: 1
+          maximum: 20
+        tableId:
+          type: string
+    Customer:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        id:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+          example: A. Rae
+        email:
+          type: string
+          example: a@rae.dev
+        phone:
+          type: string
+          maxLength: 24
+        marketingConsent:
+          type: boolean
+          default: false
+    Payment:
+      type: object
+      required:
+        - bookingId
+        - amountMinor
+        - currency
+      properties:
+        id:
+          type: string
+          readOnly: true
+        bookingId:
+          type: string
+        amountMinor:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+          enum:
+            - GBP
+            - EUR
+            - USD
+        status:
+          type: string
+          enum:
+            - authorised
+            - captured
+            - refunded
+            - voided
+          readOnly: true
+        metadata:
+          type: object
+    WebhookSubscription:
+      type: object
+      required:
+        - url
+        - events
+      properties:
+        id:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+            enum:
+              - booking.created
+              - booking.cancelled
+              - payment.captured
+        secret:
+          type: string
+          writeOnly: true
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: hold_expired
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: object
