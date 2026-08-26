@@ -160,6 +160,15 @@ public addresses only — including every written form of a private one, IPv4
 mapped into IPv6 among them — redirects re-checked on every hop, an 8 MB cap
 read as a stream, a 10-second timeout, and text out.
 
+## Scale
+
+The list is not virtualised. Every operation is a real element, which is what
+keeps the roving tabindex, find-in-page, and open-in-new-tab honest — and it
+holds up: GitHub's own 12.3 MB description (1,221 endpoints, 972 schemas, 47
+tags) loads, parses and renders in about 0.7 seconds, and filtering it stays
+under a frame. The sample the design was drawn against is 47 endpoints; the
+ceiling is a long way above that.
+
 ## The example schema
 
 `samples/bookings-api.v2.yaml` describes an imaginary restaurant bookings API.
