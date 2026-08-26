@@ -514,6 +514,9 @@ function isTypingTarget(target) {
 
 function installShortcuts() {
   document.addEventListener('keydown', (event) => {
+    // A component that has already acted on this key has said so; do not act
+    // on it twice.
+    if (event.defaultPrevented) return;
     const mod = event.metaKey || event.ctrlKey;
 
     // ⌘K opens the palette from anywhere, including from inside a field.

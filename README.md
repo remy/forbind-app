@@ -8,11 +8,15 @@ snippet, and send a real request. Parsing, filtering and snippet generation all
 happen in the browser; nothing about your schema is uploaded.
 
 ```sh
-npm start          # http://localhost:8080
-npm test           # 98 tests, no browser needed
+npm start           # http://localhost:8080
+npm test            # 98 unit tests, no dependencies, no browser
+npm install
+npm run test:a11y   # 27 checks in a real browser (needs Playwright + axe-core)
 ```
 
 There is no build step. What is in this repository is what the browser loads.
+The only runtime dependency is a vendored YAML parser; Playwright and axe-core
+are development-only and nothing in `js/` imports them.
 
 ---
 
@@ -120,11 +124,20 @@ announcements are debounced so typing does not produce a stream of them.
 Light and Dark in Display), `prefers-contrast: more`, `prefers-reduced-motion`
 (transitions drop to 0ms), and `forced-colors`.
 
-**Verified.** `axe-core` reports zero violations across all ten screens and
-states — import, parse report, dense, roomy, dark, schema view, palette open,
-auth sheet, display options and mobile detail — at WCAG 2.0/2.1/2.2 A and AA
-plus best-practice. The one place the design was overridden is documented in
-`DECISIONS.md`.
+**Verified, not asserted.** `npm run test:a11y` drives a real browser and
+checks all of the above: `axe-core` over ten screens and states (import, parse
+report, dense, roomy, dark, schema view, palette open, auth sheet, display
+options, mobile detail) at WCAG 2.0/2.1/2.2 A and AA plus best-practice, and
+then the behaviours a static scan cannot see — the roving tabindex holding
+focus through a dozen cursor moves, the combobox keeping focus in the input
+while `aria-activedescendant` moves, focus returning to an invoker whose
+toolbar re-rendered underneath it, meaning never carried by colour alone,
+reflow at 320px and at 200% and 400% zoom, a visible ring under
+`forced-colors`, the live regions actually carrying their announcements, and
+the credential reaching neither storage nor the clipboard.
+
+The one place the design was overridden for an accessibility reason is
+documented in `DECISIONS.md`.
 
 ## Try it out
 

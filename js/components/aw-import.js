@@ -90,7 +90,7 @@ class AwImport extends AwElement {
     });
 
     return el('div', { class: 'import' }, [
-      el('div', { class: 'import__inner', id: 'import-main', tabindex: '-1' }, [
+      el('div', { class: 'import__inner' }, [
         el('h1', { text: 'Load an OpenAPI schema' }),
         el('p', {
           class: 'import__lede',
@@ -173,7 +173,7 @@ class AwImport extends AwElement {
     ];
 
     return el('div', { class: 'import' }, [
-      el('div', { class: 'import__inner import__inner--wide', id: 'import-main', tabindex: '-1' }, [
+      el('div', { class: 'import__inner import__inner--wide' }, [
         el('div', { class: 'report__head' }, [
           el('h1', { class: 'report__head-title', text: schema.sourceName }),
           el('span', {

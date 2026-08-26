@@ -19,6 +19,9 @@ class AwApp extends AwElement {
 
   #media = null;
   #onMediaChange = null;
+  #mounted = false;
+  #skipLinks = null;
+  #body = null;
 
   connectedCallback() {
     super.connectedCallback();
@@ -38,6 +41,8 @@ class AwApp extends AwElement {
     const isBrowser = state.schemaState === 'ready' && state.browsing && state.schema;
     const small = this.#media?.matches ?? false;
 
+    if (!this.#mounted) this.#mount();
+
     const skipTargets = isBrowser
       ? [
           ['#endpoint-list', 'Skip to the endpoint list'],
@@ -45,21 +50,37 @@ class AwApp extends AwElement {
           ['#search', 'Skip to search'],
           ['#tag-nav', 'Skip to tags and schemas'],
         ]
-      : [['#import-main', 'Skip to the schema import form']];
+      : [['#main', 'Skip to the schema import form']];
 
-    const skipLinks = el(
-      'div',
-      { class: 'skip-links' },
+    replace(
+      this.#skipLinks,
       skipTargets.map(([href, label]) => el('a', { class: 'skip-link', href, text: label })),
     );
 
-    const politeRegion = el('div', {
+    replace(this.#body, [isBrowser ? this.#renderBrowser(state, small) : this.#renderImport()]);
+  }
+
+  /**
+   * The parts that must outlive a re-render are built once and never replaced.
+   *
+   * The live regions have to be in the document from first paint — a region
+   * created and filled in the same tick is routinely missed — and the dialogs
+   * have to survive a state change made from inside one of them. Switching
+   * density from the Display panel used to rebuild the shell, which destroyed
+   * the very dialog the click came from.
+   */
+  #mount() {
+    this.#mounted = true;
+    this.#skipLinks = el('div', { class: 'skip-links' });
+    this.#body = el('div', { class: 'app-root' });
+
+    const polite = el('div', {
       class: 'live-region',
       'aria-live': 'polite',
       'aria-atomic': 'true',
       id: 'aw-live-polite',
     });
-    const assertiveRegion = el('div', {
+    const assertive = el('div', {
       class: 'live-region',
       role: 'alert',
       'aria-live': 'assertive',
@@ -67,24 +88,22 @@ class AwApp extends AwElement {
       id: 'aw-live-assertive',
     });
 
-    const body = isBrowser ? this.#renderBrowser(state, small) : this.#renderImport();
-
     replace(this, [
-      skipLinks,
-      body,
-      politeRegion,
-      assertiveRegion,
+      this.#skipLinks,
+      this.#body,
+      polite,
+      assertive,
       el('aw-palette', {}),
       el('aw-auth-sheet', {}),
       el('aw-options', {}),
     ]);
 
-    registerRegions(politeRegion, assertiveRegion);
+    registerRegions(polite, assertive);
   }
 
   #renderImport() {
     return el('div', { class: 'app', 'data-density': 'dense' }, [
-      el('main', { id: 'main', 'aria-label': 'Load a schema' }, [el('aw-import', {})]),
+      el('main', { id: 'main', tabindex: '-1', 'aria-label': 'Load a schema' }, [el('aw-import', {})]),
     ]);
   }
 

@@ -15,7 +15,7 @@
  */
 
 import { AwElement, define } from '../lib/element.js';
-import { el, replace } from '../lib/dom.js';
+import { el, replace, preserveFocus } from '../lib/dom.js';
 import { wireDialog } from '../lib/dialog.js';
 import { announce } from '../lib/announce.js';
 import { describeScheme, describeSchemeDetail } from '../lib/openapi.js';
@@ -67,7 +67,12 @@ class AwAuthSheet extends AwElement {
     return chosen ?? schemes[0];
   }
 
+  /** Rebuild the sheet, putting the keyboard back where it was. */
   #renderSheet() {
+    preserveFocus(this.#dialog, () => this.#buildSheet());
+  }
+
+  #buildSheet() {
     const state = this.state;
     const schema = state.schema;
     const schemes = this.#schemes();
@@ -150,6 +155,7 @@ class AwAuthSheet extends AwElement {
             el('button', {
               type: 'button',
               class: 'cred__toggle',
+              dataset: { focusKey: 'auth-show' },
               'aria-pressed': String(this.#revealed),
               text: this.#revealed ? 'Hide' : 'Show',
               onclick: () => {
@@ -157,7 +163,6 @@ class AwAuthSheet extends AwElement {
                 const input = this.querySelector('#auth-credential');
                 if (input) this.#draft = input.value;
                 this.#renderSheet();
-                this.querySelector('.cred__toggle')?.focus();
                 announce(this.#revealed ? 'Credential shown.' : 'Credential hidden.');
               },
             }),
@@ -175,12 +180,14 @@ class AwAuthSheet extends AwElement {
           el('button', {
             type: 'button',
             class: 'btn btn--filled btn--lg',
+            dataset: { focusKey: 'auth-save' },
             text: 'Save for this session',
             onclick: () => this.#save(),
           }),
           el('button', {
             type: 'button',
             class: 'btn btn--lg',
+            dataset: { focusKey: 'auth-test' },
             text: state.auth.verifyState === 'checking' ? 'Testing…' : 'Test',
             'aria-disabled': state.auth.verifyState === 'checking' ? 'true' : null,
             onclick: () => this.#test(),
@@ -189,6 +196,7 @@ class AwAuthSheet extends AwElement {
             ? el('button', {
                 type: 'button',
                 class: 'btn btn--lg',
+                dataset: { focusKey: 'auth-forget' },
                 text: 'Forget',
                 onclick: () => {
                   this.#draft = '';
@@ -211,11 +219,11 @@ class AwAuthSheet extends AwElement {
           type: 'radio',
           name: 'auth-scheme',
           value: scheme.id,
+          dataset: { focusKey: `auth-scheme-${scheme.id}` },
           '.checked': scheme.id === active.id,
           onchange: () => {
             this.actions.setAuth({ schemeId: scheme.id, verifyState: 'idle', message: '' });
             this.#renderSheet();
-            this.querySelector(`input[name="auth-scheme"][value="${CSS.escape(scheme.id)}"]`)?.focus();
           },
         }),
         el('span', { class: 'choice__text' }, [
@@ -267,6 +275,7 @@ class AwAuthSheet extends AwElement {
     return el('button', {
       type: 'button',
       class: 'btn btn--lg',
+      dataset: { focusKey: 'auth-close' },
       text: label,
       onclick: () => this.#controller.close(),
     });
@@ -371,7 +380,6 @@ class AwAuthSheet extends AwElement {
     } finally {
       clearTimeout(timer);
       this.#renderSheet();
-      this.querySelector('.verdict')?.focus?.();
     }
   }
 }

@@ -52,12 +52,14 @@ class AwTopbar extends AwElement {
           el('button', {
             type: 'button',
             class: 'btn',
+            id: 'open-display',
             text: 'Display',
             onclick: () => this.actions.openOptions(),
           }),
           el('button', {
             type: 'button',
             class: 'btn btn--filled',
+            id: 'open-auth',
             text: 'Authorise',
             onclick: () => this.actions.openAuth(),
           }),

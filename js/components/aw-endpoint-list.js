@@ -349,9 +349,19 @@ class AwEndpointList extends AwElement {
         if (visible[current]) this.actions.selectOperation(visible[current].id, { focusRow: true });
         return;
       case '/':
+        // `/` is the filter shortcut, but it is also in every path a person
+        // might be typing ahead for. A slash with nothing typed yet means the
+        // shortcut; a slash mid-word is part of the word.
+        if (this.#typeBuffer === '') {
+          event.preventDefault();
+          this.actions.focusSearch();
+          return;
+        }
+        // Claim the key so the document-level `/` shortcut does not also fire
+        // and yank focus into the filter mid-word.
         event.preventDefault();
-        this.actions.focusSearch();
-        return;
+        event.stopPropagation();
+        break;
       default:
         break;
     }

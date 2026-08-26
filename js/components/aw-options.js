@@ -46,9 +46,16 @@ class AwOptions extends AwElement {
 
   render(state) {
     if (!this.#dialog) return;
-    this.#renderSheet();
-    if (state.optionsOpen && !this.#dialog.open) this.#controller.open(this.actions.lastInvoker());
-    else if (!state.optionsOpen && this.#dialog.open) this.#controller.close();
+    if (state.optionsOpen && !this.#dialog.open) {
+      // Build on the way in. Changing a preference while it is open must NOT
+      // rebuild: these are native radios and a checkbox, they already hold
+      // what was just chosen, and replacing them takes focus off the control
+      // the keyboard is standing on.
+      this.#renderSheet();
+      this.#controller.open(this.actions.lastInvoker());
+    } else if (!state.optionsOpen && this.#dialog.open) {
+      this.#controller.close();
+    }
   }
 
   #renderSheet() {

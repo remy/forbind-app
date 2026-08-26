@@ -17,7 +17,8 @@
  */
 export function wireDialog(dialog, options = {}) {
   const { initialFocus, onClose, lightDismiss = true } = options;
-  let invoker = null;
+  /** @type {{node: HTMLElement|null, key: string|null}} */
+  let invoker = { node: null, key: null };
 
   if (lightDismiss) {
     dialog.addEventListener('click', (event) => {
@@ -30,19 +31,26 @@ export function wireDialog(dialog, options = {}) {
   dialog.addEventListener('close', () => {
     onClose?.();
     // Restore focus to the control that opened the dialog. `<dialog>` does
-    // this itself in modern browsers, but only when the invoker is still in
-    // the document and still focusable — which is not guaranteed after a
-    // re-render, so we do it deliberately.
-    const target = invoker;
-    invoker = null;
-    if (target && document.contains(target)) {
-      target.focus({ preventScroll: true });
+    // this itself, but only while the invoker is still the same node in the
+    // document — and a dialog that changes state (switching density from the
+    // Display panel, say) can re-render the bar the invoker lives on. So the
+    // invoker is remembered by identity *and* by key, and the key is used to
+    // find its replacement.
+    const { node, key } = invoker;
+    invoker = { node: null, key: null };
+
+    let target = node && document.contains(node) ? node : null;
+    if (!target && key) {
+      target = document.querySelector(`#${CSS.escape(key)}`)
+        ?? document.querySelector(`[data-focus-key="${CSS.escape(key)}"]`);
     }
+    target?.focus({ preventScroll: true });
   });
 
   return {
     open(fromElement = document.activeElement) {
-      invoker = fromElement instanceof HTMLElement ? fromElement : null;
+      const node = fromElement instanceof HTMLElement ? fromElement : null;
+      invoker = { node, key: node ? (node.id || node.dataset.focusKey || null) : null };
       if (!dialog.open) dialog.showModal();
       const focusTarget = initialFocus?.();
       if (focusTarget) focusTarget.focus({ preventScroll: true });

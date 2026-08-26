@@ -91,3 +91,39 @@ export function focusable(root) {
 export function text(value) {
   return document.createTextNode(String(value));
 }
+
+/**
+ * Re-render a subtree without throwing focus away.
+ *
+ * Rebuilding a panel replaces the element the keyboard was on, and the browser
+ * drops focus to the body — which, inside a dialog, is how someone ends up
+ * unable to reach the control they just used. This records enough to find the
+ * same control again (its id, or a `data-focus-key`), plus the caret position
+ * in a text field, and restores both afterwards.
+ *
+ * @param {ParentNode} root the subtree about to be replaced
+ * @param {() => void} render
+ */
+export function preserveFocus(root, render) {
+  const active = document.activeElement;
+  const inside = active instanceof HTMLElement && root.contains(active);
+  const key = inside ? (active.id || active.dataset.focusKey || null) : null;
+  const selection = inside && typeof active.selectionStart === 'number'
+    ? [active.selectionStart, active.selectionEnd]
+    : null;
+
+  render();
+
+  if (!key) return;
+  const restored = root.querySelector(`#${CSS.escape(key)}`)
+    ?? root.querySelector(`[data-focus-key="${CSS.escape(key)}"]`);
+  if (!restored) return;
+  restored.focus({ preventScroll: true });
+  if (selection && typeof restored.setSelectionRange === 'function') {
+    try {
+      restored.setSelectionRange(selection[0], selection[1]);
+    } catch {
+      /* Not every input type supports a selection range. */
+    }
+  }
+}
