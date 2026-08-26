@@ -24,7 +24,9 @@ function credentialPlaceholder(scheme) {
  * request body. Prefers what the document actually says (`example`, `default`,
  * the first `enum`) and only invents a value as a last resort.
  */
-export function sampleValue(doc, node, depth = 0) {
+export function sampleValue(doc, node, options = {}) {
+  const { depth = 0, includeOptional = false } = options;
+  const deeper = { ...options, depth: depth + 1 };
   const { value: schema, name } = deref(doc, node);
   if (!schema || typeof schema !== 'object') return null;
   if (schema.example !== undefined) return schema.example;
@@ -34,13 +36,13 @@ export function sampleValue(doc, node, depth = 0) {
 
   if (Array.isArray(schema.allOf)) {
     return schema.allOf.reduce((acc, part) => {
-      const sub = sampleValue(doc, part, depth + 1);
+      const sub = sampleValue(doc, part, deeper);
       return sub && typeof sub === 'object' && !Array.isArray(sub) ? { ...acc, ...sub } : acc;
     }, {});
   }
   for (const key of ['oneOf', 'anyOf']) {
     if (Array.isArray(schema[key]) && schema[key].length) {
-      return sampleValue(doc, schema[key][0], depth + 1);
+      return sampleValue(doc, schema[key][0], deeper);
     }
   }
 
@@ -50,7 +52,7 @@ export function sampleValue(doc, node, depth = 0) {
 
   switch (type) {
     case 'array':
-      return [sampleValue(doc, schema.items ?? {}, depth + 1)].filter((v) => v !== null || schema.items);
+      return [sampleValue(doc, schema.items ?? {}, deeper)].filter((v) => v !== null || schema.items);
     case 'integer':
       return typeof schema.minimum === 'number' ? schema.minimum : 1;
     case 'number':
@@ -68,11 +70,16 @@ export function sampleValue(doc, node, depth = 0) {
       const required = new Set(Array.isArray(schema.required) ? schema.required : []);
       for (const [key, child] of Object.entries(schema.properties)) {
         const childSchema = deref(doc, child).value;
-        // Keep the draft to what you have to send: required fields, plus any
-        // optional one the document bothered to give an example for.
-        if (!required.has(key) && childSchema.example === undefined && childSchema.default === undefined) continue;
-        if (childSchema.readOnly) continue;
-        out[key] = sampleValue(doc, child, depth + 1);
+        // A request draft is trimmed to what you have to send: required
+        // fields, plus any optional one the document gave an example for. A
+        // response example is the opposite — show everything it might return.
+        if (!includeOptional) {
+          if (!required.has(key) && childSchema.example === undefined && childSchema.default === undefined) continue;
+          if (childSchema.readOnly) continue;
+        } else if (childSchema.writeOnly) {
+          continue;
+        }
+        out[key] = sampleValue(doc, child, deeper);
       }
       return out;
     }

@@ -29,6 +29,7 @@ import './components/aw-tag-rail.js';
 import './components/aw-endpoint-list.js';
 import './components/aw-detail.js';
 import './components/aw-code-block.js';
+import './components/aw-schema-tree.js';
 import './components/aw-try-it.js';
 import './components/aw-palette.js';
 import './components/aw-auth-sheet.js';

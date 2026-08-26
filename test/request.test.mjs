@@ -203,3 +203,26 @@ test('a body with a single quote does not break out of the curl quoting', () => 
   const curl = toCurl(buildRequest({ model, operation: model.operations[0] }));
   assert.match(curl, /'\\''/);
 });
+
+test('a response example shows everything, unlike a request draft', () => {
+  const model = sampleModel();
+  const booking = model.doc.components.schemas.Booking;
+  const draft = sampleValue(model.doc, booking);
+  const full = sampleValue(model.doc, booking, { includeOptional: true });
+
+  // The draft is trimmed to what a caller has to send.
+  assert.ok(!('createdAt' in draft), 'a read-only field was drafted into a request');
+  // The response example is the opposite: show what might come back.
+  assert.ok('createdAt' in full, 'a read-only field was left out of a response example');
+  assert.ok('notes' in full, 'an optional field was left out of a response example');
+  assert.ok(Object.keys(full).length > Object.keys(draft).length);
+});
+
+test('a write-only field never appears in a response example', () => {
+  const doc = {};
+  const full = sampleValue(doc, {
+    type: 'object',
+    properties: { url: { type: 'string' }, secret: { type: 'string', writeOnly: true } },
+  }, { includeOptional: true });
+  assert.deepEqual(Object.keys(full), ['url']);
+});

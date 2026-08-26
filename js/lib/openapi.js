@@ -64,6 +64,31 @@ export function resolvePointer(doc, ref) {
   return node;
 }
 
+/**
+ * The `$ref` a node points at, if it points at one — the value that makes a
+ * branch recognisable as one already open further up.
+ */
+export function refOf(schemaNode) {
+  return schemaNode && typeof schemaNode === 'object' && typeof schemaNode.$ref === 'string'
+    ? schemaNode.$ref
+    : null;
+}
+
+/**
+ * The `$ref` a payload is really about, looking through an array wrapper.
+ *
+ * `children: Node[]` is the same shape as `parent: Node`, but only the second
+ * carries the `$ref` at the top. Without looking through the array, a list of
+ * a self-referencing type unrolls level after level of the same fields.
+ */
+export function payloadRef(doc, node) {
+  const direct = refOf(node);
+  if (direct) return direct;
+  const { value } = deref(doc, node);
+  if (value && (value.type === 'array' || value.items)) return refOf(value.items);
+  return null;
+}
+
 /** The trailing name of a ref, used as the display name for a schema. */
 export function refName(ref) {
   if (typeof ref !== 'string') return null;
@@ -218,9 +243,102 @@ export function fieldRows(doc, schemaNode) {
       notes: constraints.join(' · '),
       description,
       deprecated: Boolean(resolved.value.deprecated ?? node?.deprecated),
+      /** The field's own schema, so a caller can walk into it. */
+      schema: raw,
+      /** Enum members, which read better as a list than as a `notes` string. */
+      values: Array.isArray(resolved.value.enum) ? resolved.value.enum.map(String) : null,
     };
   });
 }
+
+/**
+ * Everything one level below a payload node, whatever shape that level takes.
+ *
+ * A body is usually an object with fields, but it is just as often a `oneOf`
+ * or `anyOf` of several shapes — an array of three different kinds of unit,
+ * say. Those have no fields of their own, so asking only for `fieldRows` says
+ * "no named fields" about a payload that plainly has some. This returns
+ * whichever of the two a node actually has, so the caller can render one
+ * without having to know which it will get.
+ *
+ * @returns {{kind: 'fields'|'variants', items: object[]}|null}
+ */
+export function payloadChildren(doc, node, depth = 0) {
+  if (depth > 4) return null;
+  const rows = fieldRows(doc, node);
+  if (rows.length) return { kind: 'fields', items: rows };
+
+  const variants = unionVariants(doc, node);
+  if (variants.length > 1) return { kind: 'variants', items: variants };
+  // A one-member union, or `X | null`, is just X wearing a wrapper.
+  if (variants.length === 1) return payloadChildren(doc, variants[0].schema, depth + 1);
+  return null;
+}
+
+/**
+ * The meaningful members of a `oneOf`/`anyOf`, unwrapping an array first so
+ * that "an array of one of three things" reads as the three things.
+ *
+ * A bare `null` member is dropped: `describeType` already folds that into
+ * "string | null", and offering it as a branch to open would be noise.
+ */
+function unionVariants(doc, node) {
+  const { value } = deref(doc, node);
+  let target = value;
+  if (!target.oneOf && !target.anyOf && (target.type === 'array' || target.items)) {
+    const item = deref(doc, target.items ?? {}).value;
+    if (item.oneOf || item.anyOf) target = item;
+  }
+
+  const members = target.oneOf ?? target.anyOf;
+  if (!Array.isArray(members)) return [];
+
+  return members
+    .filter((member) => {
+      const resolved = deref(doc, member).value;
+      const type = Array.isArray(resolved.type) ? resolved.type : [resolved.type];
+      return !(type.length === 1 && type[0] === 'null');
+    })
+    .map((member, index) => {
+      const resolved = deref(doc, member).value;
+      const named = refName(refOf(member) ?? '') || resolved.title;
+      // Untitled variants are told apart by what they carry, which is the only
+      // thing that distinguishes them in most real documents.
+      const keys = Object.keys(resolved.properties ?? {}).slice(0, 4);
+      return {
+        name: named || `Option ${index + 1}`,
+        type: describeType(doc, member),
+        required: false,
+        notes: named || !keys.length ? '' : keys.join(', '),
+        description: String(resolved.description ?? '').trim(),
+        deprecated: Boolean(resolved.deprecated),
+        schema: member,
+        values: null,
+        variant: true,
+      };
+    });
+}
+
+/**
+ * Whether a schema has a level below it worth opening.
+ *
+ * Used to decide which rows in a payload get a disclosure and which are leaves,
+ * so a field that expands to nothing never offers a control that does nothing.
+ *
+ * @param {object} doc
+ * @param {unknown} schemaNode
+ * @param {Set<string>} [seen] refs already open on this branch — a schema that
+ *   contains itself is legal and must not be treated as infinitely deep.
+ */
+export function hasChildren(doc, schemaNode, seen = new Set()) {
+  if (!schemaNode || typeof schemaNode !== 'object') return false;
+  // Array-aware, so a list of a type counts as the type for cycle purposes.
+  const ref = payloadRef(doc, schemaNode);
+  if (ref && seen.has(ref)) return false;
+  return payloadChildren(doc, schemaNode) !== null;
+}
+
+
 
 /* -------------------------------------------------------------------------
    Operation ids

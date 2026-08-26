@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   normalise, parseText, deref, resolvePointer, describeType, describeConstraints,
   fieldRows, makeOperationId, statusClass, verbLabel, verbClass, describeScheme, SchemaError,
+  payloadChildren, payloadRef, hasChildren,
 } from '../js/lib/openapi.js';
 import { sampleModel, op, yamlDeps } from './helpers.mjs';
 
@@ -284,4 +285,119 @@ test('operation-level security overrides the document default, and an empty arra
   const closed = model.operations.find((o) => o.path === '/closed');
   assert.deepEqual(open.security, []);
   assert.deepEqual(closed.scopes, ['read']);
+});
+
+/* -------------------------------------------------------------------------
+   Payload structure — what the responses view walks through
+------------------------------------------------------------------------- */
+
+test('payloadChildren returns an object body as its fields', () => {
+  const model = sampleModel();
+  const response = op(model, 'POST', '/v2/bookings').responses.find((r) => r.code === '201');
+  const children = payloadChildren(model.doc, response.schema);
+  assert.equal(children.kind, 'fields');
+  assert.deepEqual(children.items.map((r) => r.name), [
+    'id', 'venueId', 'customer', 'status', 'partySize', 'arrivesAt', 'lines', 'notes', 'createdAt',
+  ]);
+  // Every row carries its own schema, which is what lets the next level open.
+  assert.ok(children.items.every((r) => r.schema !== undefined));
+});
+
+test('payloadChildren looks through an array to the item it carries', () => {
+  const doc = {
+    components: { schemas: { Thing: { type: 'object', properties: { id: { type: 'string' } } } } },
+  };
+  const children = payloadChildren(doc, { type: 'array', items: { $ref: '#/components/schemas/Thing' } });
+  assert.equal(children.kind, 'fields');
+  assert.deepEqual(children.items.map((r) => r.name), ['id']);
+});
+
+test('a oneOf body comes back as variants, told apart by what they carry', () => {
+  const doc = {};
+  const children = payloadChildren(doc, {
+    type: 'array',
+    items: {
+      anyOf: [
+        { type: 'object', properties: { year: {}, title: {}, units: {} } },
+        { type: 'object', properties: { year: {}, title: {}, tiers: {} } },
+      ],
+    },
+  });
+  assert.equal(children.kind, 'variants');
+  assert.deepEqual(children.items.map((v) => v.name), ['Option 1', 'Option 2']);
+  assert.equal(children.items[0].notes, 'year, title, units');
+  assert.equal(children.items[1].notes, 'year, title, tiers');
+  assert.ok(children.items.every((v) => v.variant === true));
+});
+
+test('a named variant is called by its name, not by its number', () => {
+  const doc = {
+    components: { schemas: { Cat: { type: 'object', properties: { purrs: {} } }, Dog: { title: 'A dog', type: 'object', properties: { barks: {} } } } },
+  };
+  const children = payloadChildren(doc, {
+    oneOf: [{ $ref: '#/components/schemas/Cat' }, { $ref: '#/components/schemas/Dog' }],
+  });
+  assert.deepEqual(children.items.map((v) => v.name), ['Cat', 'Dog']);
+});
+
+test('a nullable union is not offered as a choice between something and nothing', () => {
+  const doc = {};
+  // `Thing | null` is one shape, not two.
+  const children = payloadChildren(doc, {
+    oneOf: [{ type: 'object', properties: { id: { type: 'string' } } }, { type: 'null' }],
+  });
+  assert.equal(children.kind, 'fields');
+  assert.deepEqual(children.items.map((r) => r.name), ['id']);
+});
+
+test('a payload with nothing below it says so rather than pretending', () => {
+  assert.equal(payloadChildren({}, { type: 'string' }), null);
+  assert.equal(payloadChildren({}, {}), null);
+  assert.equal(payloadChildren({}, null), null);
+});
+
+test('a schema that contains itself terminates instead of unrolling', () => {
+  const doc = {
+    components: {
+      schemas: {
+        Node: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            parent: { $ref: '#/components/schemas/Node' },
+            children: { type: 'array', items: { $ref: '#/components/schemas/Node' } },
+          },
+        },
+      },
+    },
+  };
+  const ref = '#/components/schemas/Node';
+  const children = payloadChildren(doc, { $ref: ref });
+  assert.deepEqual(children.items.map((r) => r.name), ['id', 'parent', 'children']);
+
+  // Once Node is open above, neither a bare Node nor a list of them opens again.
+  const seen = new Set([ref]);
+  const parent = children.items.find((r) => r.name === 'parent');
+  const kids = children.items.find((r) => r.name === 'children');
+  assert.equal(payloadRef(doc, parent.schema), ref);
+  assert.equal(payloadRef(doc, kids.schema), ref, 'an array of the type must count as the type');
+  assert.equal(hasChildren(doc, parent.schema, seen), false);
+  assert.equal(hasChildren(doc, kids.schema, seen), false);
+});
+
+test('hasChildren is true only where there is something to open', () => {
+  const doc = { components: { schemas: { Thing: { type: 'object', properties: { id: {} } } } } };
+  assert.equal(hasChildren(doc, { $ref: '#/components/schemas/Thing' }), true);
+  assert.equal(hasChildren(doc, { type: 'string' }), false);
+  assert.equal(hasChildren(doc, { type: 'array', items: { type: 'string' } }), false);
+  assert.equal(hasChildren(doc, { type: 'array', items: { $ref: '#/components/schemas/Thing' } }), true);
+});
+
+test('enum members come back as a list rather than baked into a string', () => {
+  const model = sampleModel();
+  const rows = fieldRows(model.doc, op(model, 'POST', '/v2/bookings').responses[0].schema);
+  const status = rows.find((r) => r.name === 'status');
+  assert.deepEqual(status.values, ['held', 'pending', 'confirmed', 'cancelled']);
+  assert.equal(fieldRows(model.doc, op(model, 'POST', '/v2/bookings').responses[0].schema)
+    .find((r) => r.name === 'id').values, null);
 });

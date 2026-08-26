@@ -202,6 +202,25 @@ the roomy layout rendered the same operations grouped by tag, so the arrows and
 the eye disagreed. The list now records the order as it builds the rows, and
 every keyboard behaviour reads from that.
 
+**Responses show their payload.** They were a status code and a phrase, which
+is all the mock draws — but with a schema like Oak's, whose responses are
+inline anonymous objects nested three deep, that told you nothing about what
+came back. Each response is now a disclosure: collapsed it is the drawn row
+plus a shape hint, opened it is the body's structure and a generated example.
+
+Nested native `<details>` inside nested `<ul>`s, not `role="tree"`. The tree
+pattern would mean hand-rolling roving tabindex, `aria-expanded`,
+`aria-level`, `aria-setsize` and `aria-posinset`, and its screen-reader
+support is uneven; a response body is a document with a shape rather than a
+tree widget. Disclosures bring their own expanded state, keyboard handling and
+find-in-page reveal, and the nested lists carry the depth.
+
+Levels build on first open — thirteen levels deep is real, and a schema may
+contain itself. A branch that reopens a type already open above it says
+`repeats Booking` and links to it. Links live in the branch body rather than
+the summary, because a `<summary>` is a button and a link inside one is a
+focusable control inside a focusable control.
+
 ---
 
 ## Still not designed, still not invented

@@ -9,9 +9,9 @@ happen in the browser; nothing about your schema is uploaded.
 
 ```sh
 npm start           # http://localhost:8080
-npm test            # 112 unit tests, no dependencies, no browser
+npm test            # 123 unit tests, no dependencies, no browser
 npm install
-npm run test:a11y   # 37 checks in a real browser (needs Playwright + axe-core)
+npm run test:a11y   # 41 checks in a real browser (needs Playwright + axe-core)
 ```
 
 There is no build step. What is in this repository is what the browser loads.
@@ -173,6 +173,35 @@ the credential reaching neither storage nor the clipboard.
 
 The one place the design was overridden for an accessibility reason is
 documented in `DECISIONS.md`.
+
+## Reading a response
+
+A response is more than its status code, so each one opens up. Collapsed it is
+the row the design draws — the code and its phrase — with a hint of what it
+carries (`object · 9 fields`, `Booking[]`, `3 shapes`). Opened, it shows the
+shape of the body as something you can walk through, and an example built from
+the same schema.
+
+The shape is **nested `<details>` inside nested `<ul>`s**, deliberately not
+`role="tree"`. A tree widget would mean reimplementing roving tabindex,
+`aria-expanded`, `aria-level`, `aria-setsize` and `aria-posinset` by hand, and
+support for the pattern is uneven. A response body is not a tree *widget* — it
+is a document with a shape. Native disclosures announce their own expanded
+state, Tab and Enter and Space already work without a line of code, browsers
+can reveal a collapsed section for find-in-page, and the nested lists carry the
+depth so nothing has to describe it. `Expand all` and `Collapse all` are there
+for scanning, and say what they did.
+
+Levels are built the first time they open. Response schemas run to thirteen
+levels in real documents and are allowed to contain themselves, so drawing the
+whole shape up front is both enormous and, for a recursive schema, endless. A
+branch that reopens a type already open above it says `repeats Booking` and
+links to it rather than unrolling forever — and a list of that type counts as
+that type, or `children: Node[]` would unroll where `parent: Node` did not.
+
+A body that is a `oneOf` or `anyOf` has no fields of its own, so it lists its
+shapes instead — named where the document names them, and told apart by the
+fields they carry where it does not (`Option 1 · year, title, units`).
 
 ## Try it out
 
