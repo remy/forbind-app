@@ -55,7 +55,10 @@ test('a subscriber sees both the new state and the old one', () => {
   assert.deepEqual(seen, ['roomy', 'dense']);
 });
 
-test('ONLY the display preferences are persisted — never the credential', () => {
+test('the store itself writes only the display preferences', () => {
+  // Everything else that is remembered goes through js/lib/persist.js, which
+  // is driven deliberately from main.js rather than as a side effect of any
+  // state change. See persist.test.mjs for those rules.
   const storage = fakeStorage();
   globalThis.localStorage = storage;
   try {
@@ -65,13 +68,12 @@ test('ONLY the display preferences are persisted — never the credential', () =
     store.set({ schema: { sourceName: 'private-api.yaml', operations: [] } });
     store.patch('filters', { query: 'internal-only' });
 
-    const written = storage.dump()['allyway:prefs'];
-    assert.deepEqual(JSON.parse(written), { theme: 'dark', density: 'roomy', showHints: true });
+    assert.deepEqual(Object.keys(storage.dump()), ['allyway:prefs']);
+    assert.deepEqual(JSON.parse(storage.dump()['allyway:prefs']), { theme: 'dark', density: 'roomy', showHints: true });
     const everything = JSON.stringify(storage.dump());
-    assert.ok(!everything.includes('a-real-secret-token'), 'the credential reached storage');
-    assert.ok(!everything.includes('private-api.yaml'), 'the schema name reached storage');
-    assert.ok(!everything.includes('internal-only'), 'a filter reached storage');
-    assert.equal(storage.size, 1, 'more than the preferences key was written');
+    assert.ok(!everything.includes('a-real-secret-token'), 'the store wrote a credential');
+    assert.ok(!everything.includes('private-api.yaml'), 'the store wrote a schema');
+    assert.ok(!everything.includes('internal-only'), 'the store wrote a filter');
   } finally {
     delete globalThis.localStorage;
   }
@@ -124,5 +126,6 @@ test('the initial state carries no credential and no schema', () => {
   assert.equal(state.schema, null);
   assert.equal(state.auth.credential, '');
   assert.equal(state.auth.verifyState, 'idle');
+  assert.equal(state.auth.remember, false, 'remembering must never be the default');
   assert.equal(state.browsing, false);
 });

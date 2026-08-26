@@ -145,6 +145,45 @@ Each is either a state the design implies or a route out of a dead end.
   run. It matches the mocks' numbers exactly.
 - **Display options** (theme, density, hint bar), following the theming answer.
 
+---
+
+## Changes made after the handoff, at the user's request
+
+**The schema comes back on reload.** It used to be memory-only, so a refresh
+dropped you at the file picker. A schema loaded from a URL is remembered as
+that URL and re-fetched; one loaded from a file keeps its text in
+`localStorage` under a 3 MB cap. `Replace schema` forgets it. The import
+screen's promise — "nothing leaves your browser" — is unchanged, because
+storage is the browser.
+
+**The credential can be remembered, and says where it is.** It used to be
+memory-only. It now defaults to `sessionStorage`, which survives a reload but
+dies with the tab, and a labelled checkbox moves it to `localStorage` with the
+trade spelled out under the label ("still here tomorrow — and readable by
+anything else that can read this browser's data"). The sheet's opening line
+changes to match whichever is in force, so the copy is never claiming more
+privacy than it is delivering. A credential is stored against the schema it was
+entered for and is never handed to a different one. Neither store ever reaches
+a snippet.
+
+**Enum parameters are dropdowns in try-it.** A parameter whose schema declares
+an `enum` renders as a `<select>` of exactly those values. Optional ones open on
+a real "— not sent —" choice rather than a blank; required ones open on their
+first value, which is what the curl block already shows, so the two agree from
+the start. The enum is dropped from the hint line, since the control is now
+saying it.
+
+**Try-it is a real form.** The fields and the send button are in a `<form>`, so
+Enter sends — previously nothing happened, because Enter has no meaning outside
+a form. Validation is deliberately narrow: an empty required field is fine when
+the schema offers an example, because the builder uses it and the snippet
+already shows it. It only stops when there is nothing to fall back on and the
+URL would carry a literal `{bookingId}`. Then it announces which parameter,
+marks the field `aria-invalid`, ties a `NEEDED`-led message to it, and moves
+focus there; typing clears it.
+
+---
+
 ## Still not designed, still not invented
 
 - A live response *viewer* beyond status, timing, size, readable headers and a

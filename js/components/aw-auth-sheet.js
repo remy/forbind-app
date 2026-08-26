@@ -115,7 +115,9 @@ class AwAuthSheet extends AwElement {
         ]),
         el('p', {
           class: 'sheet__lede',
-          text: 'Credentials stay in this browser tab and are never written to the schema or the clipboard snippet.',
+          text: state.auth.remember
+            ? 'This credential is kept on this device until you forget it. It is never written to the schema or to the clipboard snippet, and never sent anywhere but the API itself.'
+            : 'This credential stays in this browser tab and is gone when you close it. It is never written to the schema or to the clipboard snippet, and never sent anywhere but the API itself.',
         }),
 
         /* Provenance: what was found, and where. Only ever what the document
@@ -174,6 +176,31 @@ class AwAuthSheet extends AwElement {
           ]),
         ]),
 
+        /* Where the credential lives is the reader's call, and the label says
+           what each choice means rather than leaving it to be inferred. */
+        el('label', { class: 'choice auth-remember' }, [
+          el('input', {
+            type: 'checkbox',
+            dataset: { focusKey: 'auth-remember' },
+            '.checked': Boolean(state.auth.remember),
+            onchange: (event) => {
+              const input = this.querySelector('#auth-credential');
+              if (input) this.#draft = input.value;
+              this.actions.setAuth({ remember: event.target.checked });
+              announce(event.target.checked
+                ? 'Credential will be kept on this device.'
+                : 'Credential will be kept for this tab only.');
+            },
+          }),
+          el('span', { class: 'choice__text' }, [
+            el('span', { class: 'choice__label', text: 'Remember on this device' }),
+            el('span', {
+              class: 'choice__hint',
+              text: 'Off: held for this tab only and dropped when it closes. On: kept in this browser\u2019s storage, so it is still here tomorrow — and readable by anything else that can read this browser\u2019s data.',
+            }),
+          ]),
+        ]),
+
         this.#renderVerdict(state),
 
         el('div', { class: 'sheet__actions' }, [
@@ -200,9 +227,8 @@ class AwAuthSheet extends AwElement {
                 text: 'Forget',
                 onclick: () => {
                   this.#draft = '';
-                  this.actions.setAuth({ credential: '', verifyState: 'idle', message: '', scopes: [], expiresAt: null });
+                  this.actions.forgetAuth();
                   this.#renderSheet();
-                  announce('Credential forgotten. It was only ever held in this tab.');
                 },
               })
             : null,
@@ -291,6 +317,7 @@ class AwAuthSheet extends AwElement {
     this.actions.setAuth({
       schemeId: scheme?.id ?? null,
       credential,
+      remember: Boolean(this.state.auth.remember),
       scopes: jwt?.scopes ?? [],
       expiresAt: jwt?.expiresAt ?? null,
       verifyState: 'idle',
@@ -300,7 +327,7 @@ class AwAuthSheet extends AwElement {
     this.#renderSheet();
     announce(
       credential
-        ? `Credential saved for this tab${jwt ? `. The token declares ${jwt.scopes.length} ${jwt.scopes.length === 1 ? 'scope' : 'scopes'}${describeExpiry(jwt.expiresAt) ? ` and ${describeExpiry(jwt.expiresAt)}` : ''}.` : '.'}`
+        ? `Credential saved ${this.state.auth.remember ? 'on this device' : 'for this tab'}${jwt ? `. The token declares ${jwt.scopes.length} ${jwt.scopes.length === 1 ? 'scope' : 'scopes'}${describeExpiry(jwt.expiresAt) ? ` and ${describeExpiry(jwt.expiresAt)}` : ''}.` : '.'}`
         : 'Credential cleared.',
     );
   }

@@ -13,7 +13,7 @@
 import { AwElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
-import { buildRequest, sampleValue } from '../lib/request.js';
+import { buildRequest, sampleValue, parameterExample } from '../lib/request.js';
 import { statusClass } from '../lib/openapi.js';
 
 /** Verbs that change something and deserve a word of warning first. */
@@ -30,6 +30,8 @@ class AwTryIt extends AwElement {
   #result = null;
   #sending = false;
   #operationId = null;
+  /** Keyed `${in}:${name}` — a required field that was left empty. */
+  #errors = {};
 
   render(state) {
     if (!this.operation) {
@@ -41,10 +43,14 @@ class AwTryIt extends AwElement {
       this.#operationId = this.operation.id;
       this.#values = { path: {}, query: {}, header: {}, body: '' };
       this.#result = null;
+      this.#errors = {};
     }
 
     const op = this.operation;
     const baseId = uid('try');
+    // Seed before the preview is computed, so the URL under the button, the
+    // curl block above it, and the dropdowns all say the same thing.
+    this.#seedDefaults(state, op);
     const preview = this.#preview(state);
 
     const params = op.parameters.filter((p) => p.in !== 'cookie');
@@ -76,31 +82,45 @@ class AwTryIt extends AwElement {
           ])
         : null,
 
-      el('div', { class: 'tryit__fields' }, [
-        ...params.map((param) => this.#fieldFor(baseId, param)),
-        op.requestBody ? this.#bodyField(baseId, state, op) : null,
-      ]),
+      // A real <form>, so Enter in any field sends the request — that is what
+      // Enter means in a form, and reimplementing it per input would only get
+      // it wrong somewhere. `novalidate` because the browser's own bubble is
+      // easy to miss and gone in a moment; the check below announces instead,
+      // and moves focus to the field it is talking about.
+      el('form', {
+        class: 'tryit__form',
+        novalidate: true,
+        onsubmit: (event) => {
+          event.preventDefault();
+          this.send();
+        },
+      }, [
+        el('div', { class: 'tryit__fields' }, [
+          ...params.map((param) => this.#fieldFor(baseId, param)),
+          op.requestBody ? this.#bodyField(baseId, state, op) : null,
+        ]),
 
-      el('div', { class: 'tryit__actions' }, [
-        el('button', {
-          type: 'button',
-          class: 'btn btn--filled btn--lg',
-          text: this.#sending ? 'Sending…' : `Send ${op.method}`,
-          'aria-disabled': this.#sending ? 'true' : null,
-          onclick: () => this.send(),
-        }),
-        el('button', {
-          type: 'button',
-          class: 'btn btn--lg',
-          text: 'Reset',
-          onclick: () => {
-            this.#values = { path: {}, query: {}, header: {}, body: '' };
-            this.#result = null;
-            this.render(this.state);
-            announce('Try-it fields reset.');
-          },
-        }),
-        el('span', { class: 'tryit__status', text: preview.url }),
+        el('div', { class: 'tryit__actions' }, [
+          el('button', {
+            type: 'submit',
+            class: 'btn btn--filled btn--lg',
+            text: this.#sending ? 'Sending…' : `Send ${op.method}`,
+            'aria-disabled': this.#sending ? 'true' : null,
+          }),
+          el('button', {
+            type: 'button',
+            class: 'btn btn--lg',
+            text: 'Reset',
+            onclick: () => {
+              this.#values = { path: {}, query: {}, header: {}, body: '' };
+              this.#result = null;
+              this.#errors = {};
+              this.render(this.state);
+              announce('Try-it fields reset.');
+            },
+          }),
+          el('span', { class: 'tryit__status', text: preview.url }),
+        ]),
       ]),
 
       this.#result ? this.#renderResult(this.#result) : null,
@@ -124,35 +144,111 @@ class AwTryIt extends AwElement {
     }
   }
 
+  /** The values a parameter is allowed to take, if the schema says. */
+  #enumFor(param) {
+    const schema = param.schema ?? {};
+    const values = Array.isArray(schema.enum) ? schema.enum : null;
+    return values && values.length ? values.map(String) : null;
+  }
+
+  /**
+   * A required dropdown has to open on something, and the honest something is
+   * whatever the request builder would have used anyway — the schema's own
+   * `example` where it gives one, its first allowed value otherwise. Anything
+   * else and the form would contradict the curl block sitting above it.
+   *
+   * Optional parameters are left alone: "not sent" is what optional means, and
+   * it is what the builder does with them.
+   */
+  #seedDefaults(state, op) {
+    const doc = state.schema?.doc ?? {};
+    for (const param of op.parameters) {
+      if (!param.required || param.in === 'cookie') continue;
+      if (this.#values[param.in]?.[param.name]) continue;
+      const options = this.#enumFor(param);
+      if (!options) continue;
+      const suggested = parameterExample(doc, param);
+      this.#values[param.in] ??= {};
+      this.#values[param.in][param.name] = options.includes(suggested) ? suggested : options[0];
+    }
+  }
+
   #fieldFor(baseId, param) {
     const id = `${baseId}-${param.in}-${param.name}`;
     const hintId = `${id}-hint`;
-    const hint = [param.type.label, param.required ? 'required' : 'optional', ...param.constraints, param.description]
+    const errorId = `${id}-error`;
+    const key = `${param.in}:${param.name}`;
+    const error = this.#errors[key] ?? null;
+    const options = this.#enumFor(param);
+    const current = this.#values[param.in]?.[param.name] ?? '';
+
+    // When the values are a dropdown, listing them in the hint as well is just
+    // the same information twice.
+    const constraints = options
+      ? param.constraints.filter((note) => !note.startsWith('one of'))
+      : param.constraints;
+    const hint = [param.type.label, param.required ? 'required' : 'optional', ...constraints, param.description]
       .filter(Boolean)
       .join(' · ');
-    const placeholder = param.in === 'path' ? `{${param.name}}` : String(sampleValue(this.state.schema.doc, param.schema ?? {}) ?? '');
+
+    const describedBy = [hintId, error ? errorId : null].filter(Boolean).join(' ');
+
+    const onChange = (event) => {
+      this.#values[param.in] ??= {};
+      this.#values[param.in][param.name] = event.target.value;
+      if (this.#errors[key]) {
+        delete this.#errors[key];
+        event.target.removeAttribute('aria-invalid');
+        this.querySelector(`#${CSS.escape(errorId)}`)?.remove();
+        event.target.setAttribute('aria-describedby', hintId);
+      }
+      this.#updatePreview();
+    };
+
+    let control;
+    if (options) {
+      control = el('select', {
+        id,
+        'aria-describedby': describedBy,
+        'aria-invalid': error ? 'true' : null,
+        onchange: onChange,
+      }, [
+        // An optional parameter has to be able to stay unsent, so the empty
+        // choice is a real one and is named rather than left blank.
+        param.required ? null : el('option', { value: '', text: '— not sent —' }),
+        ...options.map((value) => el('option', { value, text: value })),
+      ]);
+      // #seedDefaults has already put a required parameter's value in place.
+      control.value = current;
+    } else {
+      const placeholder = param.in === 'path'
+        ? `{${param.name}}`
+        : String(sampleValue(this.state.schema.doc, param.schema ?? {}) ?? '');
+      control = el('input', {
+        id,
+        type: 'text',
+        autocomplete: 'off',
+        spellcheck: 'false',
+        placeholder: placeholder === 'string' ? '' : placeholder,
+        'aria-describedby': describedBy,
+        'aria-invalid': error ? 'true' : null,
+        'aria-required': param.required ? 'true' : null,
+        '.value': current,
+        oninput: onChange,
+      });
+    }
 
     return el('div', { class: 'field-row' }, [
       el('label', { for: id }, [
         el('span', { text: param.name }),
         el('span', { class: 'visually-hidden', text: ` (${param.in} parameter)` }),
       ]),
-      el('input', {
-        id,
-        type: 'text',
-        autocomplete: 'off',
-        spellcheck: 'false',
-        placeholder: placeholder === 'string' ? '' : placeholder,
-        'aria-describedby': hintId,
-        required: param.required ? 'required' : null,
-        '.value': this.#values[param.in]?.[param.name] ?? '',
-        oninput: (event) => {
-          this.#values[param.in] ??= {};
-          this.#values[param.in][param.name] = event.target.value;
-          this.#updatePreview();
-        },
-      }),
+      control,
       el('p', { class: 'hint', id: hintId, text: hint }),
+      error ? el('p', { class: 'hint hint--error', id: errorId }, [
+        el('span', { class: 'word word--fail', text: 'NEEDED' }),
+        el('span', { text: ` ${error}` }),
+      ]) : null,
     ]);
   }
 
@@ -193,8 +289,47 @@ class AwTryIt extends AwElement {
 
   /* --- sending ---------------------------------------------------------- */
 
+  /**
+   * Stop only where the request would be nonsense.
+   *
+   * An empty required field is not automatically a problem: the builder falls
+   * back to whatever the schema offers as an example, and the curl block above
+   * is already showing that value. What cannot be sent is a parameter with no
+   * value and nothing to fall back on — the URL would carry the literal
+   * `{bookingId}` from the path template. So the test is what the builder
+   * would actually produce, which keeps the snippet and the sender agreeing.
+   *
+   * @returns {boolean} true if the request is worth sending
+   */
+  #validate() {
+    this.#errors = {};
+    const doc = this.state.schema?.doc ?? {};
+    for (const param of this.operation.parameters) {
+      if (!param.required || param.in === 'cookie') continue;
+      const value = this.#values[param.in]?.[param.name];
+      if (value !== undefined && String(value).trim() !== '') continue;
+      if (parameterExample(doc, param) !== `{${param.name}}`) continue;
+      this.#errors[`${param.in}:${param.name}`] =
+        `${param.name} needs a value — the schema offers no example to fall back on.`;
+    }
+    const missing = Object.keys(this.#errors);
+    if (!missing.length) return true;
+
+    this.render(this.state);
+    const names = missing.map((key) => key.split(':')[1]);
+    announce(
+      names.length === 1
+        ? `Cannot send: ${names[0]} is required.`
+        : `Cannot send: ${names.length} required parameters are empty — ${names.join(', ')}.`,
+      { assertive: true },
+    );
+    this.querySelector('[aria-invalid="true"]')?.focus();
+    return false;
+  }
+
   async send() {
     if (this.#sending || !this.operation) return;
+    if (!this.#validate()) return;
     const state = this.state;
     const built = buildRequest({
       model: state.schema,

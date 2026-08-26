@@ -400,7 +400,7 @@ test('copying announces what was copied, not just a changed label', async () => 
 
 /* --- the credential promises --------------------------------------------- */
 
-test('a saved credential reaches neither storage nor the clipboard', async () => {
+test('a saved credential reaches the clipboard from nowhere, and disk only if asked', async () => {
   const page = await open();
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   const SECRET = 'a-real-secret-token-value-4f2a';
@@ -414,12 +414,25 @@ test('a saved credential reaches neither storage nor the clipboard', async () =>
     // It is held, and the prefix was stripped as the help text promises.
     assert.equal(await page.evaluate(() => window.__aw.store.state.auth.credential), SECRET);
 
-    const stored = await page.evaluate(() => JSON.stringify({
-      local: { ...localStorage }, session: { ...sessionStorage }, cookie: document.cookie,
+    // The default is this tab only: sessionStorage, never disk, never a cookie.
+    const stored = () => page.evaluate(() => ({
+      local: JSON.stringify({ ...localStorage }),
+      session: JSON.stringify({ ...sessionStorage }),
+      cookie: document.cookie,
     }));
-    assert.ok(!stored.includes(SECRET), 'the credential reached browser storage');
-    assert.ok(!stored.includes('bookings-api'), 'the schema name reached browser storage');
+    let where = await stored();
+    assert.ok(where.session.includes(SECRET), 'the credential did not survive a reload of this tab');
+    assert.ok(!where.local.includes(SECRET), 'the credential reached disk without being asked to');
+    assert.ok(!where.cookie.includes(SECRET), 'the credential reached a cookie');
 
+    // Asking for it moves it to disk, and takes the session copy with it.
+    await page.getByRole('checkbox', { name: /Remember on this device/ }).check();
+    await page.waitForTimeout(400);
+    where = await stored();
+    assert.ok(where.local.includes(SECRET), '"remember" did not remember');
+    assert.ok(!where.session.includes(SECRET), 'the session copy was left behind');
+
+    // Either way, it never reaches a snippet.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
     await page.getByRole('button', { name: 'Copy', exact: true }).click();
@@ -427,6 +440,111 @@ test('a saved credential reaches neither storage nor the clipboard', async () =>
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
     assert.ok(!clipboard.includes(SECRET), 'the credential reached the clipboard');
     assert.match(clipboard, /\$TOKEN/);
+
+    // Forgetting clears both stores.
+    await page.getByRole('button', { name: 'Authorise' }).click();
+    await page.waitForTimeout(400);
+    await page.getByRole('button', { name: 'Forget' }).click();
+    await page.waitForTimeout(400);
+    where = await stored();
+    assert.ok(!`${where.local}${where.session}`.includes(SECRET), 'a forgotten credential was still on disk');
+  } finally {
+    await page.close();
+  }
+});
+
+test('a reload comes back to the schema that was loaded', async () => {
+  const page = await open();
+  try {
+    assert.equal(await page.evaluate(() => window.__aw.store.state.schema.sourceName), 'bookings-api.v2.yaml');
+    // Straight to the bare URL: no `src`, so only what was remembered can help.
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
+    await page.waitForFunction(() => window.__aw?.store.state.schemaState === 'ready', null, { timeout: 15000 });
+    await page.waitForTimeout(600);
+    assert.equal(await page.evaluate(() => window.__aw.store.state.schema.sourceName), 'bookings-api.v2.yaml');
+    assert.equal(await page.evaluate(() => window.__aw.store.state.browsing), true);
+    assert.ok(await page.locator('a.row').count() > 0);
+
+    // Replacing it forgets it, so the next visit starts at the import screen.
+    await page.getByRole('button', { name: 'Replace schema' }).click();
+    await page.waitForTimeout(500);
+    await page.goto(`${BASE}/`, { waitUntil: 'load' });
+    await page.waitForTimeout(900);
+    assert.equal(await page.evaluate(() => window.__aw.store.state.schemaState), 'idle');
+    assert.match(await page.locator('h1').first().textContent(), /Load an OpenAPI schema/);
+  } finally {
+    await page.close();
+  }
+});
+
+test('an enum parameter is a dropdown, and Enter in the form sends', async () => {
+  const page = await open();
+  try {
+    // Give the operation an enum parameter to render.
+    await page.evaluate(() => {
+      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'GET');
+      window.__aw.actions.selectOperation(op.id);
+    });
+    await page.waitForTimeout(600);
+
+    const status = page.locator('aw-try-it select').filter({ hasText: 'confirmed' }).first();
+    assert.ok(await page.locator('aw-try-it select').count() > 0, 'no enum parameter rendered as a select');
+    assert.ok(await status.count() > 0);
+    // Optional, so "not sent" has to be reachable and is where it starts.
+    const options = await status.locator('option').allTextContents();
+    assert.match(options[0], /not sent/);
+    assert.equal(await status.inputValue(), '');
+    assert.deepEqual(options.slice(1), ['held', 'pending', 'confirmed', 'cancelled']);
+
+    // The form submits on Enter, from a field rather than the button.
+    assert.equal(await page.locator('aw-try-it form').count(), 1);
+    assert.equal(await page.locator('aw-try-it button[type="submit"]').count(), 1);
+    await status.selectOption('confirmed');
+    await page.waitForTimeout(200);
+    assert.match(await page.locator('.tryit__status').textContent(), /status=confirmed/);
+    await status.focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(4000);
+    // It will fail on CORS against a host that does not exist, which still
+    // proves Enter reached the sender.
+    assert.equal(await page.locator('aw-try-it .result').count(), 1);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a required parameter left empty stops the send and says which one', async () => {
+  const page = await open();
+  try {
+    await page.evaluate(() => {
+      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings/{bookingId}' && o.method === 'GET');
+      window.__aw.actions.selectOperation(op.id);
+    });
+    await page.waitForTimeout(600);
+
+    const field = page.locator('aw-try-it input').first();
+    await field.focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+
+    assert.equal(await page.locator('aw-try-it .result').count(), 0, 'an incomplete request was sent anyway');
+    const invalid = page.locator('aw-try-it [aria-invalid="true"]');
+    assert.equal(await invalid.count(), 1);
+    // The message is tied to the field and led by a word, not a colour.
+    const describedBy = await invalid.getAttribute('aria-describedby');
+    assert.match(describedBy, /-error$/);
+    const message = await page.locator(`#${(await invalid.getAttribute('id'))}-error`).textContent();
+    assert.match(message, /^NEEDED/);
+    assert.match(message, /bookingId needs a value/);
+    assert.match(await page.locator('#aw-live-assertive').textContent(), /Cannot send: bookingId is required/);
+    // Focus is on the field being complained about.
+    assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-invalid')), 'true');
+
+    // Typing clears it rather than leaving a stale complaint on screen.
+    await page.keyboard.type('01J8QW');
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('aw-try-it [aria-invalid="true"]').count(), 0);
+    assert.equal(await page.locator('aw-try-it .hint--error').count(), 0);
   } finally {
     await page.close();
   }

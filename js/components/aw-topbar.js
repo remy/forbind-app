@@ -124,6 +124,26 @@ class AwSearchBlock extends AwElement {
   #input = null;
   #status = null;
 
+  /**
+   * Typing changes `filters`, and the only thing here that depends on them is
+   * the match count. Re-rendering for that would replace the input the person
+   * is typing into — focus goes to the body and the second keystroke lands
+   * nowhere. So a filter change updates the count and nothing else.
+   */
+  update(state, prev) {
+    if (!Object.is(state.schema, prev.schema)) {
+      this.render(state);
+      return;
+    }
+    this.#updateStatus();
+  }
+
+  #updateStatus() {
+    if (!this.#status) return;
+    const count = this.actions.visibleOperations().length;
+    this.#status.textContent = `${count} ${count === 1 ? 'match' : 'matches'} · ↑↓ to move`;
+  }
+
   render(state) {
     const { schema, filters } = state;
     const count = this.actions.visibleOperations().length;

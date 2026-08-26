@@ -351,3 +351,8 @@ dialog.palette {
   display: flex;
   align-items: center;
 }
+
+/* Where the credential is kept is a decision, so it gets a real checkbox with
+   its consequences spelled out under the label. */
+.auth-remember { margin-top: var(--s-16); }
+.auth-remember .choice__hint { max-width: 46ch; }

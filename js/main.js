@@ -12,11 +12,16 @@ import yaml from './vendor/js-yaml.mjs';
 import { Store } from './lib/store.js';
 import { setApp } from './lib/context.js';
 import { defineAll } from './lib/element.js';
-import { Router, buildHash } from './lib/router.js';
+import { Router, buildHash, parseHash } from './lib/router.js';
 import { announce } from './lib/announce.js';
 import { normalise, parseText, SchemaError, describeScheme } from './lib/openapi.js';
 import { filterOperations, allScopes, allStatusCodes } from './lib/search.js';
+import { readJwt } from './lib/auth.js';
 import { loadFromFile, loadFromUrl, loadSample } from './lib/loader.js';
+import {
+  readSchema, writeSchema, clearSchema,
+  readAuth, writeAuth, clearAuth,
+} from './lib/persist.js';
 
 import './components/aw-app.js';
 import './components/aw-topbar.js';
@@ -135,7 +140,7 @@ function announceResultCount() {
    Schema loading
 ------------------------------------------------------------------------- */
 
-async function ingest(promise, { note = null } = {}) {
+async function ingest(promise, { note = null, restoring = false } = {}) {
   store.set({ schemaState: 'loading', schemaError: null, importNote: null });
   try {
     const source = await promise;
@@ -143,13 +148,22 @@ async function ingest(promise, { note = null } = {}) {
     const model = normalise(doc, source.name);
     visibleCache = { key: null, value: [] };
     schemaSource = source.url ?? null;
+
+    // Remembered so a reload lands back where it left off rather than on an
+    // empty file picker.
+    if (!restoring) writeSchema({ name: source.name, url: source.url ?? null, text: source.text });
+
+    // A credential belongs to the API it was issued for, so it comes back only
+    // for the schema it was entered against.
+    const restoredAuth = readAuth(schemaKeyFor(source));
+
     store.set({
       schema: model,
       schemaState: 'ready',
       // A link that named the schema in the URL knows where it is going, so it
       // goes straight there. Anyone who loaded a file by hand gets the parse
       // report first, because that is where the warnings are.
-      browsing: Boolean(pendingSelection),
+      browsing: Boolean(pendingSelection) || restoring,
       schemaError: null,
       importNote: source.note ?? note,
       selectedOperationId: null,
@@ -158,15 +172,22 @@ async function ingest(promise, { note = null } = {}) {
       filters: { ...store.state.filters, query: '', tags: [], verbs: [], scopes: [], statusCodes: [], onlyDeprecated: false },
       auth: {
         ...store.state.auth,
-        // A credential belongs to the API it was issued for, not to the tab.
-        schemeId: Object.keys(model.securitySchemes)[0] ?? null,
-        credential: '',
+        schemeId: restoredAuth?.schemeId ?? Object.keys(model.securitySchemes)[0] ?? null,
+        credential: restoredAuth?.credential ?? '',
+        remember: restoredAuth?.remember ?? false,
         verifyState: 'idle',
         message: '',
         scopes: [],
         expiresAt: null,
       },
     });
+
+    // Re-read the claims of a restored token so the sheet is not blank about
+    // a credential it is already holding.
+    if (restoredAuth?.credential) {
+      const claims = readJwt(restoredAuth.credential);
+      if (claims) store.patch('auth', { scopes: claims.scopes, expiresAt: claims.expiresAt });
+    }
     const { counts } = model.report;
     announce(
       `${source.name} parsed. ${counts.endpoints} endpoints, ${counts.tags} tags, ${counts.schemas} schemas, ` +
@@ -380,6 +401,23 @@ const actions = {
   },
   setAuth(patch) {
     store.patch('auth', patch);
+    const { credential, schemeId, remember } = store.state.auth;
+    const schema = store.state.schema;
+    if (!schema) return;
+    writeAuth({
+      credential,
+      schemeId,
+      remember,
+      schemaKey: schemaSource ?? `file:${schema.sourceName}`,
+    });
+  },
+
+  forgetAuth() {
+    clearAuth();
+    store.patch('auth', {
+      credential: '', remember: false, verifyState: 'idle', message: '', scopes: [], expiresAt: null,
+    });
+    announce('Credential forgotten, and removed from this browser\u2019s storage.');
   },
 
   openOptions() {
@@ -413,6 +451,9 @@ const actions = {
     return ingest(loadSample(path), { note: 'This is the example schema bundled with allyway. It describes an imaginary service.' });
   },
   replaceSchema() {
+    clearSchema();
+    clearAuth();
+    schemaSource = null;
     store.set({ schemaState: 'idle', browsing: false, schemaError: null, importNote: null });
     go({ view: 'import' });
     requestAnimationFrame(() => document.querySelector('#schema-file')?.focus());
@@ -481,6 +522,11 @@ const actions = {
     ];
   },
 };
+
+/** Identifies the document a credential was entered against. */
+function schemaKeyFor(source) {
+  return source.url ?? `file:${source.name}`;
+}
 
 function currentOperation() {
   const state = store.state;
@@ -572,6 +618,26 @@ store.subscribe((state, prev) => {
 document.documentElement.dataset.density = store.state.density;
 
 installShortcuts();
+
+/**
+ * A reload should land where it left off. A `src` in the URL always wins — that
+ * link is being explicit about which document it means — and otherwise the last
+ * one loaded here comes back: re-fetched if it came from a URL, or from the
+ * copy kept on this machine if it came from a file.
+ */
+function restoreSchema() {
+  if (parseHash().src) return false;
+  const stored = readSchema();
+  if (!stored) return false;
+  if (stored.url) {
+    ingest(loadFromUrl(stored.url), { restoring: true });
+    return true;
+  }
+  ingest(Promise.resolve({ text: stored.text, name: stored.name, via: 'file', note: null }), { restoring: true });
+  return true;
+}
+
+restoreSchema();
 router.start();
 /* A handle for tests and for poking at state in a console. Reading it is
    harmless; the app itself never uses it. */

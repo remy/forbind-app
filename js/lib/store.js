@@ -1,17 +1,13 @@
 /**
  * A very small observable store.
  *
- * Nothing here is persisted except the two presentation preferences (theme and
- * density) which are explicitly opted into by `persistKeys`. The parsed schema,
- * the filters and — above all — the credential live in memory for the lifetime
- * of the tab and nowhere else. No localStorage for state, no cookies, no
- * telemetry: the import screen promises "nothing leaves your browser" and the
- * auth sheet promises "credentials stay in this browser tab", and both are
- * meant literally.
+ * The store itself only persists the display preferences; what else is
+ * remembered, and in which storage, is decided in js/lib/persist.js and driven
+ * from main.js. Nothing is ever sent anywhere — every one of those stores is on
+ * the reader's own machine, which is the promise the import screen makes.
  */
 
-const PERSIST_KEY = 'allyway:prefs';
-const PERSISTED = ['theme', 'density', 'showHints'];
+import { readPrefs, writePrefs } from './persist.js';
 
 /** @returns {object} the shape every screen reads from. */
 export function initialState() {
@@ -51,6 +47,8 @@ export function initialState() {
       message: '',
       scopes: [],
       expiresAt: null,
+      /** false: this tab only (sessionStorage). true: this device. */
+      remember: false,
     },
 
     /** Overlays. Kept in the store so the palette can open them too. */
@@ -109,31 +107,5 @@ export class Store {
   subscribe(fn) {
     this.#listeners.add(fn);
     return () => this.#listeners.delete(fn);
-  }
-}
-
-function readPrefs() {
-  try {
-    const raw = globalThis.localStorage?.getItem(PERSIST_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    const out = {};
-    for (const key of PERSISTED) {
-      if (key in parsed) out[key] = parsed[key];
-    }
-    return out;
-  } catch {
-    // Private mode, disabled storage, corrupt value — all fine, use defaults.
-    return {};
-  }
-}
-
-function writePrefs(state) {
-  try {
-    const out = {};
-    for (const key of PERSISTED) out[key] = state[key];
-    globalThis.localStorage?.setItem(PERSIST_KEY, JSON.stringify(out));
-  } catch {
-    /* Preferences are a nicety; never let storage failure break the app. */
   }
 }

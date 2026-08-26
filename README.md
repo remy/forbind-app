@@ -9,9 +9,9 @@ happen in the browser; nothing about your schema is uploaded.
 
 ```sh
 npm start           # http://localhost:8080
-npm test            # 98 unit tests, no dependencies, no browser
+npm test            # 112 unit tests, no dependencies, no browser
 npm install
-npm run test:a11y   # 27 checks in a real browser (needs Playwright + axe-core)
+npm run test:a11y   # 30 checks in a real browser (needs Playwright + axe-core)
 ```
 
 There is no build step. What is in this repository is what the browser loads.
@@ -52,12 +52,27 @@ failed, only for the schema, and the UI says when it was used. Real API requests
 from the try-it panel always go straight from your browser — no proxy — so a
 credential never passes through anything of ours.
 
-**Nothing is persisted except two display preferences.** Theme and density go to
-`localStorage`, because someone who needs a dark, high-contrast, roomy interface
-should not have to set it again every visit. The schema, the filters and above
-all the credential live in memory for the life of the tab and nowhere else.
-There are no cookies and no telemetry. There is a test that fails if a
-credential, a schema name or a filter ever reaches storage.
+**What is remembered, and where.** Everything below is on your own machine —
+there are no cookies, no telemetry, and nothing is sent anywhere.
+
+| What | Where | Lifetime |
+|---|---|---|
+| Theme, density, hint bar | `localStorage` | until changed |
+| The loaded schema | `localStorage` | until you replace it |
+| A credential | `sessionStorage` | this tab, and gone when it closes |
+| …if you tick *Remember on this device* | `localStorage` | until you forget it |
+
+A schema loaded from a URL is remembered as the URL and re-fetched; one loaded
+from a file keeps its text (under 3 MB — above that only its name is kept, and
+you are asked for it again). *Replace schema* forgets both the schema and any
+credential held for it.
+
+The credential defaults to `sessionStorage`, so it survives a reload but not the
+tab. Remembering it is a labelled opt-in that says what it means, never a
+default and never silent, and a credential is only ever handed back to the
+schema it was entered against. Whichever store it is in, it never reaches a
+snippet: copied commands carry `$TOKEN`. All of this is covered by tests that
+fail if it stops being true. The rules live in one file, `js/lib/persist.js`.
 
 **A copied snippet never carries your token.** `buildRequest` takes a
 `revealCredential` flag that defaults to `false`, and the snippet path never
@@ -147,6 +162,14 @@ that the API must send CORS headers for the response to be readable. When it
 does not, the panel says which of the two possible causes it is and how to tell
 them apart, rather than showing a generic failure. Mutating verbs carry a `LIVE`
 warning first: it is not a sandbox.
+
+The fields come from the schema: a parameter with an `enum` is a `<select>` of
+exactly the values it allows (optional ones can stay *— not sent —*), and the
+rest are text inputs carrying the schema's example as a placeholder. It is a
+real `<form>`, so <kbd>Enter</kbd> in any field sends. A required parameter with
+no value *and* no example to fall back on stops the send, names itself in a
+polite word-led message tied to the field, and takes focus — rather than
+sending `{bookingId}` to a real API.
 
 ## Deployment
 

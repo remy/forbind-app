@@ -336,3 +336,33 @@ table.params .col-notes { font-family: var(--font-sans); color: var(--ink-70); }
   }
   .tabs--segmented .tab:first-child { border-left: 0; }
 }
+
+/* Enum parameters are a dropdown rather than a free-text box, so the values
+   the schema allows are the values you can pick. */
+.field-row select {
+  width: 100%;
+  padding: var(--s-8) var(--s-10);
+  border: var(--rule-w) solid var(--ink);
+  background: var(--field-bg);
+  color: var(--ink);
+  font: 400 var(--t-12-5) / 1.5 var(--font-mono);
+  min-height: var(--h-32);
+  border-radius: 0;
+}
+.field-row select:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+/* A field that stopped the request: the word carries it, not the colour. */
+.hint--error { color: var(--delete-fg); }
+.field-row [aria-invalid='true'] { border-color: var(--delete-fg); border-width: var(--rule-w-strong); }
+
+@media (max-width: 48rem) {
+  .field-row select { min-height: var(--h-44); }
+}
+
+@media (forced-colors: active) {
+  .field-row select:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
+  .field-row [aria-invalid='true'] { border-style: dashed; }
+}
