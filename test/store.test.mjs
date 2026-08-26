@@ -69,11 +69,30 @@ test('the store itself writes only the display preferences', () => {
     store.patch('filters', { query: 'internal-only' });
 
     assert.deepEqual(Object.keys(storage.dump()), ['allyway:prefs']);
-    assert.deepEqual(JSON.parse(storage.dump()['allyway:prefs']), { theme: 'dark', density: 'roomy', showHints: true });
+    assert.deepEqual(JSON.parse(storage.dump()['allyway:prefs']), {
+      theme: 'dark', density: 'roomy', showHints: true, railCollapsed: false, listCollapsed: false,
+    });
     const everything = JSON.stringify(storage.dump());
     assert.ok(!everything.includes('a-real-secret-token'), 'the store wrote a credential');
     assert.ok(!everything.includes('private-api.yaml'), 'the store wrote a schema');
     assert.ok(!everything.includes('internal-only'), 'the store wrote a filter');
+  } finally {
+    delete globalThis.localStorage;
+  }
+});
+
+test('a folded column is remembered, and comes back folded', () => {
+  const storage = fakeStorage();
+  storage.setItem('allyway:prefs', JSON.stringify({ railCollapsed: true, listCollapsed: true }));
+  globalThis.localStorage = storage;
+  try {
+    const store = new Store();
+    assert.equal(store.state.railCollapsed, true);
+    assert.equal(store.state.listCollapsed, true);
+    store.set({ listCollapsed: false });
+    assert.deepEqual(JSON.parse(storage.dump()['allyway:prefs']), {
+      theme: 'auto', density: 'dense', showHints: true, railCollapsed: true, listCollapsed: false,
+    });
   } finally {
     delete globalThis.localStorage;
   }

@@ -62,6 +62,16 @@ export function initialState() {
     theme: 'auto',       // 'auto' | 'light' | 'dark'
     density: 'dense',    // 'dense' (1a) | 'roomy' (1b)
     showHints: true,     // the keyboard hint bar
+
+    /*
+     * Collapsed columns. Either navigation column can be folded away to give
+     * the detail the room; with both folded the detail has the whole frame,
+     * which is what "maximise" means here. Remembered like the other display
+     * preferences, and ignored below the phone breakpoint, where the list and
+     * the detail are already separate pages.
+     */
+    railCollapsed: false,
+    listCollapsed: false,
   };
 }
 

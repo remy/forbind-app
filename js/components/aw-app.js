@@ -15,7 +15,7 @@ import { registerRegions } from '../lib/announce.js';
 const SMALL_SCREEN = '(max-width: 48rem)';
 
 class AwApp extends AwElement {
-  static observes = ['schemaState', 'browsing', 'density', 'mobileView'];
+  static observes = ['schemaState', 'browsing', 'density', 'mobileView', 'railCollapsed', 'listCollapsed'];
 
   #media = null;
   #onMediaChange = null;
@@ -37,6 +37,30 @@ class AwApp extends AwElement {
     this.#media?.removeEventListener('change', this.#onMediaChange);
   }
 
+  /**
+   * Folding a column away must not rebuild the shell.
+   *
+   * The control that did it lives in the top bar, inside the very tree a
+   * re-render would replace — and a button replaced under the pointer takes
+   * focus to the body with it. A column is a pair of attributes and a CSS
+   * rule, so the change is written onto the element that is already there.
+   */
+  update(state, prev) {
+    const structural = ['schemaState', 'browsing', 'density', 'mobileView'];
+    if (structural.some((key) => !Object.is(state[key], prev[key]))) {
+      this.render(state);
+      return;
+    }
+    this.#syncColumns(state);
+  }
+
+  #syncColumns(state) {
+    const app = this.#body?.firstElementChild;
+    if (!(app instanceof HTMLElement) || !app.classList.contains('app--browse')) return;
+    const small = this.#media?.matches ?? false;
+    Object.assign(app.dataset, columnAttributes(state, small));
+  }
+
   render(state) {
     const isBrowser = state.schemaState === 'ready' && state.browsing && state.schema;
     const small = this.#media?.matches ?? false;
@@ -46,19 +70,24 @@ class AwApp extends AwElement {
     // Where the tags live depends on the layout: a rail at full width, a chip
     // row once that folds, facet buttons in the roomy IA. The link is offered
     // once and resolves to whichever of them is actually on screen — a skip
-    // link pointing at a hidden element is worse than no skip link.
+    // link pointing at a hidden element is worse than no skip link. A column
+    // folded away is the same problem with a different cause, and has an
+    // answer the layouts do not: where nothing the link names is on screen,
+    // it unfolds the column on the way past. Only where nothing is — with the
+    // rail folded the tag chips are standing in for it, and the link should
+    // land on those rather than undo the fold.
     const skipTargets = isBrowser
       ? [
-          ['#endpoint-list', 'Skip to the endpoint list'],
+          ['#endpoint-list', 'Skip to the endpoint list', () => this.actions.showList()],
           ['#detail', 'Skip to the operation detail'],
           ['#search', 'Skip to search'],
-          ['#tag-nav, #tag-chips, #filters', 'Skip to tags and filters'],
+          ['#tag-nav, #tag-chips, #filters', 'Skip to tags and filters', () => this.actions.showRail()],
         ]
       : [['#main', 'Skip to the schema import form']];
 
     replace(
       this.#skipLinks,
-      skipTargets.map(([selector, label]) => el('a', {
+      skipTargets.map(([selector, label, reveal]) => el('a', {
         class: 'skip-link',
         href: selector.split(',')[0].trim(),
         text: label,
@@ -70,7 +99,7 @@ class AwApp extends AwElement {
         onclick: (event) => {
           if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
           event.preventDefault();
-          focusSkipTarget(selector);
+          focusSkipTarget(selector, reveal);
         },
       })),
     );
@@ -179,10 +208,28 @@ class AwApp extends AwElement {
         class: 'app app--browse',
         'data-density': roomy ? 'roomy' : 'dense',
         'data-mobile-view': small ? state.mobileView : 'both',
+        dataset: columnAttributes(state, small),
       },
       [banner, el('div', { class: 'shell' }, [rail, main])],
     );
   }
+}
+
+/**
+ * Which columns are folded away, as the attributes the stylesheet reads.
+ *
+ * Below the phone breakpoint the flags are ignored: the list and the detail
+ * are separate pages there, so hiding the list would leave the browser with
+ * nothing to navigate from.
+ *
+ * @param {object} state
+ * @param {boolean} small
+ */
+function columnAttributes(state, small) {
+  return {
+    rail: !small && state.railCollapsed ? 'collapsed' : 'expanded',
+    list: !small && state.listCollapsed ? 'collapsed' : 'expanded',
+  };
 }
 
 /**
@@ -196,10 +243,18 @@ class AwApp extends AwElement {
  *
  * @param {string} selector one or more `#id` fragments; the first one that is
  *   actually rendered wins, so a link stays useful across the layouts.
+ * @param {(() => void)} [reveal] last resort when none of them is on screen —
+ *   unfold the column that holds the target, then look again.
  */
-function focusSkipTarget(selector) {
-  const target = [...document.querySelectorAll(selector)]
+function focusSkipTarget(selector, reveal) {
+  const onScreen = () => [...document.querySelectorAll(selector)]
     .find((node) => node.offsetParent !== null || node.getClientRects().length > 0);
+
+  let target = onScreen();
+  if (!target && reveal) {
+    reveal();
+    target = onScreen();
+  }
   if (!target) return;
   target.focus({ preventScroll: true });
   target.scrollIntoView({

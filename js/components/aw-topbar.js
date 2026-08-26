@@ -1,5 +1,6 @@
 /**
- * The top bar: wordmark, the filter search, and the right-hand cluster.
+ * The top bar: wordmark, the filter search, the column toggles, and the
+ * right-hand cluster.
  *
  * The search input is deliberately uncontrolled. It filters as you type, and a
  * re-render that replaced its value would fight the person using it, so state
@@ -9,10 +10,54 @@
 import { AwElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 
+/* The rail only exists in the dense IA and only above this width; below the
+   second one the list and the detail are separate pages, so neither column is
+   foldable. A toggle for a column that is not on screen is a control that does
+   nothing, so each is a media query rather than a CSS `display: none`. */
+const HAS_RAIL = '(min-width: 75.0625rem)';
+const HAS_COLUMNS = '(min-width: 48.0625rem)';
+
 class AwTopbar extends AwElement {
-  static observes = ['schema', 'density'];
+  static observes = ['schema', 'density', 'railCollapsed', 'listCollapsed'];
 
   #input = null;
+  #toggles = [];
+  #media = [];
+  #onMediaChange = null;
+
+  connectedCallback() {
+    this.#media = [HAS_RAIL, HAS_COLUMNS].map((query) => globalThis.matchMedia?.(query)).filter(Boolean);
+    this.#onMediaChange = () => this.render(this.state);
+    for (const media of this.#media) media.addEventListener('change', this.#onMediaChange);
+    super.connectedCallback();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    for (const media of this.#media) media.removeEventListener('change', this.#onMediaChange);
+  }
+
+  /**
+   * Folding a column away must not rebuild the bar the button lives on — the
+   * button is what the keyboard is standing on, and replacing it drops focus
+   * to the body. A toggle carries its state in `aria-expanded` and a caret, so
+   * both are written onto the button that is already there.
+   */
+  update(state, prev) {
+    if (!Object.is(state.schema, prev.schema) || state.density !== prev.density) {
+      this.render(state);
+      return;
+    }
+    this.#syncToggles(state);
+  }
+
+  #syncToggles(state) {
+    for (const { button, caret, key } of this.#toggles) {
+      const expanded = !state[key];
+      button.setAttribute('aria-expanded', String(expanded));
+      caret.textContent = expanded ? '‹' : '›';
+    }
+  }
 
   render(state) {
     const { schema } = state;
@@ -39,6 +84,7 @@ class AwTopbar extends AwElement {
         roomy && schema
           ? el('span', { class: 'searchblock__meta', text: `${schema.sourceName} · ${schema.operations.length} endpoints` })
           : null,
+        this.#renderColumnToggles(state),
         el('div', { class: 'topbar__right' }, [
           roomy
             ? el('button', {
@@ -67,6 +113,52 @@ class AwTopbar extends AwElement {
       ]),
       roomy ? el('aw-search-block', {}) : null,
     ]);
+  }
+
+  /**
+   * The column toggles: two disclosures for the two navigation columns.
+   *
+   * Disclosures rather than a "maximise" mode, because that is what they are:
+   * each says, in `aria-expanded`, whether the column it names is on screen,
+   * and stays on screen itself so a folded column always has a way back. Both
+   * folded is what maximising the detail means, and ⇧⌘M does the pair in one
+   * step.
+   *
+   * State is said three ways, none of them colour alone: the accessible
+   * `aria-expanded`, a caret that turns towards where the column went, and the
+   * button's own fill.
+   */
+  #renderColumnToggles(state) {
+    this.#toggles = [];
+    const [hasRail, hasColumns] = this.#media.map((media) => media.matches);
+    if (!hasColumns) return null;
+
+    const toggle = (key, id, label, name, run) => {
+      const caret = el('span', { 'aria-hidden': 'true', text: state[key] ? '›' : '‹' });
+      const button = el('button', {
+        type: 'button',
+        id,
+        class: 'btn btn--toggle',
+        'aria-expanded': String(!state[key]),
+        'aria-controls': key === 'railCollapsed' ? 'tag-nav' : 'endpoint-list',
+        onclick: run,
+      }, [
+        caret,
+        el('span', { 'aria-hidden': 'true', text: label }),
+        el('span', { class: 'visually-hidden', text: name }),
+      ]);
+      this.#toggles.push({ button, caret, key });
+      return button;
+    };
+
+    const buttons = [
+      hasRail && state.density !== 'roomy'
+        ? toggle('railCollapsed', 'toggle-rail', 'Tags', 'Tag rail', () => this.actions.toggleRail())
+        : null,
+      toggle('listCollapsed', 'toggle-list', 'List', 'Endpoint list', () => this.actions.toggleList()),
+    ].filter(Boolean);
+
+    return el('div', { class: 'toggles', role: 'group', 'aria-label': 'Columns' }, buttons);
   }
 
   #renderSearch(state) {

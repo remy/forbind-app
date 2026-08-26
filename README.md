@@ -9,9 +9,9 @@ happen in the browser; nothing about your schema is uploaded.
 
 ```sh
 npm start           # http://localhost:8080
-npm test            # 123 unit tests, no dependencies, no browser
+npm test            # 124 unit tests, no dependencies, no browser
 npm install
-npm run test:a11y   # 41 checks in a real browser (needs Playwright + axe-core)
+npm run test:a11y   # 50 checks in a real browser (needs Playwright + axe-core)
 ```
 
 There is no build step. What is in this repository is what the browser loads.
@@ -28,11 +28,12 @@ js/main.js               entry point: store, router, actions, shortcuts
 js/lib/                  pure modules — parser, request builder, search, routing
 js/components/           the custom elements
 js/vendor/js-yaml.mjs    the one dependency, vendored (MIT)
-css/                     tokens, base, app, detail, overlays
+css/                     tokens, base, app, list, detail, overlays
 assets/fonts/            IBM Plex Sans + Mono, self-hosted, latin subsets (OFL)
 samples/                 a worked example schema
 netlify/functions/       the one piece of server-side code
 test/                    node:test suites for the pure modules
+test/a11y/               the browser suites, one file per subject
 ```
 
 ## Choices worth knowing about
@@ -57,7 +58,7 @@ there are no cookies, no telemetry, and nothing is sent anywhere.
 
 | What | Where | Lifetime |
 |---|---|---|
-| Theme, density, hint bar | `localStorage` | until changed |
+| Theme, density, hint bar, folded columns | `localStorage` | until changed |
 | The loaded schema | `localStorage` | until you replace it |
 | A credential | `sessionStorage` | this tab, and gone when it closes |
 | …if you tick *Remember on this device* | `localStorage` | until you forget it |
@@ -113,6 +114,7 @@ strikethrough is not announced.
 | `⇧⌘F` | Focus the method filters |
 | `⇧⌘C` | Copy the request snippet |
 | `⇧⌘U` | Replace the schema |
+| `⇧⌘M` | Maximise the detail, and restore the columns |
 | `Tab` (from the top) | Skip links to every landmark |
 
 Rows are anchors, so `Enter`, middle-click and open-in-new-tab work without
@@ -122,6 +124,25 @@ rebuilt row drops focus to the body and the whole model dies on the spot. The
 cursor walks the rows *as rendered*, which is not the same list as the filter
 returns once the roomy layout groups them by tag; if those two ever disagree
 the arrows stop matching the eye.
+
+**Folding the columns away.** Either navigation column can be folded away to
+give the detail the room: `Tags` and `List` in the top bar are disclosures, and
+`aria-expanded` on each says whether the column it names is on screen. With
+both folded the detail has the whole frame, which is all "maximise" means here
+— `⇧⌘M` does the pair in one step, and again to bring them back.
+
+Folding the rail hands the tags to the chip row that already stands in for it
+in the narrower layouts, so filtering by tag never goes away with the column.
+
+A folded column is removed rather than shrunk to a strip: a strip would carry a
+second copy of the control that folded it, which is two tab stops for one
+state. The toggles stay in the top bar instead, so what is missing always has a
+way back, and so do the routes that need the column — the skip link unfolds it
+on the way in, and a shortcut that moves into the list brings the list back
+first rather than focusing a row nobody can see. Below the phone breakpoint
+the preference is ignored and the toggles are not rendered: the list and the
+detail are already separate pages there, and folding the list away would leave
+nothing to navigate from.
 
 The skip links move focus themselves rather than letting the browser navigate
 to the fragment — the URL's fragment is the router here, so `#detail` would be
@@ -160,16 +181,18 @@ Light and Dark in Display), `prefers-contrast: more`, `prefers-reduced-motion`
 (transitions drop to 0ms), and `forced-colors`.
 
 **Verified, not asserted.** `npm run test:a11y` drives a real browser and
-checks all of the above: `axe-core` over ten screens and states (import, parse
-report, dense, roomy, dark, schema view, palette open, auth sheet, display
-options, mobile detail) at WCAG 2.0/2.1/2.2 A and AA plus best-practice, and
+checks all of the above: `axe-core` over eleven screens and states (import,
+parse report, dense, roomy, dark, schema view, palette open, auth sheet,
+display options, mobile detail, columns folded away) at WCAG 2.0/2.1/2.2 A and
+AA plus best-practice, and
 then the behaviours a static scan cannot see — the roving tabindex holding
 focus through a dozen cursor moves, the combobox keeping focus in the input
 while `aria-activedescendant` moves, focus returning to an invoker whose
 toolbar re-rendered underneath it, meaning never carried by colour alone,
 reflow at 320px and at 200% and 400% zoom, a visible ring under
 `forced-colors`, the live regions actually carrying their announcements, and
-the credential reaching neither storage nor the clipboard.
+the credential reaching neither storage nor the clipboard, and a folded column
+keeping every route back to itself.
 
 The one place the design was overridden for an accessibility reason is
 documented in `DECISIONS.md`.

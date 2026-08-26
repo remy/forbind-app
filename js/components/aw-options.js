@@ -89,7 +89,7 @@ class AwOptions extends AwElement {
         ]),
         el('p', {
           class: 'sheet__lede',
-          text: 'These two settings are remembered on this device. Nothing else is — not the schema, not the filters, and not the credential.',
+          text: 'These settings are remembered on this device, along with which columns you have folded away. The filters are not, and neither is the credential — that is kept, and forgotten, in the Authorise sheet.',
         }),
 
         radioGroup('theme', THEMES, state.theme, (value) => {
