@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><style>body{margin:0;background:#efeee9;font-family:'IBM Plex Sans',system-ui,sans-serif}a{color:#1a3fb8}a:hover{color:#0f2775}.dv-turn{padding:40px 44px 32px;border-bottom:1.5px solid #0f0f0e;scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px 'IBM Plex Mono',ui-monospace,monospace;padding:3px 7px;background:#0f0f0e;color:#fbfbf9;text-decoration:none}.dv-tname{font:600 13px/1.2 'IBM Plex Sans',sans-serif;color:#0f0f0e}.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'IBM Plex Mono',ui-monospace,monospace;padding:3px 7px;background:#0f0f0e;color:#fbfbf9;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:9px;font:500 12px/1.4 'IBM Plex Sans',sans-serif;color:#0f0f0e}.dv-card{max-width:100%;background:#fbfbf9;border:1.5px solid #0f0f0e;overflow:hidden}.dv-note{margin:0;max-width:640px;font:400 11.5px/1.55 'IBM Plex Sans',sans-serif;color:#56564f}.dv-opt:target .dv-oid{background:#1a3fb8}.dv-next{margin:24px 0 0;font:12px/1.6 'IBM Plex Sans',sans-serif;color:#56564f}</style></helmet>
+
+<section class="dv-turn" style="background:#fbfbf9">
+<div class="dv-thd"><span class="dv-tid">BRIEF</span><span class="dv-tname">allyway API browser — assumptions before you read the options</span></div>
+<div style="display:flex;flex-wrap:wrap;gap:0;border:1.5px solid #0f0f0e;max-width:1240px">
+<div style="flex:1 1 300px;min-width:280px;padding:18px 20px;border-right:1.5px solid #0f0f0e">
+<h3 style="margin:0 0 10px;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase;color:#56564f">What I assumed</h3>
+<ul style="margin:0;padding-left:16px;font:400 12.5px/1.65 'IBM Plex Sans',sans-serif;color:#0f0f0e">
+<li>Schema is uploaded per session, 30–150 endpoints, so search + tag grouping beats deep tree nav.</li>
+<li>Accessibility is invisible-but-correct: no badges, no a11y panel. It shows up as focus visibility, real semantics, and never colour-only meaning.</li>
+<li>curl is the only snippet language for now; the code block is built to take more later.</li>
+<li>Four audiences, one UI — density is the lever, not separate modes.</li>
+</ul>
+</div>
+<div style="flex:1 1 300px;min-width:280px;padding:18px 20px;border-right:1.5px solid #0f0f0e">
+<h3 style="margin:0 0 10px;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase;color:#56564f">The system</h3>
+<ul style="margin:0;padding-left:16px;font:400 12.5px/1.65 'IBM Plex Sans',sans-serif;color:#0f0f0e">
+<li>Near-black #0F0F0E on near-white #FBFBF9. Hairlines are structure; no shadows anywhere.</li>
+<li>IBM Plex Sans for prose, IBM Plex Mono for anything the API literally says.</li>
+<li>One accent, #1A3FB8, reserved for focus and selection. Never decoration.</li>
+<li>HTTP verbs always carry their word. Tint is redundant reinforcement only.</li>
+</ul>
+</div>
+<div style="flex:1 1 260px;min-width:250px;padding:18px 20px">
+<h3 style="margin:0 0 10px;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase;color:#56564f">Open with you</h3>
+<ul style="margin:0;padding-left:16px;font:400 12.5px/1.65 'IBM Plex Sans',sans-serif;color:#0f0f0e">
+<li>I couldn't read the <code style="font-family:'IBM Plex Mono',monospace">allyway</code> folder from here — this sets a direction rather than matching your existing shell.</li>
+<li>Try-it-out and live responses aren't drawn yet; the detail pane leaves room for them.</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Two navigation models, two list densities — plus the supporting screens</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Three-pane, dense table — the by-the-book one</div>
+<div class="dv-card" style="width:1280px;height:800px;display:grid;grid-template-rows:auto auto 1fr;color:#0f0f0e">
+  <div style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-bottom:1.5px solid #0f0f0e">
+    <span style="font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">ALLYWAY</span>
+    <span style="width:1px;height:20px;background:#c9c8c2"></span>
+    <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:380px;height:32px;padding:0 10px;border:1px solid #0f0f0e;background:#fff">
+      <span style="font:400 12.5px/1 'IBM Plex Sans',sans-serif;color:#56564f">Search endpoints, params, schemas</span>
+      <span style="margin-left:auto;font:500 10.5px/1 'IBM Plex Mono',monospace;padding:3px 5px;border:1px solid #c9c8c2;color:#56564f">⌘K</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <span style="display:flex;align-items:center;gap:7px;height:30px;padding:0 10px;border:1px solid #0f0f0e;font:500 11.5px/1 'IBM Plex Mono',monospace">v2.1 ▾</span>
+      <span style="display:flex;align-items:center;height:30px;padding:0 13px;background:#0f0f0e;color:#fbfbf9;font:600 11.5px/1 'IBM Plex Sans',sans-serif">Authorise</span>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;height:34px;padding:0 16px;border-bottom:1px solid #d8d7d1;background:#f3f2ed;font:400 11.5px/1 'IBM Plex Mono',monospace;color:#56564f">
+    <span style="color:#0f0f0e;font-weight:500">bookings-api.v2.yaml</span><span>·</span><span>OpenAPI 3.1</span><span>·</span><span>47 endpoints</span><span>·</span><span>9 schemas</span>
+    <span style="margin-left:auto;text-decoration:underline;color:#1a3fb8">Replace schema</span>
+  </div>
+  <div style="display:grid;grid-template-columns:216px 402px 1fr;min-height:0">
+    <div style="border-right:1.5px solid #0f0f0e;padding:14px 0;overflow:hidden">
+      <div style="padding:0 14px 9px;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#56564f">Tags</div>
+      <div style="display:flex;flex-direction:column">
+        <div style="display:flex;justify-content:space-between;padding:7px 14px;background:#0f0f0e;color:#fbfbf9;font:600 12.5px/1.2 'IBM Plex Sans',sans-serif"><span>Bookings</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px">12</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 14px;font:400 12.5px/1.2 'IBM Plex Sans',sans-serif"><span>Venues</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#56564f">9</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 14px;font:400 12.5px/1.2 'IBM Plex Sans',sans-serif"><span>Availability</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#56564f">5</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 14px;font:400 12.5px/1.2 'IBM Plex Sans',sans-serif"><span>Payments</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#56564f">8</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 14px;font:400 12.5px/1.2 'IBM Plex Sans',sans-serif"><span>Customers</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#56564f">7</span></div>
+        <div style="display:flex;justify-content:space-between;padding:7px 14px;font:400 12.5px/1.2 'IBM Plex Sans',sans-serif"><span>Webhooks</span><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#56564f">6</span></div>
+      </div>
+      <div style="margin:16px 14px 9px;padding-top:14px;border-top:1px solid #d8d7d1;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#56564f">Schemas</div>
+      <div style="display:flex;flex-direction:column;font:400 12px/1.2 'IBM Plex Mono',monospace;color:#0f0f0e">
+        <span style="padding:6px 14px">Booking</span>
+        <span style="padding:6px 14px">BookingLine</span>
+        <span style="padding:6px 14px">Venue</span>
+        <span style="padding:6px 14px">AvailabilitySlot</span>
+        <span style="padding:6px 14px">Error</span>
+      </div>
+    </div>
+    <div style="border-right:1.5px solid #0f0f0e;display:grid;grid-template-rows:auto 1fr auto;min-height:0">
+      <div style="display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:1px solid #d8d7d1">
+        <span style="padding:4px 8px;background:#0f0f0e;color:#fbfbf9;font:600 10.5px/1 'IBM Plex Mono',monospace">ALL 47</span>
+        <span style="padding:4px 8px;border:1px solid #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace">GET 21</span>
+        <span style="padding:4px 8px;border:1px solid #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace">POST 12</span>
+        <span style="padding:4px 8px;border:1px solid #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace">PATCH 8</span>
+        <span style="padding:4px 8px;border:1px solid #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace">DELETE 6</span>
+        <span style="padding:4px 8px;border:1px dashed #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace;color:#56564f">DEPRECATED 3</span>
+      </div>
+      <div style="overflow:hidden">
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df;border-left:3px solid #0f0f0e;background:#e9ecf7">
+          <span style="padding:3px 5px;background:#dbe4f3;border:1px solid #0b4f9c;color:#0b4f9c;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">GET</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">/v2/bookings</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">List bookings for the authenticated account</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df;box-shadow:inset 0 0 0 2px #1a3fb8">
+          <span style="padding:3px 5px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">POST</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">/v2/bookings</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">Create a booking against a held slot</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df">
+          <span style="padding:3px 5px;background:#dbe4f3;border:1px solid #0b4f9c;color:#0b4f9c;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">GET</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">/v2/bookings/{bookingId}</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">Retrieve a single booking</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df">
+          <span style="padding:3px 5px;background:#f7ecd6;border:1px solid #6b4300;color:#6b4300;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">PATCH</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">/v2/bookings/{bookingId}</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">Amend party size, notes or arrival time</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df">
+          <span style="padding:3px 5px;background:#fae4e3;border:1px solid #97161c;color:#97161c;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">DEL</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">/v2/bookings/{bookingId}</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">Cancel a booking</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df">
+          <span style="padding:3px 5px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">POST</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">/v2/bookings/{bookingId}/confirm</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">Confirm a pending booking</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df">
+          <span style="padding:3px 5px;background:#dbe4f3;border:1px solid #0b4f9c;color:#0b4f9c;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">GET</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">/v2/bookings/{bookingId}/lines</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">List line items on a booking</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:baseline;padding:9px 12px;border-bottom:1px solid #e6e5df;opacity:.62">
+          <span style="padding:3px 5px;background:#f2f1ec;border:1px solid #6d6c66;color:#3f3f38;font:600 10px/1 'IBM Plex Mono',monospace;text-align:center">GET</span>
+          <div><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace;text-decoration:line-through">/v2/bookings/search</div><div style="font:400 11.5px/1.4 'IBM Plex Sans',sans-serif;color:#3f3f38">Deprecated — use GET /v2/bookings with filters</div></div>
+        </div>
+      </div>
+      <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;gap:14px;align-items:center;height:30px;padding:0 12px;border-top:1px solid #d8d7d1;background:#f3f2ed;font:400 10.5px/1 'IBM Plex Mono',monospace;color:#56564f">
+        <span>↑↓ move</span><span>↵ open</span><span>/ filter</span><span>⇧⌘F verbs</span><span style="margin-left:auto">2 of 47</span>
+      </div>
+      </sc-if>
+    </div>
+    <div style="display:grid;grid-template-rows:auto 1fr;min-height:0">
+      <div style="padding:16px 20px 14px;border-bottom:1px solid #d8d7d1">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="padding:4px 7px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 11px/1 'IBM Plex Mono',monospace">POST</span>
+          <span style="font:500 16px/1.2 'IBM Plex Mono',monospace">/v2/bookings</span>
+          <span style="margin-left:auto;display:flex;align-items:center;height:28px;padding:0 12px;background:#0f0f0e;color:#fbfbf9;font:600 11.5px/1 'IBM Plex Sans',sans-serif">Try it</span>
+        </div>
+        <p style="margin:10px 0 0;max-width:56ch;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:#3f3f38">Creates a booking against a slot previously held with <span style="font-family:'IBM Plex Mono',monospace">POST /v2/availability/holds</span>. Idempotent on <span style="font-family:'IBM Plex Mono',monospace">Idempotency-Key</span>.</p>
+        <div style="display:flex;gap:8px;margin-top:11px;font:500 10.5px/1 'IBM Plex Mono',monospace">
+          <span style="padding:4px 7px;border:1px solid #a9a8a2">requires bearer</span>
+          <span style="padding:4px 7px;border:1px solid #a9a8a2">scope: bookings.write</span>
+          <span style="padding:4px 7px;border:1px solid #a9a8a2">rate 60/min</span>
+        </div>
+      </div>
+      <div style="padding:16px 20px;overflow:hidden">
+        <h4 style="margin:0 0 9px;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#56564f">Request body — BookingCreate</h4>
+        <div style="border:1px solid #d8d7d1">
+          <div style="display:grid;grid-template-columns:1.3fr .8fr .6fr 1.6fr;gap:8px;padding:6px 10px;background:#f3f2ed;border-bottom:1px solid #d8d7d1;font:600 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:#56564f"><span>Field</span><span>Type</span><span>Req</span><span>Notes</span></div>
+          <div style="display:grid;grid-template-columns:1.3fr .8fr .6fr 1.6fr;gap:8px;padding:7px 10px;border-bottom:1px solid #eceae4;font:400 11.5px/1.35 'IBM Plex Mono',monospace"><span>venueId</span><span style="color:#3f3f38">string</span><span style="font-weight:600">yes</span><span style="font-family:'IBM Plex Sans',sans-serif;color:#3f3f38">ULID</span></div>
+          <div style="display:grid;grid-template-columns:1.3fr .8fr .6fr 1.6fr;gap:8px;padding:7px 10px;border-bottom:1px solid #eceae4;font:400 11.5px/1.35 'IBM Plex Mono',monospace"><span>holdId</span><span style="color:#3f3f38">string</span><span style="font-weight:600">yes</span><span style="font-family:'IBM Plex Sans',sans-serif;color:#3f3f38">Expires after 10 min</span></div>
+          <div style="display:grid;grid-template-columns:1.3fr .8fr .6fr 1.6fr;gap:8px;padding:7px 10px;border-bottom:1px solid #eceae4;font:400 11.5px/1.35 'IBM Plex Mono',monospace"><span>partySize</span><span style="color:#3f3f38">integer</span><span style="font-weight:600">yes</span><span style="font-family:'IBM Plex Sans',sans-serif;color:#3f3f38">1–20</span></div>
+          <div style="display:grid;grid-template-columns:1.3fr .8fr .6fr 1.6fr;gap:8px;padding:7px 10px;border-bottom:1px solid #eceae4;font:400 11.5px/1.35 'IBM Plex Mono',monospace"><span>customer</span><span style="color:#3f3f38">Customer</span><span style="font-weight:600">yes</span><span style="font-family:'IBM Plex Sans',sans-serif;color:#1a3fb8;text-decoration:underline">jump to schema</span></div>
+          <div style="display:grid;grid-template-columns:1.3fr .8fr .6fr 1.6fr;gap:8px;padding:7px 10px;font:400 11.5px/1.35 'IBM Plex Mono',monospace"><span>notes</span><span style="color:#3f3f38">string</span><span style="color:#56564f">no</span><span style="font-family:'IBM Plex Sans',sans-serif;color:#3f3f38">Max 500 chars</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin:18px 0 9px">
+          <h4 style="margin:0;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#56564f">Request</h4>
+          <span style="font:500 10.5px/1 'IBM Plex Mono',monospace;padding:3px 6px;background:#0f0f0e;color:#fbfbf9">curl</span>
+          <span style="font:500 10.5px/1 'IBM Plex Mono',monospace;padding:3px 6px;border:1px solid #a9a8a2;color:#56564f">fetch</span>
+          <span style="font:500 10.5px/1 'IBM Plex Mono',monospace;padding:3px 6px;border:1px solid #a9a8a2;color:#56564f">python</span>
+          <span style="margin-left:auto;display:flex;align-items:center;height:24px;padding:0 9px;border:1px solid #0f0f0e;font:600 10.5px/1 'IBM Plex Sans',sans-serif">Copy</span>
+        </div>
+        <pre style="margin:0;padding:12px 14px;background:#0f0f0e;color:#f2f1ec;font:400 11.5px/1.75 'IBM Plex Mono',monospace;white-space:pre-wrap;word-break:break-all">curl -X POST https://api.bookings.dev/v2/bookings \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Idempotency-Key: 01J9F2K3" \
+  -d '{"venueId":"01J8...","holdId":"h_92k","partySize":4}'</pre>
+        <div style="display:flex;gap:8px;margin-top:16px;font:500 11px/1 'IBM Plex Mono',monospace">
+          <span style="padding:5px 8px;border:1px solid #14603a;background:#dff0e6;color:#14603a">201 Created</span>
+          <span style="padding:5px 8px;border:1px solid #6b4300;background:#f7ecd6;color:#6b4300">409 Hold expired</span>
+          <span style="padding:5px 8px;border:1px solid #97161c;background:#fae4e3;color:#97161c">422 Invalid party size</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+<p class="dv-note">The list row under the cursor carries a real 2px focus ring inside the row bounds, and selection is marked by the left bar and tint <em>and</em> by <code style="font-family:'IBM Plex Mono',monospace">aria-current</code> — never tint alone. Verb tints repeat the word, so a monochrome or high-contrast render loses nothing.</p>
+</sc-if>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Two-pane, roomy grouped rows — search-first, no tag rail</div>
+<div class="dv-card" style="width:1280px;height:800px;display:grid;grid-template-rows:auto 1fr;color:#0f0f0e">
+  <div style="padding:18px 22px 16px;border-bottom:1.5px solid #0f0f0e">
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">ALLYWAY</span>
+      <span style="font:400 11.5px/1 'IBM Plex Mono',monospace;color:#56564f">bookings-api.v2.yaml · 47 endpoints</span>
+      <span style="margin-left:auto;display:flex;align-items:center;height:30px;padding:0 13px;border:1px solid #0f0f0e;font:600 11.5px/1 'IBM Plex Sans',sans-serif">Authorise</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:14px;height:46px;padding:0 14px;border:1.5px solid #0f0f0e;background:#fff;box-shadow:inset 0 0 0 2px #1a3fb8">
+      <span style="font:400 15px/1 'IBM Plex Mono',monospace">book</span><span style="width:1.5px;height:19px;background:#0f0f0e"></span>
+      <span style="margin-left:auto;font:400 11.5px/1 'IBM Plex Mono',monospace;color:#56564f">14 matches · ↑↓ to move</span>
+    </div>
+    <div style="display:flex;gap:7px;margin-top:12px">
+      <span style="padding:5px 9px;background:#0f0f0e;color:#fbfbf9;font:600 10.5px/1 'IBM Plex Mono',monospace">Tag: Bookings ✕</span>
+      <span style="padding:5px 9px;border:1px solid #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace">+ verb</span>
+      <span style="padding:5px 9px;border:1px solid #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace">+ auth scope</span>
+      <span style="padding:5px 9px;border:1px solid #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace">+ status code</span>
+      <span style="margin-left:auto;padding:5px 9px;border:1px dashed #a9a8a2;font:600 10.5px/1 'IBM Plex Mono',monospace;color:#56564f">Hide deprecated</span>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:520px 1fr;min-height:0">
+    <div style="border-right:1.5px solid #0f0f0e;overflow:hidden">
+      <div style="padding:9px 18px;background:#0f0f0e;color:#fbfbf9;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase">Bookings — 12</div>
+      <div style="padding:15px 18px;border-bottom:1px solid #e6e5df;border-left:4px solid #1a3fb8;background:#e9ecf7">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="padding:3px 6px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 10px/1 'IBM Plex Mono',monospace">POST</span><span style="font:500 14px/1.2 'IBM Plex Mono',monospace">/v2/bookings</span></div>
+        <p style="margin:7px 0 0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:#3f3f38">Create a booking against a held slot. Idempotent.</p>
+        <div style="display:flex;gap:7px;margin-top:9px;font:500 10px/1 'IBM Plex Mono',monospace;color:#3f3f38"><span style="padding:3px 6px;border:1px solid #a9a8a2">bookings.write</span><span style="padding:3px 6px;border:1px solid #a9a8a2">4 fields</span><span style="padding:3px 6px;border:1px solid #a9a8a2">3 responses</span></div>
+      </div>
+      <div style="padding:15px 18px;border-bottom:1px solid #e6e5df">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="padding:3px 6px;background:#dbe4f3;border:1px solid #0b4f9c;color:#0b4f9c;font:600 10px/1 'IBM Plex Mono',monospace">GET</span><span style="font:500 14px/1.2 'IBM Plex Mono',monospace">/v2/bookings</span></div>
+        <p style="margin:7px 0 0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:#3f3f38">List bookings, filtered by venue, date range or status.</p>
+        <div style="display:flex;gap:7px;margin-top:9px;font:500 10px/1 'IBM Plex Mono',monospace;color:#3f3f38"><span style="padding:3px 6px;border:1px solid #a9a8a2">bookings.read</span><span style="padding:3px 6px;border:1px solid #a9a8a2">7 query params</span><span style="padding:3px 6px;border:1px solid #a9a8a2">cursor paged</span></div>
+      </div>
+      <div style="padding:15px 18px;border-bottom:1px solid #e6e5df">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="padding:3px 6px;background:#f7ecd6;border:1px solid #6b4300;color:#6b4300;font:600 10px/1 'IBM Plex Mono',monospace">PATCH</span><span style="font:500 14px/1.2 'IBM Plex Mono',monospace">/v2/bookings/{bookingId}</span></div>
+        <p style="margin:7px 0 0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:#3f3f38">Amend party size, notes or arrival time.</p>
+        <div style="display:flex;gap:7px;margin-top:9px;font:500 10px/1 'IBM Plex Mono',monospace;color:#3f3f38"><span style="padding:3px 6px;border:1px solid #a9a8a2">bookings.write</span><span style="padding:3px 6px;border:1px solid #a9a8a2">1 path param</span></div>
+      </div>
+      <div style="padding:9px 18px;background:#f3f2ed;border-top:1px solid #d8d7d1;border-bottom:1px solid #d8d7d1;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#56564f">Availability — 2 matches</div>
+      <div style="padding:15px 18px;border-bottom:1px solid #e6e5df">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="padding:3px 6px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 10px/1 'IBM Plex Mono',monospace">POST</span><span style="font:500 14px/1.2 'IBM Plex Mono',monospace">/v2/availability/holds</span></div>
+        <p style="margin:7px 0 0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:#3f3f38">Hold a slot for 10 minutes before booking.</p>
+      </div>
+      <div style="padding:15px 18px;opacity:.62">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="padding:3px 6px;background:#f2f1ec;border:1px solid #6d6c66;color:#3f3f38;font:600 10px/1 'IBM Plex Mono',monospace">GET</span><span style="font:500 14px/1.2 'IBM Plex Mono',monospace;text-decoration:line-through">/v2/bookings/search</span></div>
+        <p style="margin:7px 0 0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:#3f3f38">Deprecated in 2.1 — superseded by list filters.</p>
+      </div>
+    </div>
+    <div style="padding:20px 24px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="padding:5px 8px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 11.5px/1 'IBM Plex Mono',monospace">POST</span>
+        <span style="font:500 19px/1.2 'IBM Plex Mono',monospace">/v2/bookings</span>
+      </div>
+      <div style="display:flex;gap:0;margin-top:18px;border-bottom:1.5px solid #0f0f0e">
+        <span style="padding:9px 14px;background:#0f0f0e;color:#fbfbf9;font:600 11.5px/1 'IBM Plex Sans',sans-serif">Overview</span>
+        <span style="padding:9px 14px;font:500 11.5px/1 'IBM Plex Sans',sans-serif;color:#3f3f38">Body</span>
+        <span style="padding:9px 14px;font:500 11.5px/1 'IBM Plex Sans',sans-serif;color:#3f3f38">Responses</span>
+        <span style="padding:9px 14px;font:500 11.5px/1 'IBM Plex Sans',sans-serif;color:#3f3f38">Code</span>
+        <span style="padding:9px 14px;font:500 11.5px/1 'IBM Plex Sans',sans-serif;color:#3f3f38">Try it</span>
+      </div>
+      <p style="margin:16px 0 0;max-width:62ch;font:400 13.5px/1.7 'IBM Plex Sans',sans-serif;color:#0f0f0e;text-wrap:pretty">Creates a booking from a slot hold. The hold must be less than ten minutes old and belong to the same account. Retrying with the same <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px">Idempotency-Key</span> returns the original booking rather than creating a second one.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:20px;border:1px solid #d8d7d1">
+        <div style="padding:13px 15px;border-right:1px solid #d8d7d1"><div style="font:600 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#56564f">Auth</div><div style="margin-top:7px;font:400 12.5px/1.4 'IBM Plex Mono',monospace">Bearer · bookings.write</div></div>
+        <div style="padding:13px 15px"><div style="font:600 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#56564f">Rate limit</div><div style="margin-top:7px;font:400 12.5px/1.4 'IBM Plex Mono',monospace">60 req / min / token</div></div>
+        <div style="padding:13px 15px;border-right:1px solid #d8d7d1;border-top:1px solid #d8d7d1"><div style="font:600 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#56564f">Idempotent</div><div style="margin-top:7px;font:400 12.5px/1.4 'IBM Plex Mono',monospace">Yes — 24h window</div></div>
+        <div style="padding:13px 15px;border-top:1px solid #d8d7d1"><div style="font:600 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#56564f">Since</div><div style="margin-top:7px;font:400 12.5px/1.4 'IBM Plex Mono',monospace">v2.0</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin:22px 0 10px">
+        <h4 style="margin:0;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#56564f">Copy as curl</h4>
+        <span style="margin-left:auto;display:flex;align-items:center;height:26px;padding:0 10px;background:#0f0f0e;color:#fbfbf9;font:600 10.5px/1 'IBM Plex Sans',sans-serif">Copied ✓</span>
+      </div>
+      <pre style="margin:0;padding:13px 15px;background:#0f0f0e;color:#f2f1ec;font:400 12px/1.8 'IBM Plex Mono',monospace;white-space:pre-wrap;word-break:break-all">curl -X POST https://api.bookings.dev/v2/bookings \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"venueId":"01J8QW","holdId":"h_92k","partySize":4,
+       "customer":{"name":"A. Rae","email":"a@rae.dev"}}'</pre>
+      <p style="margin:14px 0 0;font:400 11.5px/1.6 'IBM Plex Sans',sans-serif;color:#56564f">Copying announces “curl command copied, 5 lines” to assistive tech via a polite live region.</p>
+    </div>
+  </div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+<p class="dv-note">Search owns the top of the page and always has focus on load, so typing works before you point at anything. Rows are two-line with metadata, which trades density for scannability — better for the writers and QA in your audience list, worse if someone lives in a 150-endpoint schema all day.</p>
+</sc-if>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Import a schema — empty state, then parsed</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap">
+<div class="dv-card" style="width:620px;height:470px;display:grid;place-items:center;padding:32px;color:#0f0f0e">
+  <div style="width:100%;max-width:440px;text-align:left">
+    <h2 style="margin:0;font:600 26px/1.2 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">Load an OpenAPI schema</h2>
+    <p style="margin:12px 0 0;font:400 13.5px/1.65 'IBM Plex Sans',sans-serif;color:#3f3f38">JSON or YAML, 2.0 through 3.1. Nothing leaves your browser unless you send a request.</p>
+    <div style="margin-top:22px;border:1.5px dashed #0f0f0e;padding:26px 20px;text-align:center;background:#f3f2ed">
+      <div style="font:500 13px/1.4 'IBM Plex Sans',sans-serif">Drop a file here</div>
+      <div style="margin-top:12px;display:inline-flex;align-items:center;height:34px;padding:0 15px;background:#0f0f0e;color:#fbfbf9;font:600 12px/1 'IBM Plex Sans',sans-serif;box-shadow:0 0 0 2px #fbfbf9,0 0 0 4px #1a3fb8">Choose file…</div>
+      <div style="margin-top:12px;font:400 11.5px/1 'IBM Plex Mono',monospace;color:#56564f">or paste a URL below</div>
+    </div>
+    <div style="display:flex;margin-top:14px;border:1px solid #0f0f0e">
+      <span style="flex:1;padding:10px 12px;font:400 12.5px/1 'IBM Plex Mono',monospace;color:#56564f">https://…/openapi.yaml</span>
+      <span style="padding:10px 14px;border-left:1px solid #0f0f0e;font:600 12px/1 'IBM Plex Sans',sans-serif">Fetch</span>
+    </div>
+    <p style="margin:14px 0 0;font:400 11.5px/1.6 'IBM Plex Sans',sans-serif;color:#56564f">The drop zone is a real file input with a visible label — keyboard and drag both work, and the button is the primary path, not a fallback.</p>
+  </div>
+</div>
+<div class="dv-card" style="width:620px;height:470px;padding:26px 28px;color:#0f0f0e">
+  <div style="display:flex;align-items:baseline;gap:10px">
+    <h2 style="margin:0;font:600 19px/1.2 'IBM Plex Mono',monospace">bookings-api.v2.yaml</h2>
+    <span style="font:500 10.5px/1 'IBM Plex Mono',monospace;padding:4px 7px;background:#dff0e6;border:1px solid #14603a;color:#14603a">Parsed OK</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:18px;border:1px solid #0f0f0e">
+    <div style="padding:14px;border-right:1px solid #d8d7d1"><div style="font:600 22px/1 'IBM Plex Mono',monospace">47</div><div style="margin-top:6px;font:400 10.5px/1 'IBM Plex Mono',monospace;color:#56564f">endpoints</div></div>
+    <div style="padding:14px;border-right:1px solid #d8d7d1"><div style="font:600 22px/1 'IBM Plex Mono',monospace">6</div><div style="margin-top:6px;font:400 10.5px/1 'IBM Plex Mono',monospace;color:#56564f">tags</div></div>
+    <div style="padding:14px;border-right:1px solid #d8d7d1"><div style="font:600 22px/1 'IBM Plex Mono',monospace">9</div><div style="margin-top:6px;font:400 10.5px/1 'IBM Plex Mono',monospace;color:#56564f">schemas</div></div>
+    <div style="padding:14px"><div style="font:600 22px/1 'IBM Plex Mono',monospace">3</div><div style="margin-top:6px;font:400 10.5px/1 'IBM Plex Mono',monospace;color:#56564f">deprecated</div></div>
+  </div>
+  <h3 style="margin:22px 0 10px;font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#56564f">3 things worth knowing</h3>
+  <div style="border:1px solid #d8d7d1">
+    <div style="display:flex;gap:12px;padding:11px 13px;border-bottom:1px solid #eceae4;font:400 12px/1.5 'IBM Plex Sans',sans-serif"><span style="flex:none;font:600 10px/1.6 'IBM Plex Mono',monospace;color:#6b4300">WARN</span><span>4 operations have no <code style="font-family:'IBM Plex Mono',monospace">summary</code> — they'll list by path only.</span></div>
+    <div style="display:flex;gap:12px;padding:11px 13px;border-bottom:1px solid #eceae4;font:400 12px/1.5 'IBM Plex Sans',sans-serif"><span style="flex:none;font:600 10px/1.6 'IBM Plex Mono',monospace;color:#6b4300">WARN</span><span><code style="font-family:'IBM Plex Mono',monospace">Customer.email</code> has no format — try-it validation will be loose.</span></div>
+    <div style="display:flex;gap:12px;padding:11px 13px;font:400 12px/1.5 'IBM Plex Sans',sans-serif"><span style="flex:none;font:600 10px/1.6 'IBM Plex Mono',monospace;color:#14603a">INFO</span><span>One security scheme found: <code style="font-family:'IBM Plex Mono',monospace">http bearer</code> — auth setup will ask for a token only.</span></div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:22px">
+    <span style="display:flex;align-items:center;height:36px;padding:0 16px;background:#0f0f0e;color:#fbfbf9;font:600 12.5px/1 'IBM Plex Sans',sans-serif">Browse 47 endpoints</span>
+    <span style="display:flex;align-items:center;height:36px;padding:0 16px;border:1px solid #0f0f0e;font:600 12.5px/1 'IBM Plex Sans',sans-serif">Set up auth first</span>
+  </div>
+</div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+<p class="dv-note">Parse warnings are text-led with a word, not an icon or a colour. They're framed as “things worth knowing” rather than errors, because a schema with loose docs is still perfectly browsable.</p>
+</sc-if>
+</div>
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Auth setup — a sheet, not a settings page</div>
+<div class="dv-card" style="width:600px;padding:26px 28px;color:#0f0f0e">
+  <div style="display:flex;align-items:baseline;gap:12px">
+    <h2 style="margin:0;font:600 20px/1.2 'IBM Plex Sans',sans-serif">Authorise requests</h2>
+    <span style="margin-left:auto;font:400 12px/1 'IBM Plex Mono',monospace;color:#56564f">esc</span>
+  </div>
+  <p style="margin:10px 0 0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:#3f3f38">Credentials stay in this browser tab and are never written to the schema or the clipboard snippet.</p>
+  <div style="margin-top:20px;padding:11px 13px;border:1px solid #d8d7d1;background:#f3f2ed">
+    <div style="font:600 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#56564f">Declared in bookings-api.v2.yaml</div>
+    <div style="margin-top:8px;font:500 13px/1.4 'IBM Plex Mono',monospace">http bearer <span style="font-weight:400;color:#3f3f38">— JWT, header <span style="font-family:'IBM Plex Mono',monospace">Authorization</span></span></div>
+  </div>
+  <div style="margin-top:18px">
+    <label style="display:block;font:600 11px/1 'IBM Plex Sans',sans-serif">Bearer token</label>
+    <div style="display:flex;align-items:center;margin-top:7px;border:1.5px solid #0f0f0e;box-shadow:inset 0 0 0 2px #1a3fb8">
+      <span style="flex:1;padding:10px 12px;font:400 12.5px/1 'IBM Plex Mono',monospace">••••••••••••••••••••4f2a</span>
+      <span style="padding:10px 12px;border-left:1px solid #d8d7d1;font:500 11px/1 'IBM Plex Sans',sans-serif;text-decoration:underline">Show</span>
+    </div>
+    <p style="margin:8px 0 0;font:400 11.5px/1.55 'IBM Plex Sans',sans-serif;color:#56564f">Paste a token or an <code style="font-family:'IBM Plex Mono',monospace">Authorization</code> header — we'll strip the prefix for you.</p>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;margin-top:20px;padding:11px 13px;border:1px solid #14603a;background:#dff0e6">
+    <span style="font:600 10px/1 'IBM Plex Mono',monospace;color:#14603a">VERIFIED</span>
+    <span style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:#14603a">Token valid · 6 scopes · expires in 51 min</span>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:20px">
+    <span style="display:flex;align-items:center;height:36px;padding:0 16px;background:#0f0f0e;color:#fbfbf9;font:600 12.5px/1 'IBM Plex Sans',sans-serif">Save for this session</span>
+    <span style="display:flex;align-items:center;height:36px;padding:0 16px;border:1px solid #0f0f0e;font:600 12.5px/1 'IBM Plex Sans',sans-serif">Test again</span>
+  </div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+<p class="dv-note">The sheet only ever offers what the schema declares — here a single <code style="font-family:'IBM Plex Mono',monospace">http bearer</code> scheme, so there are no tabs to choose between. Multi-scheme schemas get a scheme picker; one-scheme schemas skip it entirely. Every field has a persistent visible label, help text is tied to the input, and the verify result is announced when it changes.</p>
+</sc-if>
+</div>
+
+<div class="dv-opt" id="1f">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Small screen — list collapses to one column, detail is a full page</div>
+<div style="display:flex;gap:20px;flex-wrap:wrap">
+<div class="dv-card" style="width:390px;height:720px;display:grid;grid-template-rows:auto auto 1fr auto;color:#0f0f0e">
+  <div style="display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 14px;border-bottom:1.5px solid #0f0f0e"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">ALLYWAY</span><span style="font:600 11.5px/1 'IBM Plex Sans',sans-serif;padding:8px 10px;border:1px solid #0f0f0e">Auth</span></div>
+  <div style="padding:12px 14px;border-bottom:1px solid #d8d7d1">
+    <div style="display:flex;align-items:center;height:44px;padding:0 12px;border:1.5px solid #0f0f0e;font:400 13px/1 'IBM Plex Sans',sans-serif;color:#56564f">Search 47 endpoints</div>
+    <div style="display:flex;gap:6px;margin-top:10px;overflow:hidden"><span style="padding:8px 11px;background:#0f0f0e;color:#fbfbf9;font:600 11px/1 'IBM Plex Mono',monospace">Bookings</span><span style="padding:8px 11px;border:1px solid #a9a8a2;font:600 11px/1 'IBM Plex Mono',monospace">Venues</span><span style="padding:8px 11px;border:1px solid #a9a8a2;font:600 11px/1 'IBM Plex Mono',monospace">Payments</span></div>
+  </div>
+  <div style="overflow:hidden">
+    <div style="padding:14px;border-bottom:1px solid #e6e5df"><div style="display:flex;align-items:baseline;gap:9px"><span style="padding:3px 6px;background:#dbe4f3;border:1px solid #0b4f9c;color:#0b4f9c;font:600 10px/1 'IBM Plex Mono',monospace">GET</span><span style="font:500 13px/1.3 'IBM Plex Mono',monospace">/v2/bookings</span></div><div style="margin-top:6px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">List bookings for the account</div></div>
+    <div style="padding:14px;border-bottom:1px solid #e6e5df;background:#e9ecf7;border-left:4px solid #1a3fb8"><div style="display:flex;align-items:baseline;gap:9px"><span style="padding:3px 6px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 10px/1 'IBM Plex Mono',monospace">POST</span><span style="font:500 13px/1.3 'IBM Plex Mono',monospace">/v2/bookings</span></div><div style="margin-top:6px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">Create a booking against a held slot</div></div>
+    <div style="padding:14px;border-bottom:1px solid #e6e5df"><div style="display:flex;align-items:baseline;gap:9px"><span style="padding:3px 6px;background:#f7ecd6;border:1px solid #6b4300;color:#6b4300;font:600 10px/1 'IBM Plex Mono',monospace">PATCH</span><span style="font:500 13px/1.3 'IBM Plex Mono',monospace">/v2/bookings/{id}</span></div><div style="margin-top:6px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">Amend party size or notes</div></div>
+    <div style="padding:14px;border-bottom:1px solid #e6e5df"><div style="display:flex;align-items:baseline;gap:9px"><span style="padding:3px 6px;background:#fae4e3;border:1px solid #97161c;color:#97161c;font:600 10px/1 'IBM Plex Mono',monospace">DEL</span><span style="font:500 13px/1.3 'IBM Plex Mono',monospace">/v2/bookings/{id}</span></div><div style="margin-top:6px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">Cancel a booking</div></div>
+    <div style="padding:14px;border-bottom:1px solid #e6e5df"><div style="display:flex;align-items:baseline;gap:9px"><span style="padding:3px 6px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 10px/1 'IBM Plex Mono',monospace">POST</span><span style="font:500 13px/1.3 'IBM Plex Mono',monospace">/v2/availability/holds</span></div><div style="margin-top:6px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">Hold a slot for 10 minutes</div></div>
+  </div>
+  <div style="height:46px;display:flex;align-items:center;padding:0 14px;border-top:1.5px solid #0f0f0e;background:#f3f2ed;font:400 11px/1 'IBM Plex Mono',monospace;color:#56564f">Bookings · 12 of 47 shown</div>
+</div>
+<div class="dv-card" style="width:390px;height:720px;display:grid;grid-template-rows:auto 1fr auto;color:#0f0f0e">
+  <div style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-bottom:1.5px solid #0f0f0e"><span style="font:600 12px/1 'IBM Plex Sans',sans-serif">‹ Bookings</span><span style="margin-left:auto;font:600 11.5px/1 'IBM Plex Sans',sans-serif;padding:8px 10px;border:1px solid #0f0f0e">Copy curl</span></div>
+  <div style="padding:18px 14px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:9px"><span style="padding:4px 7px;background:#dff0e6;border:1px solid #14603a;color:#14603a;font:600 11px/1 'IBM Plex Mono',monospace">POST</span></div>
+    <div style="margin-top:9px;font:500 17px/1.35 'IBM Plex Mono',monospace;word-break:break-all">/v2/bookings</div>
+    <p style="margin:12px 0 0;font:400 13px/1.65 'IBM Plex Sans',sans-serif;color:#3f3f38">Create a booking against a slot held in the last ten minutes.</p>
+    <div style="display:flex;gap:0;margin-top:16px;border:1px solid #0f0f0e"><span style="flex:1;padding:9px;text-align:center;background:#0f0f0e;color:#fbfbf9;font:600 11.5px/1 'IBM Plex Sans',sans-serif">Body</span><span style="flex:1;padding:9px;text-align:center;border-left:1px solid #0f0f0e;font:500 11.5px/1 'IBM Plex Sans',sans-serif">Responses</span><span style="flex:1;padding:9px;text-align:center;border-left:1px solid #0f0f0e;font:500 11.5px/1 'IBM Plex Sans',sans-serif">curl</span></div>
+    <div style="margin-top:14px;border:1px solid #d8d7d1">
+      <div style="padding:11px 12px;border-bottom:1px solid #eceae4"><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">venueId</div><div style="margin-top:5px;font:400 11.5px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">string · required · ULID</div></div>
+      <div style="padding:11px 12px;border-bottom:1px solid #eceae4"><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">holdId</div><div style="margin-top:5px;font:400 11.5px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">string · required · expires in 10 min</div></div>
+      <div style="padding:11px 12px;border-bottom:1px solid #eceae4"><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">partySize</div><div style="margin-top:5px;font:400 11.5px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">integer · required · 1–20</div></div>
+      <div style="padding:11px 12px"><div style="font:500 12.5px/1.3 'IBM Plex Mono',monospace">notes</div><div style="margin-top:5px;font:400 11.5px/1.5 'IBM Plex Sans',sans-serif;color:#3f3f38">string · optional · max 500</div></div>
+    </div>
+  </div>
+  <div style="padding:12px 14px;border-top:1.5px solid #0f0f0e"><div style="display:flex;align-items:center;justify-content:center;height:48px;background:#0f0f0e;color:#fbfbf9;font:600 13px/1 'IBM Plex Sans',sans-serif">Try this request</div></div>
+</div>
+</div>
+<sc-if value="{{ showNotes }}" hint-placeholder-val="{{ true }}">
+<p class="dv-note">Params become stacked definition rows rather than a scrolling table — no horizontal scroll at 320px or at 200% zoom. Every tap target is at least 44px, including the tag chips and the back link.</p>
+</sc-if>
+</div>
+
+</div>
+<p class="dv-next">Try next: “take <a class="dv-oid" href="#1a">1a</a>'s three panes but <a class="dv-oid" href="#1b">1b</a>'s roomier rows” · “draw the try-it-out and live response for <a class="dv-oid" href="#1a">1a</a>” · “add a persistent breadcrumb/where-am-I to <a class="dv-oid" href="#1b">1b</a>”</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showKeyboardHints&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Options&quot;},&quot;showAnnotations&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Options&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props || {};
+    return {
+      showHints: p.showKeyboardHints ?? true,
+      showNotes: p.showAnnotations ?? true
+    };
+  }
+}
+</script>
+</body>
+</html>
