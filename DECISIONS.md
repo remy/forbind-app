@@ -182,6 +182,26 @@ URL would carry a literal `{bookingId}`. Then it announces which parameter,
 marks the field `aria-invalid`, ties a `NEEDED`-led message to it, and moves
 focus there; typing clears it.
 
+**The browser is a fixed frame again.** The mocks draw a 1280×800 app with
+panes that scroll inside it; the build had drifted into a page that scrolled as
+a whole, so the endpoint list ran off the bottom of the window and the keyboard
+hint bar went with it. Above the phone breakpoint the shell is pinned to the
+window and each pane scrolls in its own bounds. On a phone it stays an ordinary
+scrolling page.
+
+**Skip links move focus themselves.** They were plain `href="#detail"` links,
+which is right in a static document and wrong here: the fragment is the router,
+so following one was read as a route naming no operation and cleared both the
+open operation and the filters. They keep their hrefs and preventDefault on
+activation. The tags link resolves across the rail, the chip row and the facet
+buttons, so it always lands on the one the current layout is showing rather
+than on a hidden element.
+
+**The cursor follows the rendered order.** It walked the filtered array while
+the roomy layout rendered the same operations grouped by tag, so the arrows and
+the eye disagreed. The list now records the order as it builds the rows, and
+every keyboard behaviour reads from that.
+
 ---
 
 ## Still not designed, still not invented

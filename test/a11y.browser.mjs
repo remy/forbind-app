@@ -227,6 +227,237 @@ test('the endpoint list is one tab stop with a roving cursor', async () => {
   }
 });
 
+test('the cursor follows the rows as rendered, not some other ordering', async () => {
+  // The roomy layout groups rows by tag, so the order on screen and the order
+  // the filter returns are different lists. The arrows have to follow the eye.
+  for (const density of ['dense', 'roomy']) {
+    const page = await open();
+    try {
+      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.waitForTimeout(500);
+
+      const domOrder = () => page.evaluate(() => [...document.querySelectorAll('a.row')].map((a) => a.dataset.opId));
+      const expected = await domOrder();
+
+      await page.locator('a.row').first().focus();
+      const walked = [];
+      for (let i = 0; i < 8; i += 1) {
+        walked.push(await page.evaluate(() => document.activeElement.dataset.opId));
+        await page.keyboard.press('ArrowDown');
+        await page.waitForTimeout(60);
+      }
+      assert.deepEqual(walked, expected.slice(0, 8), `${density}: the cursor did not follow the rendered order`);
+
+      // And again with a query, where the filter sorts by score.
+      await page.evaluate(() => window.__aw.actions.setQuery('booking'));
+      await page.waitForTimeout(600);
+      const queried = await domOrder();
+      await page.locator('a.row').first().focus();
+      const walkedQ = [];
+      for (let i = 0; i < 5; i += 1) {
+        walkedQ.push(await page.evaluate(() => document.activeElement.dataset.opId));
+        await page.keyboard.press('ArrowDown');
+        await page.waitForTimeout(60);
+      }
+      assert.deepEqual(walkedQ, queried.slice(0, 5), `${density}: filtered cursor did not follow the rendered order`);
+
+      // End lands on the last row on screen, Home on the first.
+      await page.keyboard.press('End');
+      await page.waitForTimeout(150);
+      assert.equal(await page.evaluate(() => document.activeElement.dataset.opId), queried.at(-1));
+      await page.keyboard.press('Home');
+      await page.waitForTimeout(150);
+      assert.equal(await page.evaluate(() => document.activeElement.dataset.opId), queried[0]);
+    } finally {
+      await page.close();
+    }
+  }
+});
+
+test('the list is a real list, with no display:contents anywhere in it', async () => {
+  for (const density of ['dense', 'roomy']) {
+    const page = await open();
+    try {
+      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.waitForTimeout(500);
+
+      const shape = await page.evaluate(() => {
+        const scroller = document.querySelector('.list-scroll');
+        const lists = [...scroller.querySelectorAll('ul')];
+        return {
+          lists: lists.length,
+          // A list may contain nothing but list items.
+          strayChildren: lists.flatMap((ul) => [...ul.children])
+            .filter((c) => c.tagName !== 'LI')
+            .map((c) => c.tagName),
+          rowsNotInListItems: [...scroller.querySelectorAll('a.row')]
+            .filter((a) => a.parentElement.tagName !== 'LI').length,
+          // display:contents on an <li> is what quietly costs it its role.
+          contents: [...scroller.querySelectorAll('*')]
+            .filter((n) => getComputedStyle(n).display === 'contents').length,
+          namedLists: lists.every((ul) => ul.hasAttribute('aria-label') || ul.hasAttribute('aria-labelledby')),
+        };
+      });
+      assert.ok(shape.lists >= 1, `${density}: no list rendered`);
+      assert.deepEqual(shape.strayChildren, [], `${density}: a list contained something other than list items`);
+      assert.equal(shape.rowsNotInListItems, 0, `${density}: a row was not inside a list item`);
+      assert.equal(shape.contents, 0, `${density}: display:contents found inside the list`);
+      assert.ok(shape.namedLists, `${density}: a list had no accessible name`);
+
+      // Every group heading is a real heading, and every row is still reachable.
+      const snapshot = await page.locator('.list-scroll').ariaSnapshot();
+      assert.match(snapshot, /- list/);
+      assert.match(snapshot, /- listitem/);
+      if (density === 'roomy') assert.match(snapshot, /- heading .* \[level=2\]/);
+    } finally {
+      await page.close();
+    }
+  }
+});
+
+test('a skip link lands focus on its target without disturbing the route', async () => {
+  const page = await open();
+  try {
+    // Something worth not losing: a filter and an open operation.
+    await page.evaluate(() => {
+      window.__aw.actions.setQuery('booking');
+      window.__aw.actions.selectOperation(window.__aw.actions.visibleOperations()[1].id);
+    });
+    await page.waitForTimeout(600);
+    const before = await page.evaluate(() => ({
+      op: window.__aw.store.state.selectedOperationId,
+      query: window.__aw.store.state.filters.query,
+      hash: location.hash,
+    }));
+
+    const expected = {
+      'Skip to the endpoint list': 'endpoint-list',
+      'Skip to the operation detail': 'detail',
+      'Skip to search': 'search',
+      'Skip to tags and filters': 'tag-nav',
+    };
+
+    for (const [name, id] of Object.entries(expected)) {
+      await page.getByRole('link', { name }).focus();
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(350);
+      assert.equal(await page.evaluate(() => document.activeElement.id), id, `${name} did not focus its target`);
+      const after = await page.evaluate(() => ({
+        op: window.__aw.store.state.selectedOperationId,
+        query: window.__aw.store.state.filters.query,
+        hash: location.hash,
+      }));
+      assert.deepEqual(after, before, `${name} changed the route or the filters`);
+    }
+
+    // Skipping to the search selects what is there, so typing replaces it.
+    await page.getByRole('link', { name: 'Skip to search' }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(250);
+    await page.keyboard.type('venue');
+    await page.waitForTimeout(500);
+    assert.equal(await page.evaluate(() => window.__aw.store.state.filters.query), 'venue');
+  } finally {
+    await page.close();
+  }
+});
+
+test('the tags skip link follows the tags wherever the layout puts them', async () => {
+  // A rail at full width, a chip row once it folds, facets in the roomy IA.
+  const cases = [
+    [{ width: 1280, height: 900 }, 'dense', 'tag-nav'],
+    [{ width: 1000, height: 800 }, 'dense', 'tag-chips'],
+    [{ width: 1280, height: 900 }, 'roomy', 'filters'],
+  ];
+  for (const [viewport, density, id] of cases) {
+    const page = await open(`#/op/post-v2-bookings?src=${SRC}`, { viewport });
+    try {
+      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.waitForTimeout(500);
+      await page.getByRole('link', { name: 'Skip to tags and filters' }).focus();
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(350);
+      assert.equal(await page.evaluate(() => document.activeElement.id), id,
+        `${density} at ${viewport.width}px went somewhere else`);
+      assert.ok(await page.evaluate(() => document.activeElement.getClientRects().length > 0),
+        `${density} at ${viewport.width}px focused something invisible`);
+    } finally {
+      await page.close();
+    }
+  }
+});
+
+test('the panes scroll inside the window rather than the page scrolling', async () => {
+  // Measured with a real wheel gesture: `documentElement.scrollHeight` reports
+  // a scrollable document here even when nothing can move, so the honest test
+  // is whether the banner stays put while the list underneath it travels.
+  for (const density of ['dense', 'roomy']) {
+    const page = await open(`#/op/post-v2-bookings?src=${SRC}`, { viewport: { width: 1280, height: 700 } });
+    try {
+      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.waitForTimeout(600);
+
+      const bannerTop = () => page.evaluate(() => document.querySelector('.topbar').getBoundingClientRect().top);
+      const listTop = () => page.evaluate(() => document.querySelector('.list-scroll').scrollTop);
+      const listBox = await page.locator('.list-scroll').boundingBox();
+
+      assert.equal(await bannerTop(), 0);
+      assert.equal(await listTop(), 0);
+
+      await page.mouse.move(listBox.x + listBox.width / 2, listBox.y + listBox.height / 2);
+      await page.mouse.wheel(0, 600);
+      await page.waitForTimeout(300);
+
+      assert.ok(await listTop() > 0, `${density}: the list did not scroll inside its pane`);
+      assert.equal(await bannerTop(), 0, `${density}: the whole page scrolled`);
+
+      // The hint bar is pinned to the bottom of the pane, not pushed off screen.
+      const hint = await page.locator('.hintbar').boundingBox();
+      const viewportHeight = page.viewportSize().height;
+      assert.ok(hint.y + hint.height <= viewportHeight + 1, `${density}: the hint bar fell off the bottom`);
+    } finally {
+      await page.close();
+    }
+  }
+});
+
+test('a long detail pane scrolls without taking the list with it', async () => {
+  const page = await open(`#/op/post-v2-bookings?src=${SRC}`, { viewport: { width: 1280, height: 700 } });
+  try {
+    const detail = await page.locator('.pane--detail').boundingBox();
+    const listTop = () => page.evaluate(() => document.querySelector('.list-scroll').scrollTop);
+    const detailTop = () => page.evaluate(() => document.querySelector('.pane--detail').scrollTop);
+
+    await page.mouse.move(detail.x + detail.width / 2, detail.y + detail.height / 2);
+    await page.mouse.wheel(0, 500);
+    await page.waitForTimeout(300);
+
+    assert.ok(await detailTop() > 0, 'the detail pane did not scroll');
+    assert.equal(await listTop(), 0, 'scrolling the detail moved the list too');
+    assert.equal(await page.evaluate(() => document.querySelector('.topbar').getBoundingClientRect().top), 0);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a phone keeps ordinary page scrolling', async () => {
+  const page = await open(`#/?src=${SRC}`, { viewport: { width: 390, height: 720 } });
+  try {
+    const bannerTop = () => page.evaluate(() => document.querySelector('.topbar').getBoundingClientRect().top);
+    assert.equal(await bannerTop(), 0);
+    await page.mouse.move(195, 500);
+    await page.mouse.wheel(0, 500);
+    await page.waitForTimeout(300);
+    assert.ok(await bannerTop() < 0, 'the phone layout stopped scrolling as a page');
+    assert.equal(
+      await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1),
+      false,
+    );
+  } finally {
+    await page.close();
+  }
+});
+
 test('the cursor never loses focus to the body while moving', async () => {
   const page = await open();
   try {

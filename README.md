@@ -11,7 +11,7 @@ happen in the browser; nothing about your schema is uploaded.
 npm start           # http://localhost:8080
 npm test            # 112 unit tests, no dependencies, no browser
 npm install
-npm run test:a11y   # 30 checks in a real browser (needs Playwright + axe-core)
+npm run test:a11y   # 37 checks in a real browser (needs Playwright + axe-core)
 ```
 
 There is no build step. What is in this repository is what the browser loads.
@@ -85,7 +85,11 @@ The point of the project, so it is worth being specific.
 
 **Semantics.** Real landmarks with accessible names: `banner`, `navigation`
 (tags and schemas), `main`, and a named region per pane. One `<h1>` naming the
-tool and the loaded document. Parameters render as a real `<table>` with
+tool and the loaded document. The endpoint list is a real list of real list
+items — grouped results are a heading per group with that group's own named
+list, rather than one list with headings wedged inside it, and nothing in it is
+`display: contents`, which is the one thing that can quietly cost a list its
+semantics. Parameters render as a real `<table>` with
 `scope`ed headers where there is room, and as a real `<dl>` of stacked rows
 where there is not — switched on a media query, because restyling a table to
 `display: block` keeps the look and throws the semantics away.
@@ -114,7 +118,16 @@ strikethrough is not announced.
 Rows are anchors, so `Enter`, middle-click and open-in-new-tab work without
 being reimplemented, and every operation has an address you can paste into a
 ticket. Cursor moves patch attributes in place rather than re-rendering — a
-rebuilt row drops focus to the body and the whole model dies on the spot.
+rebuilt row drops focus to the body and the whole model dies on the spot. The
+cursor walks the rows *as rendered*, which is not the same list as the filter
+returns once the roomy layout groups them by tag; if those two ever disagree
+the arrows stop matching the eye.
+
+The skip links move focus themselves rather than letting the browser navigate
+to the fragment — the URL's fragment is the router here, so `#detail` would be
+read as a route naming no operation and would throw away the selection and the
+filters on the way past. The tags link resolves to whichever of the rail, the
+chip row or the facet buttons the current layout is actually showing.
 
 **Focus.** Every focusable element has a visible indicator and none of them are
 removed: a `2px` accent outline offset clear of the element, or an inset ring
@@ -128,6 +141,13 @@ and the breakpoints themselves — is in `rem`, so a browser *text size* setting
 scales the whole interface and not just the prose. Verified for no horizontal
 page scroll at 320px, at 200% zoom and at 400% zoom. Three panes become two,
 then one column with the detail as a pushed page.
+
+Above the phone breakpoint the browser is a fixed frame: the banner stays put
+and each pane scrolls inside its own bounds, so the endpoint list is a column
+you can run down without the detail beside it moving. On a phone that is
+dropped and the page scrolls normally, because the detail is a pushed page of
+its own and a document that scrolls with the browser chrome beats a pane that
+scrolls inside it.
 
 **Live regions.** One polite region and one assertive one, both present from
 first paint (a region created and filled in the same tick is routinely missed).

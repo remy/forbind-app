@@ -43,18 +43,36 @@ class AwApp extends AwElement {
 
     if (!this.#mounted) this.#mount();
 
+    // Where the tags live depends on the layout: a rail at full width, a chip
+    // row once that folds, facet buttons in the roomy IA. The link is offered
+    // once and resolves to whichever of them is actually on screen — a skip
+    // link pointing at a hidden element is worse than no skip link.
     const skipTargets = isBrowser
       ? [
           ['#endpoint-list', 'Skip to the endpoint list'],
           ['#detail', 'Skip to the operation detail'],
           ['#search', 'Skip to search'],
-          ['#tag-nav', 'Skip to tags and schemas'],
+          ['#tag-nav, #tag-chips, #filters', 'Skip to tags and filters'],
         ]
       : [['#main', 'Skip to the schema import form']];
 
     replace(
       this.#skipLinks,
-      skipTargets.map(([href, label]) => el('a', { class: 'skip-link', href, text: label })),
+      skipTargets.map(([selector, label]) => el('a', {
+        class: 'skip-link',
+        href: selector.split(',')[0].trim(),
+        text: label,
+        // The fragment belongs to the router here, so letting the browser
+        // navigate to `#detail` would be read as a route — one that names no
+        // operation, which threw away both the selection and the filters. The
+        // link keeps its href for semantics and for anyone who opens it in a
+        // new tab; activating it moves focus directly instead.
+        onclick: (event) => {
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+          event.preventDefault();
+          focusSkipTarget(selector);
+        },
+      })),
     );
 
     replace(this.#body, [isBrowser ? this.#renderBrowser(state, small) : this.#renderImport()]);
@@ -158,13 +176,37 @@ class AwApp extends AwElement {
     return el(
       'div',
       {
-        class: 'app',
+        class: 'app app--browse',
         'data-density': roomy ? 'roomy' : 'dense',
         'data-mobile-view': small ? state.mobileView : 'both',
       },
       [banner, el('div', { class: 'shell' }, [rail, main])],
     );
   }
+}
+
+/**
+ * Put focus on a skip link's target and scroll it into view.
+ *
+ * A skip link that only scrolls has not done its job — the next Tab would
+ * carry on from where it was, which is the thing the link exists to avoid. The
+ * panes carry `tabindex="-1"` so they can take focus without becoming tab
+ * stops; where the target is already a control, like the search field, it is
+ * focused and its text selected so typing replaces the query.
+ *
+ * @param {string} selector one or more `#id` fragments; the first one that is
+ *   actually rendered wins, so a link stays useful across the layouts.
+ */
+function focusSkipTarget(selector) {
+  const target = [...document.querySelectorAll(selector)]
+    .find((node) => node.offsetParent !== null || node.getClientRects().length > 0);
+  if (!target) return;
+  target.focus({ preventScroll: true });
+  target.scrollIntoView({
+    block: 'start',
+    behavior: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+  });
+  if (typeof target.select === 'function') target.select();
 }
 
 define('aw-app', AwApp);

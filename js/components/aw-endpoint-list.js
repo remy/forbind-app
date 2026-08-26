@@ -20,7 +20,7 @@
  */
 
 import { AwElement, define } from '../lib/element.js';
-import { el, replace } from '../lib/dom.js';
+import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { verbLabel, verbClass } from '../lib/openapi.js';
 import { groupByTag, typeAheadIndex } from '../lib/search.js';
@@ -34,6 +34,20 @@ class AwEndpointList extends AwElement {
   #typeTimer = null;
   #scroll = null;
   #hintCount = null;
+
+  /**
+   * The operations in the order they were actually rendered.
+   *
+   * This is not always the order `visibleOperations()` returns them in: the
+   * roomy layout groups by tag, so a filtered-and-sorted array and the rows on
+   * screen can disagree completely. Everything the keyboard does — the arrows,
+   * Home/End, type-ahead, the "3 of 32" counter, which row holds the tab stop
+   * — reads from here, so the cursor always moves to the row underneath the
+   * one it was on.
+   *
+   * @type {object[]}
+   */
+  #ordered = [];
 
   /**
    * Moving the cursor must not rebuild the list.
@@ -53,19 +67,20 @@ class AwEndpointList extends AwElement {
   }
 
   #patchRows(state) {
-    const visible = this.actions.visibleOperations();
     for (const row of this.#rows()) {
       const id = row.dataset.opId;
       if (state.selectedOperationId === id) row.setAttribute('aria-current', 'true');
       else row.removeAttribute('aria-current');
     }
-    this.#syncRoving(visible, state);
-    const index = visible.findIndex((op) => op.id === state.activeRowId);
-    if (this.#hintCount) {
-      this.#hintCount.textContent = visible.length
-        ? `${Math.max(0, index) + 1} of ${visible.length}`
-        : '0 of 0';
-    }
+    this.#syncRoving(state);
+    this.#updateCount(state);
+  }
+
+  #updateCount(state) {
+    if (!this.#hintCount) return;
+    const total = this.#ordered.length;
+    const index = this.#ordered.findIndex((op) => op.id === state.activeRowId);
+    this.#hintCount.textContent = total ? `${Math.max(0, index) + 1} of ${total}` : '0 of 0';
   }
 
   render(state) {
@@ -77,8 +92,9 @@ class AwEndpointList extends AwElement {
 
     const visible = this.actions.visibleOperations();
     const roomy = state.density === 'roomy';
-    const activeIndex = Math.max(0, visible.findIndex((op) => op.id === state.activeRowId));
 
+    // #ordered is filled as the rows are built, so it cannot drift from them.
+    this.#ordered = [];
     const listBody = visible.length
       ? roomy
         ? this.#renderGrouped(state, visible)
@@ -87,24 +103,14 @@ class AwEndpointList extends AwElement {
 
     this.#scroll = el(
       'div',
-      { class: 'list-scroll' },
-      [
-        el(
-          'ul',
-          {
-            class: 'endpoints',
-            'aria-label': `Endpoints, ${visible.length} of ${schema.operations.length}`,
-            onkeydown: (event) => this.#onKeyDown(event, visible),
-          },
-          listBody,
-        ),
-      ],
+      {
+        class: 'list-scroll',
+        onkeydown: (event) => this.#onKeyDown(event),
+      },
+      listBody,
     );
 
-    this.#hintCount = el('span', {
-      class: 'hintbar__count',
-      text: visible.length ? `${activeIndex + 1} of ${visible.length}` : '0 of 0',
-    });
+    this.#hintCount = el('span', { class: 'hintbar__count' });
 
     replace(this, [
       roomy ? null : el('aw-verb-bar', {}),
@@ -114,7 +120,8 @@ class AwEndpointList extends AwElement {
       this.#renderStatusBar(state, visible),
     ]);
 
-    this.#syncRoving(visible, state);
+    this.#syncRoving(state);
+    this.#updateCount(state);
   }
 
   /* --- rows ------------------------------------------------------------- */
@@ -184,26 +191,47 @@ class AwEndpointList extends AwElement {
           ],
     );
 
-    return el('li', {}, [anchor]);
+    return anchor;
+  }
+
+  /** @returns {HTMLElement} an `<li>`, recording the operation's place in the run. */
+  #listItem(state, op, roomy) {
+    this.#ordered.push(op);
+    return el('li', {}, [this.#renderRow(state, op, roomy)]);
   }
 
   #renderFlat(state, visible) {
-    return visible.map((op) => this.#renderRow(state, op, false));
+    return [
+      el('ul', {
+        class: 'endpoints',
+        'aria-label': `Endpoints, ${visible.length} of ${state.schema.operations.length}`,
+      }, visible.map((op) => this.#listItem(state, op, false))),
+    ];
   }
 
+  /**
+   * Grouped rows are a heading followed by that group's own list, rather than
+   * one list with headings wedged inside it. A list may only contain list
+   * items, and the alternative — an `<li>` set to `display: contents` so the
+   * heading inside it can stick — is exactly the construct that drops the
+   * listitem role in some browsers. This way the headings are real headings,
+   * each group is a named list, and `position: sticky` works because the
+   * heading is a sibling in the scroll container.
+   */
   #renderGrouped(state, visible) {
     const groups = groupByTag(visible, this.state.schema.tags);
     const out = [];
     groups.forEach((group, index) => {
-      out.push(
-        el('li', { class: 'group-item' }, [
-          el('h2', {
-            class: `group-head${index === 0 ? ' group-head--first' : ''}`,
-            text: `${group.name} — ${group.operations.length}`,
-          }),
-        ]),
-      );
-      for (const op of group.operations) out.push(this.#renderRow(state, op, true));
+      const headingId = uid('group');
+      out.push(el('h2', {
+        class: `group-head${index === 0 ? ' group-head--first' : ''}`,
+        id: headingId,
+        text: `${group.name} — ${group.operations.length}`,
+      }));
+      out.push(el('ul', {
+        class: 'endpoints',
+        'aria-labelledby': headingId,
+      }, group.operations.map((op) => this.#listItem(state, op, true))));
     });
     return out;
   }
@@ -218,7 +246,7 @@ class AwEndpointList extends AwElement {
     ].filter(Boolean);
 
     return [
-      el('li', {}, [
+      el('div', { class: 'empty-wrap' }, [
         el('div', { class: 'empty' }, [
           el('p', { class: 'empty__title', text: 'No endpoints match' }),
           el('p', {
@@ -278,44 +306,57 @@ class AwEndpointList extends AwElement {
     return [...this.querySelectorAll('a.row')];
   }
 
-  #syncRoving(visible, state) {
+  #syncRoving(state) {
     const rows = this.#rows();
     if (!rows.length) return;
-    let index = visible.findIndex((op) => op.id === state.activeRowId);
-    if (index < 0) index = Math.max(0, visible.findIndex((op) => op.id === state.selectedOperationId));
-    for (const [i, row] of rows.entries()) {
-      row.tabIndex = i === index ? 0 : -1;
-    }
+    let index = this.#ordered.findIndex((op) => op.id === state.activeRowId);
+    if (index < 0) index = this.#ordered.findIndex((op) => op.id === state.selectedOperationId);
+    if (index < 0) index = 0;
+    for (const [i, row] of rows.entries()) row.tabIndex = i === index ? 0 : -1;
   }
 
   #isNarrow() {
     return globalThis.matchMedia?.('(max-width: 48rem)').matches ?? false;
   }
 
-  #moveTo(visible, index, { announceRow = false } = {}) {
-    if (!visible.length) return;
-    const clamped = Math.min(Math.max(index, 0), visible.length - 1);
-    const op = visible[clamped];
-    this.actions.setActiveRow(op.id);
-    const row = this.querySelector(`a.row[data-op-id="${CSS.escape(op.id)}"]`);
-    if (row) {
-      for (const other of this.#rows()) other.tabIndex = -1;
-      row.tabIndex = 0;
-      row.focus({ preventScroll: false });
-    }
-    if (this.#hintCount) this.#hintCount.textContent = `${clamped + 1} of ${visible.length}`;
-    if (announceRow) {
-      announce(`${op.method} ${op.path}, ${clamped + 1} of ${visible.length}`);
+  /** Move the cursor to a position in the rendered run. */
+  #moveTo(index, { announceRow = false } = {}) {
+    const rows = this.#rows();
+    if (!rows.length) return;
+    const clamped = Math.min(Math.max(index, 0), rows.length - 1);
+    const row = rows[clamped];
+    const op = this.#ordered[clamped];
+    for (const other of rows) other.tabIndex = -1;
+    row.tabIndex = 0;
+    row.focus({ preventScroll: false });
+    if (op) this.actions.setActiveRow(op.id);
+    if (this.#hintCount) this.#hintCount.textContent = `${clamped + 1} of ${rows.length}`;
+    if (announceRow && op) {
+      announce(`${op.method} ${op.path}, ${clamped + 1} of ${rows.length}`);
     }
   }
 
-  #onKeyDown(event, visible) {
-    const current = Math.max(0, visible.findIndex((op) => op.id === this.state.activeRowId));
+  /** Where the cursor is in the rendered run, by the row that actually has focus. */
+  #cursorIndex() {
+    const rows = this.#rows();
+    const focused = rows.indexOf(document.activeElement);
+    if (focused >= 0) return focused;
+    const byState = this.#ordered.findIndex((op) => op.id === this.state.activeRowId);
+    return byState < 0 ? 0 : byState;
+  }
+
+  #onKeyDown(event) {
+    // Only the rows drive the cursor; a control that happens to sit inside the
+    // scroller keeps its own keys.
+    if (!(event.target instanceof HTMLElement) || !event.target.classList.contains('row')) return;
+
+    const total = this.#ordered.length;
+    const current = this.#cursorIndex();
 
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        this.#moveTo(visible, current + 1);
+        this.#moveTo(current + 1);
         return;
       case 'ArrowUp':
         event.preventDefault();
@@ -325,28 +366,28 @@ class AwEndpointList extends AwElement {
           this.actions.focusSearch();
           return;
         }
-        this.#moveTo(visible, current - 1);
+        this.#moveTo(current - 1);
         return;
       case 'Home':
         event.preventDefault();
-        this.#moveTo(visible, 0);
+        this.#moveTo(0);
         return;
       case 'End':
         event.preventDefault();
-        this.#moveTo(visible, visible.length - 1);
+        this.#moveTo(total - 1);
         return;
       case 'PageDown':
         event.preventDefault();
-        this.#moveTo(visible, current + 10, { announceRow: true });
+        this.#moveTo(current + 10, { announceRow: true });
         return;
       case 'PageUp':
         event.preventDefault();
-        this.#moveTo(visible, current - 10, { announceRow: true });
+        this.#moveTo(current - 10, { announceRow: true });
         return;
       case ' ':
       case 'Spacebar':
         event.preventDefault();
-        if (visible[current]) this.actions.selectOperation(visible[current].id, { focusRow: true });
+        if (this.#ordered[current]) this.actions.selectOperation(this.#ordered[current].id, { focusRow: true });
         return;
       case '/':
         // `/` is the filter shortcut, but it is also in every path a person
@@ -376,10 +417,14 @@ class AwEndpointList extends AwElement {
       const needle = this.#typeBuffer.length > 1 && this.#typeBuffer.split('').every((c) => c === this.#typeBuffer[0])
         ? this.#typeBuffer[0]
         : this.#typeBuffer;
-      const found = typeAheadIndex(visible, needle, this.#typeBuffer.length > 1 && needle === this.#typeBuffer ? current - 1 : current);
+      const found = typeAheadIndex(
+        this.#ordered,
+        needle,
+        this.#typeBuffer.length > 1 && needle === this.#typeBuffer ? current - 1 : current,
+      );
       if (found >= 0) {
         event.preventDefault();
-        this.#moveTo(visible, found, { announceRow: true });
+        this.#moveTo(found, { announceRow: true });
       }
     }
   }
@@ -454,7 +499,7 @@ class AwTagChips extends AwElement {
       return;
     }
     replace(this, [
-      el('div', { class: 'tagbar', role: 'group', 'aria-label': 'Filter by tag' }, [
+      el('div', { class: 'tagbar', id: 'tag-chips', tabindex: '-1', role: 'group', 'aria-label': 'Filter by tag' }, [
         el('button', {
           type: 'button',
           class: 'chip',

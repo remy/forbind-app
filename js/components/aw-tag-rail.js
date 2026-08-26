@@ -133,7 +133,7 @@ class AwFacets extends AwElement {
     const panelId = 'facet-panel';
 
     replace(this, [
-      el('div', { class: 'filterbar', role: 'group', 'aria-label': 'Filters' }, [
+      el('div', { class: 'filterbar', id: 'filters', tabindex: '-1', role: 'group', 'aria-label': 'Filters' }, [
         ...applied.map((item) =>
           el('button', {
             type: 'button',

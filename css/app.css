@@ -13,13 +13,59 @@
    become separate pages, as drawn in 1f.
 --------------------------------------------------------------------------- */
 
+/*
+ * Custom elements are `display: inline` until told otherwise, and several of
+ * these sit directly between a pane and the thing that is supposed to fill it.
+ * An undeclared element in that position quietly swallows `flex: 1` from the
+ * child below it, which is how the endpoint list ended up taller than the
+ * window instead of scrolling inside it.
+ */
+aw-app,
+aw-topbar,
+aw-search-block,
+aw-meta-strip,
+aw-tag-rail,
+aw-facets,
+aw-endpoint-list,
+aw-verb-bar,
+aw-tag-chips,
+aw-detail,
+aw-code-block,
+aw-try-it,
+aw-import { display: block; }
+
+/* The list component *is* the pane's contents, so it takes the pane's shape:
+   a column whose middle section scrolls. */
+.pane--list > aw-endpoint-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .app {
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 100vh;
   min-height: 100dvh;
-  border: var(--rule-w-strong) solid var(--rule-strong);
-  border-width: 0;
+}
+
+/*
+ * The browser is a fixed frame, as the design draws it: the banner stays put
+ * and each pane scrolls inside its own bounds, so the endpoint list is a column
+ * you can run down without the whole page moving under the detail beside it.
+ *
+ * Below the two-pane breakpoint this is dropped and the page scrolls normally
+ * — on a phone the detail is a pushed page of its own, and a document that
+ * scrolls with the browser chrome beats a pane that scrolls inside it.
+ */
+@media (min-width: 48.0625rem) {
+  .app--browse {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
 }
 
 /* --- top bar (1a) -------------------------------------------------------- */
@@ -99,6 +145,17 @@
   grid-template-columns: var(--w-rail) var(--w-list) minmax(0, 1fr);
   min-height: 0;
 }
+/*
+ * A grid's implicit row is `auto`, which means "as tall as the tallest pane"
+ * — so a long detail pane would grow the row, and the panes would never reach
+ * the point of scrolling inside themselves. Pinning the row to the available
+ * space is what makes `overflow` on the panes mean anything.
+ */
+.app--browse .shell {
+  overflow: hidden;
+  grid-template-rows: minmax(0, 1fr);
+}
+.app--browse .main { grid-template-rows: minmax(0, 1fr); }
 
 .rail {
   border-right: var(--rule-w-strong) solid var(--rule-strong);
@@ -302,7 +359,11 @@
 --------------------------------------------------------------------------- */
 .list-scroll { flex: 1; overflow-y: auto; min-height: 0; }
 
-.endpoints { display: flex; flex-direction: column; }
+/* Plain block flow: each <li> is a box and the row fills it. Nothing here is
+   `display: contents`, which is the one thing that can quietly cost a list its
+   listitem semantics. */
+.endpoints { display: block; }
+.endpoints > li { display: block; }
 
 .row {
   display: grid;
@@ -476,5 +537,3 @@
 /* The back affordance's chevron is decorative; the gap keeps it off the word. */
 .detail-back__link { gap: var(--s-6); }
 
-/* A group header is a list item that carries a heading, not a row. */
-.group-item { display: contents; }
