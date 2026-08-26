@@ -202,6 +202,47 @@ the roomy layout rendered the same operations grouped by tag, so the arrows and
 the eye disagreed. The list now records the order as it builds the rows, and
 every keyboard behaviour reads from that.
 
+**The columns fold away.** Three panes is the right default and the wrong
+answer when the thing being read is a response body thirteen levels deep. Both
+navigation columns are now disclosures — `Tags` and `List` in the top bar —
+and folding both gives the detail the whole frame, which is all "maximise"
+means here; `⇧⌘M` does the pair in one step.
+
+A folded column is removed from the grid rather than shrunk to a strip. A strip
+would have to carry a control to bring the column back, which is a second tab
+stop for a state the top bar is already reporting, and the design has no
+vocabulary for a vertical label. So the toggles stay put and stay legible:
+`aria-expanded` says which way round each is, a caret turns towards where the
+column went, and the fill changes — three cues, none of them colour alone.
+
+Folding the rail is the same substitution the 75rem breakpoint already makes:
+the tags become the chip row that stands in for the rail, so what is saved is
+216px of width rather than the ability to filter by tag. One rail, one stand-in,
+whichever reason the rail is not there.
+
+The care is in the ways back. Focus is moved out of a column before it stops
+being focusable, or it lands on the body. A skip link aimed at a folded column
+unfolds it on the way past rather than pointing at something invisible — but
+only where nothing it names is on screen, so the tags link lands on the chips
+instead of undoing the fold. `/`
+then `↓`, and anything else that moves into the list, brings the list back
+first — the rows are still in the document when the column is folded, so
+focusing one would otherwise fail silently. Below the phone breakpoint none of
+it applies: the list and the detail are already separate pages there, so the
+flags are ignored and the toggles are not rendered rather than sitting there
+doing nothing.
+
+Neither the shell nor the top bar re-renders for a fold. Both patch the
+attributes in place, because the button that did the folding lives in the top
+bar and a replaced button takes the keyboard's focus to the body with it —
+the same rule the endpoint list's cursor has always followed.
+
+**Two files were split rather than grown.** `css/app.css` was 539 lines of two
+subjects; the endpoint list moved to `css/list.css`. The browser suite was one
+944-line file; it is now `test/a11y/`, one file per subject over a shared
+harness, run by the same `npm run test:a11y`. Nothing in either changed
+besides where it lives.
+
 **Responses show their payload.** They were a status code and a phrase, which
 is all the mock draws — but with a schema like Oak's, whose responses are
 inline anonymous objects nested three deep, that told you nothing about what

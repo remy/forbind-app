@@ -287,6 +287,7 @@ class AwEndpointList extends AwElement {
       hint('↵', 'Enter', 'open'),
       hint('/', 'Slash', 'filter'),
       hint('⇧⌘F', 'Shift Command F, or Shift Control F', 'verbs'),
+      hint('⇧⌘M', 'Shift Command M, or Shift Control M', 'wide'),
       hint('⌘K', 'Command K, or Control K', 'palette'),
       this.#hintCount,
     ]);
@@ -470,12 +471,14 @@ class AwVerbBar extends AwElement {
 }
 
 /**
- * The tag chips that stand in for the rail once it is off screen. Rendered
- * always and hidden by CSS at wide widths would mean two tab stops for the
- * same control, so it is a media query in JS instead.
+ * The tag chips that stand in for the rail once it is off screen — whether
+ * that is because the window is too narrow for it or because it has been
+ * folded away by hand. Rendered always and hidden by CSS at wide widths would
+ * mean two tab stops for the same control, so it is a media query in JS
+ * instead.
  */
 class AwTagChips extends AwElement {
-  static observes = ['schema', 'filters'];
+  static observes = ['schema', 'filters', 'railCollapsed'];
 
   #media = null;
   #onChange = null;
@@ -494,7 +497,8 @@ class AwTagChips extends AwElement {
 
   render(state) {
     const { schema, filters } = state;
-    if (!schema || !(this.#media?.matches ?? false)) {
+    const railOffScreen = (this.#media?.matches ?? false) || state.railCollapsed;
+    if (!schema || !railOffScreen) {
       replace(this, []);
       return;
     }

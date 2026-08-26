@@ -5,7 +5,7 @@
  *
  * | What              | Where            | Lifetime                        |
  * |-------------------|------------------|---------------------------------|
- * | Theme, density    | localStorage     | until changed                   |
+ * | Display prefs     | localStorage     | until changed                   |
  * | The loaded schema | localStorage     | until another one is loaded     |
  * | A credential      | sessionStorage   | this tab, unless you ask for... |
  * | ...if remembered  | localStorage     | until you forget it             |
@@ -23,7 +23,7 @@ const PREFS_KEY = 'allyway:prefs';
 const SCHEMA_KEY = 'allyway:schema';
 const AUTH_KEY = 'allyway:auth';
 
-const PERSISTED_PREFS = ['theme', 'density', 'showHints'];
+const PERSISTED_PREFS = ['theme', 'density', 'showHints', 'railCollapsed', 'listCollapsed'];
 
 /**
  * A schema much larger than this is not worth pushing through localStorage —

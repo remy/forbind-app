@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "test": "node --test 'test/*.test.mjs'",
-    "test:a11y": "node --test --test-concurrency=1 test/a11y.browser.mjs"
+    "test:a11y": "node --test --test-concurrency=1 'test/a11y/*.mjs'"
   },
   "engines": {
     "node": ">=20"

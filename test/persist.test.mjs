@@ -44,9 +44,13 @@ const SECRET = 'a-real-secret-token-4f2a';
 test('preferences round-trip, and nothing else is taken from that key', () => {
   const local = fakeStorage();
   withStorage(local, fakeStorage(), () => {
-    writePrefs({ theme: 'dark', density: 'roomy', showHints: false, credential: SECRET, schema: {} });
-    assert.deepEqual(JSON.parse(local.dump()['allyway:prefs']), { theme: 'dark', density: 'roomy', showHints: false });
-    assert.deepEqual(readPrefs(), { theme: 'dark', density: 'roomy', showHints: false });
+    writePrefs({
+      theme: 'dark', density: 'roomy', showHints: false, railCollapsed: true, listCollapsed: false,
+      credential: SECRET, schema: {},
+    });
+    const kept = { theme: 'dark', density: 'roomy', showHints: false, railCollapsed: true, listCollapsed: false };
+    assert.deepEqual(JSON.parse(local.dump()['allyway:prefs']), kept);
+    assert.deepEqual(readPrefs(), kept);
     assert.ok(!JSON.stringify(local.dump()).includes(SECRET));
   });
 });
@@ -189,7 +193,9 @@ test('storage that is blocked outright does not throw on the way past', () => {
   };
   withStorage(blocked, blocked, () => {
     assert.deepEqual(readPrefs(), {});
-    assert.doesNotThrow(() => writePrefs({ theme: 'dark', density: 'dense', showHints: true }));
+    assert.doesNotThrow(() => writePrefs({
+      theme: 'dark', density: 'dense', showHints: true, railCollapsed: false, listCollapsed: false,
+    }));
     assert.equal(readSchema(), null);
     assert.equal(writeSchema({ name: 'a', url: null, text: '{}' }), null);
     assert.equal(readAuth('k'), null);

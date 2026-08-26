@@ -343,6 +343,7 @@ const actions = {
   },
 
   backToList() {
+    actions.showList();
     store.set({ mobileView: 'list' });
     go({ view: 'browse' });
     requestAnimationFrame(() => {
@@ -352,6 +353,10 @@ const actions = {
   },
 
   focusList() {
+    // The rows are still in the document when the column is folded away, so
+    // focusing one would silently fail. Bring the list back first: being sent
+    // to a list you cannot see is worse than the shortcut doing nothing.
+    actions.showList();
     const row = document.querySelector('a.row[tabindex="0"]') ?? document.querySelector('a.row');
     row?.focus();
   },
@@ -441,6 +446,64 @@ const actions = {
     store.set({ showHints });
   },
 
+  /* --- columns ---------------------------------------------------------- */
+
+  /**
+   * Fold a navigation column away, or bring it back.
+   *
+   * Both are disclosures rather than a mode: the buttons that drive them stay
+   * on screen with `aria-expanded` saying which way round it is, so a column
+   * that is gone is never gone without a way back. Below the phone breakpoint
+   * the flags are ignored — the list and the detail are already separate
+   * pages there, and hiding the list would leave nothing to navigate with.
+   */
+  setRailCollapsed(collapsed) {
+    setColumn('railCollapsed', collapsed);
+    announce(collapsed ? 'Tag rail hidden.' : 'Tag rail shown.');
+  },
+  toggleRail() {
+    actions.setRailCollapsed(!store.state.railCollapsed);
+  },
+  showRail() {
+    if (store.state.railCollapsed) store.set({ railCollapsed: false });
+  },
+
+  setListCollapsed(collapsed) {
+    setColumn('listCollapsed', collapsed);
+    announce(collapsed ? 'Endpoint list hidden. The detail fills the frame.' : 'Endpoint list shown.');
+  },
+  toggleList() {
+    actions.setListCollapsed(!store.state.listCollapsed);
+  },
+  showList() {
+    if (store.state.listCollapsed) store.set({ listCollapsed: false });
+  },
+
+  /**
+   * One step to the widest reading of an operation, and one step back.
+   *
+   * Maximised is not a third state — it is both columns folded — so the two
+   * toggles keep telling the truth about what is on screen while it is on.
+   */
+  toggleMaximiseDetail() {
+    const maximised = actions.detailMaximised();
+    setColumn('railCollapsed', !maximised);
+    setColumn('listCollapsed', !maximised);
+    announce(maximised
+      ? 'Columns restored.'
+      : 'Detail maximised. The columns beside it are hidden.');
+  },
+
+  /**
+   * Whether the detail already has the frame to itself.
+   *
+   * The roomy IA has no rail to fold, so its flag does not get a say there —
+   * otherwise "maximise" would appear to do nothing the first time it is
+   * pressed in a layout where the list was already the only column.
+   */
+  detailMaximised: () => store.state.listCollapsed
+    && (store.state.density === 'roomy' || store.state.railCollapsed),
+
   /* --- schema ---------------------------------------------------------- */
   loadFile(file) {
     return ingest(loadFromFile(file));
@@ -514,6 +577,25 @@ const actions = {
       },
       {
         kind: 'command',
+        label: actions.detailMaximised() ? 'Restore the columns' : 'Maximise the detail',
+        shortcut: '⇧⌘M',
+        detail: null,
+        run: () => actions.toggleMaximiseDetail(),
+      },
+      {
+        kind: 'command',
+        label: state.railCollapsed ? 'Show the tag rail' : 'Hide the tag rail',
+        detail: null,
+        run: () => actions.toggleRail(),
+      },
+      {
+        kind: 'command',
+        label: state.listCollapsed ? 'Show the endpoint list' : 'Hide the endpoint list',
+        detail: null,
+        run: () => actions.toggleList(),
+      },
+      {
+        kind: 'command',
         label: state.filters.hideDeprecated ? 'Show deprecated endpoints' : 'Hide deprecated endpoints',
         detail: null,
         run: () => actions.toggleHideDeprecated(),
@@ -523,6 +605,31 @@ const actions = {
     ];
   },
 };
+
+/**
+ * Set one of the column flags, and keep focus somewhere real.
+ *
+ * A column is hidden with CSS rather than removed, so anything focused inside
+ * it does not vanish — it stops being focusable, and the browser drops focus
+ * to the body. Where that would happen, focus goes to the button that folded
+ * the column away, which is both where the keyboard now is and the way back.
+ *
+ * @param {'railCollapsed'|'listCollapsed'} key
+ * @param {boolean} collapsed
+ */
+function setColumn(key, collapsed) {
+  const rail = key === 'railCollapsed';
+  const pane = document.querySelector(rail ? '#tag-nav' : '#endpoint-list');
+  const active = document.activeElement;
+  const losingFocus = collapsed && active instanceof HTMLElement && Boolean(pane?.contains(active));
+
+  store.set({ [key]: collapsed });
+
+  if (!losingFocus) return;
+  const fallback = document.querySelector(rail ? '#toggle-rail' : '#toggle-list')
+    ?? document.querySelector('#detail');
+  fallback?.focus({ preventScroll: true });
+}
 
 /** Identifies the document a credential was entered against. */
 function schemaKeyFor(source) {
@@ -587,6 +694,11 @@ function installShortcuts() {
     if (mod && event.shiftKey && event.key.toLowerCase() === 'f') {
       event.preventDefault();
       actions.focusVerbs();
+      return;
+    }
+    if (mod && event.shiftKey && event.key.toLowerCase() === 'm') {
+      event.preventDefault();
+      actions.toggleMaximiseDetail();
       return;
     }
 

@@ -11,6 +11,9 @@
    preference as well as to page zoom. The panes collapse before the detail
    pane can be squeezed under ~30rem, and below 48rem the list and the detail
    become separate pages, as drawn in 1f.
+
+   Either navigation column can also be folded away by hand; that lives at the
+   bottom of this file. The endpoint list's own rules are in list.css.
 --------------------------------------------------------------------------- */
 
 /*
@@ -244,6 +247,8 @@ aw-import { display: block; }
   .detail-back__link:hover { color: var(--ink); text-decoration: underline; }
   .detail-back__end { margin-left: auto; }
 }
+/* The back affordance's chevron is decorative; the gap keeps it off the word. */
+.detail-back__link { gap: var(--s-6); }
 
 /* ---------------------------------------------------------------------------
    Tag rail
@@ -355,185 +360,63 @@ aw-import { display: block; }
 .searchblock__status { font: 400 var(--t-11-5) / 1.3 var(--font-mono); color: var(--ink-55); white-space: nowrap; }
 
 /* ---------------------------------------------------------------------------
-   Endpoint list
+   Folded columns
+
+   Either navigation column can be folded away to give the detail the room,
+   and with both folded the detail has the whole frame — which is all
+   "maximise" is here. The column is removed from the grid rather than shrunk
+   to a sliver: a strip carrying a second copy of the control that folded it
+   would be two tab stops for one state, and the toggles that did it are in
+   the top bar, on screen, saying which way round it is.
+
+   Not below the phone breakpoint, where the list and the detail are already
+   separate pages and folding the list away would leave nothing to navigate
+   from. The flags are not written onto the shell there either; this is the
+   belt to that braces.
 --------------------------------------------------------------------------- */
-.list-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+@media (min-width: 48.0625rem) {
+  .app--browse[data-rail='collapsed'] .shell { grid-template-columns: minmax(0, 1fr); }
+  .app--browse[data-rail='collapsed'] .rail { display: none; }
+  .app--browse[data-rail='collapsed'] .main { grid-column: 1 / -1; }
 
-/* Plain block flow: each <li> is a box and the row fills it. Nothing here is
-   `display: contents`, which is the one thing that can quietly cost a list its
-   listitem semantics. */
-.endpoints { display: block; }
-.endpoints > li { display: block; }
-
-.row {
-  display: grid;
-  grid-template-columns: 4rem minmax(0, 1fr);
-  gap: var(--s-10);
-  align-items: baseline;
-  padding: var(--s-9) var(--s-12);
-  border-bottom: var(--rule-w) solid var(--rule-soft);
-  border-left: 3px solid transparent;
-  color: var(--ink);
-  text-decoration: none;
-  transition: background-color var(--dur) var(--ease);
-}
-.row:hover { background: var(--hover-surface); color: var(--ink); text-decoration: none; }
-
-/* The ring is inset so it is never clipped by the pane edge. */
-.row:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--accent);
+  .app--browse[data-list='collapsed'] .main { grid-template-columns: minmax(0, 1fr); }
+  .app--browse[data-list='collapsed'] .pane--list { display: none; }
 }
 
-/* Selection is said three ways: a left bar, a tint, and aria-current. */
-.row[aria-current='true'] {
-  background: var(--accent-tint);
-  border-left-color: var(--ink);
-}
-.row[aria-current='true']:hover { background: var(--accent-tint); }
-
-/* The pill sits in its own column and fills it, so the paths line up. */
-.row > .pill { display: block; align-self: start; }
-
-.row__path { display: block; font: 500 var(--t-12-5) / 1.3 var(--font-mono); overflow-wrap: anywhere; }
-.row__summary { display: block; margin-top: var(--s-3); font: 400 var(--t-11-5) / 1.4 var(--font-sans); color: var(--ink-70); }
-.row__head { display: flex; align-items: baseline; gap: var(--s-10); flex-wrap: wrap; }
-.row__head .row__path { margin: 0; }
-
-/* Deprecated rows are listed but stood down. The design called for opacity
-   0.62; measured against the paper, that puts the 10px verb pill at 3.3:1 and
-   the 11.5px summary at 3.5:1, both under the 4.5:1 the rest of the palette
-   was built to clear. 0.78 keeps the row visibly stood down and keeps the
-   worst pair at 5.05:1. The de-emphasis was never carrying the meaning
-   anyway — the strikethrough, the neutral pill and the word "Deprecated" in
-   the accessible name all say it. */
-.row--deprecated { opacity: 0.78; }
-.row--deprecated .row__path { text-decoration: line-through; }
-.row--deprecated:hover, .row--deprecated:focus-visible { opacity: 1; }
-
-/* Roomy rows (1b) */
-[data-density='roomy'] .row {
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--s-7);
-  padding: var(--s-14) var(--s-18);
-}
-[data-density='roomy'] .row[aria-current='true'] { border-left: 4px solid var(--accent); }
-[data-density='roomy'] .row > .pill { display: inline-block; }
-[data-density='roomy'] .row__path { font-size: var(--t-14); }
-[data-density='roomy'] .row__summary { font-size: var(--t-12-5); line-height: 1.55; }
-.row__meta { display: flex; flex-wrap: wrap; gap: var(--s-7); margin-top: var(--s-9); }
-.row__meta .chip {
-  cursor: default;
-  padding: var(--s-3) var(--s-6);
-  font-size: var(--t-10);
-  font-weight: 500;
-  color: var(--ink-70);
-}
-.row__meta .chip:hover { background: transparent; }
-
-.group-head {
-  padding: var(--s-9) var(--s-18);
-  background: var(--paper-alt);
-  border-top: var(--rule-w) solid var(--rule);
-  border-bottom: var(--rule-w) solid var(--rule);
-  font: 600 var(--t-10) / 1.3 var(--font-mono);
-  letter-spacing: var(--ls-label);
-  text-transform: uppercase;
-  color: var(--ink-55);
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.group-head--first {
-  background: var(--ink);
-  color: var(--paper);
-  border-color: var(--ink);
-}
-
-@media (max-width: 48rem) {
-  .row { padding: var(--s-14); grid-template-columns: minmax(0, 1fr); gap: var(--s-6); }
-  .row > .pill { display: inline-block; }
-  .row__head { gap: var(--s-9); }
-  .row__path { font-size: var(--t-13); }
-  .row__summary { font-size: var(--t-12); line-height: 1.5; }
-  .row[aria-current='true'] { border-left: 4px solid var(--accent); }
-}
-
-/* --- the empty result state --------------------------------------------- */
-.empty {
-  padding: var(--s-24) var(--s-18);
-  max-width: 40ch;
-}
-.empty__title { font: 600 var(--t-14) / 1.4 var(--font-sans); margin-bottom: var(--s-8); }
-.empty__body { font: 400 var(--t-12-5) / var(--lh-body) var(--font-sans); color: var(--ink-70); }
-
-/* --- keyboard hint bar --------------------------------------------------- */
-.hintbar {
+/* The two column toggles. State is said three ways and none of them is colour
+   alone: `aria-expanded`, the caret's direction, and the fill. */
+.toggles {
   display: flex;
-  gap: var(--s-14);
-  align-items: center;
-  flex-wrap: wrap;
-  min-height: var(--h-30);
-  padding: var(--s-4) var(--s-12);
-  border-top: var(--rule-w) solid var(--rule);
-  background: var(--paper-alt);
-  font: 400 var(--t-10-5) / 1.6 var(--font-mono);
-  color: var(--ink-55);
+  gap: var(--s-6);
+  flex: none;
 }
-.hintbar__count { margin-left: auto; }
-.hintbar kbd {
-  font: inherit;
-  border: 0;
-  padding: 0;
-  color: inherit;
+.btn--toggle {
+  gap: var(--s-6);
+  font-family: var(--font-mono);
+  font-size: var(--t-11);
+  letter-spacing: var(--ls-label);
 }
-
-/* --- status bar (small screens) ------------------------------------------ */
-.statusbar {
-  display: none;
-  align-items: center;
-  min-height: var(--h-46);
-  padding: var(--s-8) var(--s-14);
-  border-top: var(--rule-w-strong) solid var(--rule-strong);
-  background: var(--paper-alt);
-  font: 400 var(--t-11) / 1.4 var(--font-mono);
-  color: var(--ink-55);
+.btn--toggle[aria-expanded='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
-@media (max-width: 48rem) {
-  .statusbar { display: flex; }
-  .hintbar { display: none; }
-}
+.btn--toggle[aria-expanded='true']:hover { background: var(--fill-hover); color: var(--paper); }
 
 /* ---------------------------------------------------------------------------
-   Forced colours: fills stop conveying anything, so make sure the structural
-   borders survive and selection keeps a border of its own.
+   Forced colours: fills stop conveying anything, so the state a fill was
+   carrying has to be said with a border the system paints.
 --------------------------------------------------------------------------- */
 @media (forced-colors: active) {
-  /* Every row carries a left border so the selected one can thicken it; in
-     forced colours a transparent border is repainted as a visible system
-     colour, which would put a bar on all forty-seven rows. Painting the
-     unselected ones in Canvas puts them back out of sight. */
-  .row { border-left-color: Canvas; }
-  .row[aria-current='true'] { border-left-color: Highlight; }
-
-  /* The focus ring is a box-shadow so it can sit inside the pane edge, and
-     forced colours drop box-shadows entirely. An inset outline does the same
-     job with a colour the system controls. */
-  .row:focus-visible { outline: 3px solid Highlight; outline-offset: -3px; }
-
-  /* A pressed chip loses its fill, so it gains a ring instead. */
+  /* A pressed chip, a current rail item or an open column toggle all lose
+     their fill, so each gains a ring instead. */
   .chip[aria-pressed='true'],
   .chip[aria-current='true'],
   .rail__item[aria-pressed='true'],
-  .rail__item[aria-current='true'] {
+  .rail__item[aria-current='true'],
+  .btn--toggle[aria-expanded='true'] {
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }
   .rail__schema[aria-current='page'] { outline: 2px solid Highlight; outline-offset: -2px; }
-  .pill { border: 1px solid currentColor; }
-  .group-head--first { border: 1px solid CanvasText; }
 }
-
-/* The back affordance's chevron is decorative; the gap keeps it off the word. */
-.detail-back__link { gap: var(--s-6); }
-
