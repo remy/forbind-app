@@ -11,7 +11,7 @@ place the build knowingly diverges from the mocks.
 
 **Both, with `1a` as the default and `1b` as a density preference.**
 
-`1a` (three panes, tag rail, dense rows) is what loads. Display → Roomy switches
+`1a` (three panes, tag rail, dense rows) is what loads. Settings → Roomy switches
 to `1b` (two panes, no rail, search-first, grouped rows with metadata), and the
 preference is remembered.
 
@@ -20,9 +20,10 @@ rail is gone and tags become facet chips in the filter row, exactly as drawn.
 The same folding already had to exist for narrow windows, so `1b` costs one
 density flag rather than a second application.
 
-The detail pane differs too, as the mocks show: stacked sections under real
-headings in dense (one linear read, and find-in-page reaches all of it), a tab
-set in roomy and on phones.
+The detail pane does not differ, though the mocks draw it both ways. It shipped
+as the mocks have it — stacked sections in `1a`, a tab set in `1b` — and the tab
+set has since been made the structure in every layout; see "The detail pane is a
+tab set in every layout" below.
 
 ### 2. Is try-it-out in scope for v1?
 
@@ -92,9 +93,10 @@ switching were explicitly descoped, which leaves the caret with nothing to
 disclose. A disclosure affordance that discloses nothing is worse than no
 affordance, so it shows `v2.1.0` as a labelled chip.
 
-**A `Display` button was added to the top bar.** Theme and density need
+**A `Settings` button was added to the top bar.** Theme and density need
 somewhere to live and the mocks predate the theming decision. It sits before
-`Authorise` in the right cluster, in the same outline-button style.
+`Authorise` in the right cluster, in the same outline-button style. It was
+called `Display` first; `Settings` is the word people go looking for.
 
 **`DEPRECATED 3` and `Hide deprecated` are both in the dense verb bar.** The
 mock shows `DEPRECATED 3` in `1a` and `Hide deprecated` in `1b`. They do
@@ -106,9 +108,23 @@ exclusive; pressing one releases the other.
 chip row.** The mock shows a tag selected with no drawn way back. Shift-click
 (or `+ tag` in roomy) adds a tag to the selection rather than replacing it.
 
-**The header `Try it` button is not repeated in the tabbed layouts.** In roomy
-and on phones, Try it is already a tab, and on phones it is also the sticky
-footer action. Three controls for one job is two too many.
+**The detail pane is a tab set in every layout.** The mocks draw the sections
+stacked under headings in `1a` and as tabs in `1b`, and that is how it shipped.
+Two structures for one pane meant two things to learn, two shapes for a
+"go to Try it" command to hit, and — once either navigation column could be
+folded away — a dense detail that was one very long scroll at whatever width it
+happened to have. The tab set is now what an operation is, in both densities and
+on phones, where the same tabs are drawn as a segmented control.
+
+What that costs is real and worth naming: find-in-page no longer reaches a
+section that is not the open one, and neither does `⌘F`'s cousin, a print. The
+answer is not to keep two structures — it is that every section is one keystroke
+away on the tab list, the tab list is a single tab stop, and the panel is
+labelled by its tab, so nothing is hidden from a screen reader that was not
+already one arrow key away.
+
+**The header `Try it` button is not repeated.** Try it is a tab, and on phones
+it is also the sticky footer action. Three controls for one job is two too many.
 
 **The parse report is a step, not a flash.** Loading a file lands on the report
 card with its warnings and a `Browse 47 endpoints` button. A link that names the
@@ -143,7 +159,7 @@ Each is either a state the design implies or a route out of a dead end.
   has never loaded that document.
 - **A bundled example schema**, so the tool has something to browse on first
   run. It matches the mocks' numbers exactly.
-- **Display options** (theme, density, hint bar), following the theming answer.
+- **Settings** (theme, density, hint bar), following the theming answer.
 
 ---
 

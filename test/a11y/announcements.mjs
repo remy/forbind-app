@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open } from './lib/harness.mjs';
+import { open, showTab } from './lib/harness.mjs';
 
 test('the live regions exist from first paint and carry the announcements', async () => {
   const page = await open('');
@@ -25,6 +25,7 @@ test('copying announces what was copied, not just a changed label', async () => 
   const page = await open();
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   try {
+    await showTab(page, 'code');
     await page.getByRole('button', { name: 'Copy', exact: true }).click();
     await page.waitForTimeout(300);
     assert.match(await page.locator('#aw-live-polite').textContent(), /curl command copied, 5 lines/);

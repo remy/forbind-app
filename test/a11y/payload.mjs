@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open } from './lib/harness.mjs';
+import { open, showTab } from './lib/harness.mjs';
 
 test('a response opens up to the shape of its payload', async () => {
   const page = await open();
@@ -16,6 +16,7 @@ test('a response opens up to the shape of its payload', async () => {
       window.__aw.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
+    await showTab(page, 'responses');
 
     // Collapsed, a response still reads as the row the design draws.
     const summaries = await page.locator('.response-summary').allTextContents();
@@ -53,6 +54,7 @@ test('a nested payload is walked with the keyboard alone', async () => {
       window.__aw.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
+    await showTab(page, 'responses');
 
     const branch = page.locator('details.response-detail[open] details.field-branch').first();
     const summary = branch.locator('> summary');
@@ -88,6 +90,7 @@ test('the payload is nested lists, not a hand-rolled tree widget', async () => {
       window.__aw.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
+    await showTab(page, 'responses');
     const tree = page.locator('details.response-detail[open] aw-schema-tree');
 
     const shape = await tree.evaluate((root) => ({
@@ -123,6 +126,7 @@ test('expand all opens every level and says what it did', async () => {
       window.__aw.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
+    await showTab(page, 'responses');
     const tree = page.locator('details.response-detail[open] aw-schema-tree');
 
     await tree.getByRole('button', { name: 'Expand all' }).click();

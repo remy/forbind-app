@@ -113,7 +113,7 @@ class AwApp extends AwElement {
    * The live regions have to be in the document from first paint — a region
    * created and filled in the same tick is routinely missed — and the dialogs
    * have to survive a state change made from inside one of them. Switching
-   * density from the Display panel used to rebuild the shell, which destroyed
+   * density from the Settings panel used to rebuild the shell, which destroyed
    * the very dialog the click came from.
    */
   #mount() {

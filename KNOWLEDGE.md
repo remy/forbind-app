@@ -90,10 +90,10 @@ re-render, everything else patches attributes in place.
 | Element | Owns |
 |---|---|
 | `aw-app` | landmarks, skip links, live regions, the shell layout, the column flags |
-| `aw-topbar` | wordmark, search, column toggles, Display/Authorise; also `aw-search-block` (roomy) and `aw-meta-strip` |
+| `aw-topbar` | wordmark, search, column toggles, Settings/Authorise; also `aw-search-block` (roomy) and `aw-meta-strip` |
 | `aw-tag-rail` | the tag rail; also `aw-facets`, the filter row that replaces it |
 | `aw-endpoint-list` | the rows, the roving tabindex, type-ahead; also `aw-verb-bar` and `aw-tag-chips` |
-| `aw-detail` | an operation, a component schema, or the empty state — stacked sections in dense, tabs in roomy and on phones |
+| `aw-detail` | an operation, a component schema, or the empty state — an operation's sections are a tab set in every layout |
 | `aw-schema-tree` | a response body as nested `<details>` in nested `<ul>`s |
 | `aw-code-block` | the curl/fetch/python snippet and its copy button |
 | `aw-try-it` | the real request form and its result |
@@ -114,7 +114,7 @@ browser. `npm test` covers these.
 | `openapi.js` | the parser. Swagger 2.0 → OpenAPI 3.1 into one model: operations, schemas, tags, servers, security schemes, and a parse report. Also `$ref` resolution, type description, field rows and payload children |
 | `search.js` | filtering, scoring, grouping by tag, type-ahead indexing |
 | `request.js` | builds a request from an operation and renders it as curl, fetch or python. `revealCredential` defaults to `false`, and the snippet path never sets it |
-| `router.js` | hash routing: `#/op/<id>`, `#/schema/<name>`, `#/import`, with filters and `src` in the query |
+| `router.js` | hash routing: `#/op/<id>`, `#/schema/<name>`, `#/import`, with filters and `src` in the query; `foldQuerySchema` rewrites a `?url=` in the search into that `src` |
 | `persist.js` | every rule about what is remembered and where, in one file |
 | `loader.js` | file, URL and sample loading, plus the CORS fallback |
 | `auth.js` | credential normalising, masking, JWT claims, probe interpretation |
@@ -161,6 +161,12 @@ there is one stand-in whichever reason the rail is not there.
 Every operation and schema has an address, filters ride in the query, and `src`
 names the schema the rest of the URL is about — so a link opens the right
 operation for someone who has never loaded that document.
+
+A schema can also be named before the fragment, as `?url=` (or `?src=`) in the
+real query string — the shape an inbound link usually takes. `foldQuerySchema`
+rewrites it into the fragment at boot and `main.js` `replaceState`s the result
+before `restoreSchema` or `router.start` look at the address, so exactly one
+representation ever reaches the app. A `src` already in the fragment wins.
 
 The fragment being the router is why skip links move focus themselves instead
 of letting the browser navigate: `#detail` would be read as a route naming no

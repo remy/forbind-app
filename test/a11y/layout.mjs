@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, SRC } from './lib/harness.mjs';
+import { open, showTab, SRC } from './lib/harness.mjs';
 
 test('the panes scroll inside the window rather than the page scrolling', async () => {
   // Measured with a real wheel gesture: `documentElement.scrollHeight` reports
@@ -45,6 +45,8 @@ test('the panes scroll inside the window rather than the page scrolling', async 
 test('a long detail pane scrolls without taking the list with it', async () => {
   const page = await open(`#/op/post-v2-bookings?src=${SRC}`, { viewport: { width: 1280, height: 700 } });
   try {
+    // The panel with the most in it, so there is something to scroll.
+    await showTab(page, 'responses');
     const detail = await page.locator('.pane--detail').boundingBox();
     const listTop = () => page.evaluate(() => document.querySelector('.list-scroll').scrollTop);
     const detailTop = () => page.evaluate(() => document.querySelector('.pane--detail').scrollTop);

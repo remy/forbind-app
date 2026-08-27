@@ -98,8 +98,8 @@ class AwTopbar extends AwElement {
           el('button', {
             type: 'button',
             class: 'btn',
-            id: 'open-display',
-            text: 'Display',
+            id: 'open-settings',
+            text: 'Settings',
             onclick: () => this.actions.openOptions(),
           }),
           el('button', {

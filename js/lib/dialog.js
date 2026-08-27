@@ -33,7 +33,7 @@ export function wireDialog(dialog, options = {}) {
     // Restore focus to the control that opened the dialog. `<dialog>` does
     // this itself, but only while the invoker is still the same node in the
     // document — and a dialog that changes state (switching density from the
-    // Display panel, say) can re-render the bar the invoker lives on. So the
+    // Settings panel, say) can re-render the bar the invoker lives on. So the
     // invoker is remembered by identity *and* by key, and the key is used to
     // find its replacement.
     const { node, key } = invoker;

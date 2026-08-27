@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, LOCAL } from './lib/harness.mjs';
+import { open, showTab, LOCAL } from './lib/harness.mjs';
 
 test('an enum parameter is a dropdown, and Enter in the form sends', async () => {
   const page = await open();
@@ -17,6 +17,7 @@ test('an enum parameter is a dropdown, and Enter in the form sends', async () =>
       window.__aw.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
+    await showTab(page, 'tryit');
 
     const status = page.locator('aw-try-it select').filter({ hasText: 'confirmed' }).first();
     assert.ok(await page.locator('aw-try-it select').count() > 0, 'no enum parameter rendered as a select');
@@ -52,6 +53,7 @@ test('a required parameter left empty stops the send and says which one', async 
       window.__aw.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
+    await showTab(page, 'tryit');
 
     const field = page.locator('aw-try-it input').first();
     await field.focus();
@@ -86,6 +88,7 @@ test('a request that succeeds reports its status, timing and readable headers', 
   try {
     await page.locator('a.row').first().click();
     await page.waitForTimeout(400);
+    await showTab(page, 'tryit');
     await page.getByRole('button', { name: /^Send GET$/ }).click();
     await page.waitForTimeout(1500);
     assert.match(await page.locator('.result__head').textContent(), /200/);
@@ -99,6 +102,7 @@ test('a request that succeeds reports its status, timing and readable headers', 
 test('a request the browser cannot read explains CORS rather than shrugging', async () => {
   const page = await open();
   try {
+    await showTab(page, 'tryit');
     await page.getByRole('button', { name: /^Send POST$/ }).click();
     await page.waitForTimeout(4000);
     const text = await page.locator('.result--error').textContent();

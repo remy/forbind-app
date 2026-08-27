@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, BASE } from './lib/harness.mjs';
+import { open, showTab, BASE } from './lib/harness.mjs';
 
 test('a saved credential reaches the clipboard from nowhere, and disk only if asked', async () => {
   const page = await open();
@@ -43,6 +43,7 @@ test('a saved credential reaches the clipboard from nowhere, and disk only if as
     // Either way, it never reaches a snippet.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
+    await showTab(page, 'code');
     await page.getByRole('button', { name: 'Copy', exact: true }).click();
     await page.waitForTimeout(300);
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());

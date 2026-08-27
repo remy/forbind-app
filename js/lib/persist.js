@@ -5,7 +5,7 @@
  *
  * | What              | Where            | Lifetime                        |
  * |-------------------|------------------|---------------------------------|
- * | Display prefs     | localStorage     | until changed                   |
+ * | Settings          | localStorage     | until changed                   |
  * | The loaded schema | localStorage     | until another one is loaded     |
  * | A credential      | sessionStorage   | this tab, unless you ask for... |
  * | ...if remembered  | localStorage     | until you forget it             |
@@ -79,7 +79,7 @@ function drop(storage, key) {
 }
 
 /* -------------------------------------------------------------------------
-   Display preferences
+   Settings
 ------------------------------------------------------------------------- */
 
 export function readPrefs() {

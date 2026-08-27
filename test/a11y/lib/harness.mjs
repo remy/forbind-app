@@ -80,6 +80,19 @@ export async function open(hash = `#/op/post-v2-bookings?src=${SRC}`, options = 
   return page;
 }
 
+/**
+ * Open one of the detail pane's tabs. The sections of an operation are a tab
+ * set in every layout, so a suite that wants Responses or Try it has to ask
+ * for it rather than scrolling to it.
+ *
+ * @param {import('playwright').Page} page
+ * @param {'overview'|'body'|'responses'|'code'|'tryit'} key
+ */
+export async function showTab(page, key) {
+  await page.evaluate((k) => document.querySelector('aw-detail')?.showTab(k), key);
+  await page.waitForTimeout(400);
+}
+
 /** @returns {Promise<string[]>} one line per violation */
 export async function violations(page) {
   await page.addScriptTag({ content: axeSource });

@@ -59,14 +59,18 @@
 .detail__section-head h3,
 .detail__section-head h4 { margin: 0; }
 
+/* The tab bar carries the rule beneath the header, so a tabbed header does
+   not draw a second one above it. The component-schema view has no tabs and
+   keeps its own. */
+.detail__header--tabbed { border-bottom: 0; padding-bottom: 0; }
+
 /* Roomy (1b) header sizes */
-[data-density='roomy'] .detail__header { border-bottom: 0; padding-bottom: 0; }
 [data-density='roomy'] .detail__path { font-size: var(--t-19); }
 [data-density='roomy'] .detail__pill { font-size: var(--t-11-5); padding: var(--s-5) var(--s-8); }
 [data-density='roomy'] .detail__body { padding-top: var(--s-4); }
 [data-density='roomy'] .detail__lede { max-width: 62ch; font-size: var(--t-13-5); line-height: var(--lh-prose); color: var(--ink); }
 
-/* --- tabs (roomy) -------------------------------------------------------- */
+/* --- tabs -------------------------------------------------------------- */
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -371,8 +375,7 @@ table.params .col-notes { font-family: var(--font-sans); color: var(--ink-70); }
    Responses, opened up
 --------------------------------------------------------------------------- */
 
-.response-detail { border-bottom: var(--rule-w) solid var(--rule-softer); }
-.response-list > li:last-child .response-detail { border-bottom: 0; }
+/* No rule under a response: the list already separates them. */
 
 .response-summary,
 .response-row {

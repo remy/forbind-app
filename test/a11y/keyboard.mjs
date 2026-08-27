@@ -145,7 +145,7 @@ test('the palette is a combobox: focus stays put and activedescendant moves', as
 test('a dialog hands focus back even when the bar it came from re-rendered', async () => {
   const page = await open();
   try {
-    await page.getByRole('button', { name: 'Display' }).click();
+    await page.getByRole('button', { name: 'Settings' }).click();
     await page.waitForTimeout(300);
     // Changing density re-renders the top bar the invoker lives on.
     await page.getByRole('radio', { name: /^Roomy/ }).check();
@@ -153,8 +153,66 @@ test('a dialog hands focus back even when the bar it came from re-rendered', asy
     assert.equal(await page.evaluate(() => document.documentElement.dataset.density), 'roomy');
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);
-    assert.equal(await page.evaluate(() => document.activeElement.textContent.trim()), 'Display');
+    assert.equal(await page.evaluate(() => document.activeElement.textContent.trim()), 'Settings');
   } finally {
     await page.close();
+  }
+});
+
+test('the detail sections are one tab stop, moved between with the arrows', async () => {
+  // The tab set is the detail's structure in every layout, so both densities
+  // have to hold the pattern up.
+  for (const density of ['dense', 'roomy']) {
+    const page = await open();
+    try {
+      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.waitForTimeout(500);
+
+      const tabs = page.locator('aw-detail [role="tab"]');
+      assert.deepEqual(
+        await tabs.allTextContents(),
+        ['Overview', 'Body', 'Responses', 'Code', 'Try it'],
+        `${density}: the detail did not render its tab set`,
+      );
+
+      // One tab stop for the whole set: the selected tab, and nothing else.
+      assert.equal(await page.locator('aw-detail [role="tab"][tabindex="0"]').count(), 1, `${density}: not one tab stop`);
+      assert.equal(await page.locator('aw-detail [role="tab"][aria-selected="true"]').count(), 1);
+
+      await tabs.first().focus();
+      await page.keyboard.press('ArrowRight');
+      await page.waitForTimeout(300);
+      // The arrow both moved the selection and took focus with it.
+      assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Body', `${density}: focus did not follow the arrow`);
+      assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-selected')), 'true');
+
+      await page.keyboard.press('End');
+      await page.waitForTimeout(300);
+      assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Try it');
+      await page.keyboard.press('ArrowRight');
+      await page.waitForTimeout(300);
+      assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Overview', `${density}: the tab list did not wrap`);
+
+      // The panel on screen is the one the selected tab names.
+      const shape = await page.evaluate(() => {
+        const tab = document.querySelector('aw-detail [role="tab"][aria-selected="true"]');
+        const panel = document.querySelector('aw-detail [role="tabpanel"]');
+        return {
+          panels: document.querySelectorAll('aw-detail [role="tabpanel"]').length,
+          controls: tab.getAttribute('aria-controls'),
+          panelId: panel.id,
+          labelledBy: panel.getAttribute('aria-labelledby'),
+          tabId: tab.id,
+          reachable: panel.tabIndex,
+        };
+      });
+      assert.equal(shape.panels, 1, `${density}: the panels that are not selected were left in the document`);
+      assert.equal(shape.controls, shape.panelId, `${density}: the tab points at a panel that is not there`);
+      assert.equal(shape.labelledBy, shape.tabId, `${density}: the panel is not labelled by its tab`);
+      // The panel scrolls, so it has to be reachable with the keyboard.
+      assert.equal(shape.reachable, 0);
+    } finally {
+      await page.close();
+    }
   }
 });

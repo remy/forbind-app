@@ -12,7 +12,7 @@ import yaml from './vendor/js-yaml.mjs';
 import { Store } from './lib/store.js';
 import { setApp } from './lib/context.js';
 import { defineAll } from './lib/element.js';
-import { Router, buildHash, parseHash } from './lib/router.js';
+import { Router, buildHash, parseHash, foldQuerySchema } from './lib/router.js';
 import { announce } from './lib/announce.js';
 import { normalise, parseText, SchemaError, describeScheme } from './lib/openapi.js';
 import { filterOperations, allScopes, allStatusCodes } from './lib/search.js';
@@ -565,7 +565,7 @@ const actions = {
       { kind: 'command', label: 'Copy the request as curl', shortcut: '⇧⌘C', detail: null, run: () => actions.copyCurl(currentOperation()) },
       { kind: 'command', label: 'Replace the schema', shortcut: '⇧⌘U', detail: null, run: () => actions.replaceSchema() },
       { kind: 'command', label: 'Authorise requests', detail: null, run: () => actions.openAuth() },
-      { kind: 'command', label: 'Display options', detail: null, run: () => actions.openOptions() },
+      { kind: 'command', label: 'Settings', detail: null, run: () => actions.openOptions() },
       {
         kind: 'command',
         label: state.density === 'dense' ? 'Switch to the roomy layout' : 'Switch to the dense layout',
@@ -749,6 +749,12 @@ function restoreSchema() {
   ingest(Promise.resolve({ text: stored.text, name: stored.name, via: 'file', note: null }), { restoring: true });
   return true;
 }
+
+// `?url=…` is rewritten to the `#…?src=…` the router reads, before anything
+// looks at the address — including `restoreSchema`, which stands aside for a
+// URL that names a document.
+const folded = foldQuerySchema(globalThis.location?.href ?? '');
+if (folded) globalThis.history?.replaceState(null, '', folded);
 
 restoreSchema();
 router.start();

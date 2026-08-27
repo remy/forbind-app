@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, SRC } from './lib/harness.mjs';
+import { open, showTab, SRC } from './lib/harness.mjs';
 
 test('meaning is never carried by colour alone', async () => {
   const page = await open();
@@ -32,6 +32,7 @@ test('meaning is never carried by colour alone', async () => {
     assert.notEqual(style.bg, 'rgba(0, 0, 0, 0)');
 
     // Required is a word.
+    await showTab(page, 'body');
     const req = await page.locator('table.params tbody tr').first().locator('td').nth(1).textContent();
     assert.match(req, /^(yes|no)$/);
   } finally {

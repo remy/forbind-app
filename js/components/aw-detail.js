@@ -4,11 +4,11 @@
  * Renders three things depending on the route: an operation, a component
  * schema, or the "nothing selected yet" state.
  *
- * In the dense IA (1a) the sections are stacked under real headings, so the
- * whole operation is one linear read and a browser's find-in-page reaches all
- * of it. In the roomy IA (1b) the same sections become a tab set, built on the
- * ARIA tabs pattern: one tab stop for the tab list, arrows to move between
- * tabs, and the panel labelled by its tab.
+ * An operation's sections are a tab set in every layout, built on the ARIA
+ * tabs pattern: one tab stop for the tab list, arrows to move between tabs,
+ * and the panel labelled by its tab. The only thing a layout changes is how
+ * the tabs are drawn — a row of them where there is width, a segmented
+ * control on a phone.
  *
  * Parameters render as a real `<table>` where there is room for one, and as a
  * real `<dl>` of stacked rows where there is not. A table restyled with
@@ -95,22 +95,7 @@ class AwDetail extends AwElement {
 
   #renderOperation(state, op) {
     const roomy = state.density === 'roomy';
-    const useTabs = roomy || this.#narrow;
-
     const header = this.#renderHeader(state, op, roomy);
-
-    if (!useTabs) {
-      return [
-        header,
-        el('div', { class: 'detail__body' }, [
-          this.#sectionOverview(state, op, { heading: true }),
-          this.#sectionBody(state, op, { heading: true }),
-          this.#sectionResponses(state, op, { heading: true }),
-          this.#sectionCode(state, op, { heading: true }),
-          this.#sectionTryIt(state, op, { heading: true }),
-        ]),
-      ];
-    }
 
     const available = SECTIONS.filter((section) => {
       if (section.key === 'body') return Boolean(op.requestBody) || op.parameters.length > 0;
@@ -169,20 +154,16 @@ class AwDetail extends AwElement {
 
   #renderPanel(state, op, key) {
     switch (key) {
-      case 'body': return this.#sectionBody(state, op, { heading: false });
-      case 'responses': return this.#sectionResponses(state, op, { heading: false });
-      case 'code': return this.#sectionCode(state, op, { heading: false });
-      case 'tryit': return this.#sectionTryIt(state, op, { heading: false });
+      case 'body': return this.#sectionBody(state, op);
+      case 'responses': return this.#sectionResponses(state, op);
+      case 'code': return this.#sectionCode(state, op);
+      case 'tryit': return this.#sectionTryIt(state, op);
       case 'overview':
-      default: return this.#sectionOverview(state, op, { heading: false });
+      default: return this.#sectionOverview(state, op);
     }
   }
 
-  /**
-   * Open a named section. In the stacked layout there are no tabs, so this
-   * scrolls to the section instead — the caller does not have to know which
-   * layout is on screen.
-   */
+  /** Open a named section, whoever asked — a command, a link, the palette. */
   showTab(key) {
     this.#tab = key;
     this.render(this.state);
@@ -236,7 +217,7 @@ class AwDetail extends AwElement {
 
     return el('div', {}, [
       backLink,
-      el('div', { class: 'detail__header' }, [
+      el('div', { class: 'detail__header detail__header--tabbed' }, [
         el('div', { class: 'detail__title-row' }, [
           verbLabel(op.method) === op.method
             ? el('span', { class: `pill detail__pill pill--${op.deprecated ? 'neutral' : verbClass(op.method)}`, text: op.method })
@@ -245,19 +226,8 @@ class AwDetail extends AwElement {
                 el('span', { class: 'visually-hidden', text: op.method }),
               ]),
           el('h2', { class: 'detail__path', text: op.path }),
-          // In the tabbed layouts Try it is one of the tabs, and on a phone it
-          // is also the sticky action — a third copy in the header would be
-          // three controls doing one job.
-          roomy || this.#narrow
-            ? null
-            : el('span', { class: 'detail__actions' }, [
-                el('button', {
-                  type: 'button',
-                  class: 'btn btn--filled btn--md',
-                  text: 'Try it',
-                  onclick: () => this.actions.openTryIt(op.id),
-                }),
-              ]),
+          // Try it is one of the tabs, and on a phone it is also the sticky
+          // action; a copy here as well would be three controls doing one job.
         ]),
         op.summary && !roomy ? el('p', { class: 'detail__lede', text: op.summary }) : null,
         chips.length ? el('div', { class: 'detail__chips' }, chips) : null,
@@ -278,30 +248,20 @@ class AwDetail extends AwElement {
 
   /* --- sections --------------------------------------------------------- */
 
-  #heading(text, show, level = 'h3') {
-    return show ? el(level, { class: 'label', text }) : null;
-  }
-
-  #sectionOverview(state, op, { heading }) {
+  #sectionOverview(state, op) {
     const prose = op.description || op.summary;
-    // `heading` is true in the stacked layout, where the header chips above
-    // already carry auth, scope and rate — so the grid does not repeat them.
-    const stacked = heading;
     const facts = [
-      !stacked && ['Auth', op.security.length
+      ['Auth', op.security.length
         ? `${this.actions.schemeLabel(op.security[0].schemeId)}${op.scopes.length ? ` · ${op.scopes.join(', ')}` : ''}`
         : 'None'],
-      !stacked && ['Rate limit', op.extensions.rateLimit],
+      ['Rate limit', op.extensions.rateLimit],
       ['Idempotent', op.extensions.idempotent],
       ['Since', op.extensions.since],
       ['Operation id', op.operationId],
       ['Server', op.servers[0]?.url],
-    ].filter((entry) => Array.isArray(entry) && Boolean(entry[1]));
+    ].filter(([, value]) => Boolean(value));
 
-    const params = op.parameters.filter((p) => p.in !== 'body');
-
-    return el('section', { class: 'detail__section', 'aria-label': heading ? null : 'Overview' }, [
-      this.#heading('Overview', heading),
+    return el('section', { class: 'detail__section', 'aria-label': 'Overview' }, [
       prose ? el('p', { class: 'detail__lede', text: prose }) : null,
       op.deprecated
         ? el('p', { class: 'tryit__warning' }, [
@@ -314,14 +274,13 @@ class AwDetail extends AwElement {
             el('div', {}, [el('dt', { text: label }), el('dd', { text: String(value) })]),
           ))
         : null,
-      heading && params.length ? this.#paramGroups(state, op, params) : null,
     ]);
   }
 
-  #sectionBody(state, op, { heading }) {
+  #sectionBody(state, op) {
     const params = op.parameters.filter((p) => p.in !== 'body');
-    return el('section', { class: 'detail__section', 'aria-label': heading ? null : 'Request body and parameters' }, [
-      !heading && params.length ? this.#paramGroups(state, op, params) : null,
+    return el('section', { class: 'detail__section', 'aria-label': 'Request body and parameters' }, [
+      params.length ? this.#paramGroups(state, op, params) : null,
       op.requestBody ? this.#requestBody(state, op) : null,
       !op.requestBody && !params.length
         ? el('p', { class: 'empty__body', text: 'This operation takes no parameters and no request body.' })
@@ -450,18 +409,16 @@ class AwDetail extends AwElement {
    * schema. Every 2xx starts open, because that is the one you came to read;
    * the rest wait to be asked for.
    */
-  #sectionResponses(state, op, { heading }) {
+  #sectionResponses(state, op) {
     if (!op.responses.length) {
-      return el('section', { class: 'detail__section' }, [
-        this.#heading('Responses', heading),
+      return el('section', { class: 'detail__section', 'aria-label': 'Responses' }, [
         el('p', { class: 'empty__body', text: 'This operation declares no responses.' }),
       ]);
     }
 
     const success = op.responses.filter((r) => statusClass(r.code) === 'success');
 
-    return el('section', { class: 'detail__section', 'aria-label': heading ? null : 'Responses' }, [
-      this.#heading('Responses', heading),
+    return el('section', { class: 'detail__section', 'aria-label': 'Responses' }, [
       el('ul', { class: 'response-list' }, op.responses.map((response) =>
         el('li', {}, [this.#renderResponse(state, response, success.length === 1 && success[0] === response)]),
       )),
@@ -538,22 +495,16 @@ class AwDetail extends AwElement {
     return wrapper;
   }
 
-  #sectionCode(state, op, { heading }) {
+  #sectionCode(state, op) {
     const block = el('aw-code-block', {});
     block.operation = op;
-    return el('section', { class: 'detail__section', 'aria-label': heading ? null : 'Request snippet' }, [
-      this.#heading('Request', heading),
-      block,
-    ]);
+    return el('section', { class: 'detail__section', 'aria-label': 'Request snippet' }, [block]);
   }
 
-  #sectionTryIt(state, op, { heading }) {
+  #sectionTryIt(state, op) {
     const panel = el('aw-try-it', { id: 'try-it' });
     panel.operation = op;
-    return el('section', { class: 'detail__section', 'aria-label': heading ? null : 'Try it' }, [
-      this.#heading('Try it', heading),
-      panel,
-    ]);
+    return el('section', { class: 'detail__section', 'aria-label': 'Try it' }, [panel]);
   }
 
   /* --- component schema view -------------------------------------------- */

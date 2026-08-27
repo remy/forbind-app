@@ -1,10 +1,11 @@
 /**
- * Display options.
+ * Settings.
  *
  * Theme and density are the two preferences worth persisting: someone who
  * needs a dark, high-contrast, roomy interface should not have to set it again
  * on every visit. They go to localStorage and nothing else does — no schema,
  * no filters, and above all no credential.
+
  *
  * Theme has three states rather than two, because "follow the system" is a
  * real answer and is the default. A two-way toggle silently overrides whatever
@@ -84,7 +85,7 @@ class AwOptions extends AwElement {
     replace(this.#dialog, [
       el('div', { class: 'sheet' }, [
         el('div', { class: 'sheet__head' }, [
-          el('h2', { id: 'options-title', text: 'Display' }),
+          el('h2', { id: 'options-title', text: 'Settings' }),
           el('span', { class: 'sheet__esc', 'aria-hidden': 'true', text: 'esc' }),
         ]),
         el('p', {

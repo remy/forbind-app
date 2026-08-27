@@ -42,9 +42,9 @@ const SCREENS = [
     await page.waitForTimeout(400);
     return page;
   }],
-  ['the display panel', async () => {
+  ['the settings panel', async () => {
     const page = await open();
-    await page.getByRole('button', { name: 'Display' }).click();
+    await page.getByRole('button', { name: 'Settings' }).click();
     await page.waitForTimeout(400);
     return page;
   }],

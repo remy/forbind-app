@@ -161,3 +161,31 @@ test('the tags skip link follows the tags wherever the layout puts them', async 
     }
   }
 });
+
+test('a schema named in the query string loads, and the address is tidied up', async () => {
+  // No fragment at all: the shape a link from somewhere else takes.
+  const page = await open(`?url=${SRC}`);
+  try {
+    assert.equal(
+      await page.evaluate(() => window.__aw.store.state.schema?.sourceName ?? null),
+      'bookings-api.v2.yaml',
+      'the query string did not load the schema',
+    );
+    // Folded into the fragment, and out of the query, so one place holds it.
+    const where = await page.evaluate(() => ({ search: location.search, hash: location.hash }));
+    assert.equal(where.search, '', 'the query parameter was left behind');
+    assert.match(where.hash, /src=/);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a query schema lands on the operation the fragment asked for', async () => {
+  const page = await open(`?url=${SRC}#/op/post-v2-bookings`);
+  try {
+    assert.equal(await page.evaluate(() => window.__aw.store.state.selectedOperationId), 'post-v2-bookings');
+    assert.match(await page.locator('.detail__path').textContent(), /\/v2\/bookings/);
+  } finally {
+    await page.close();
+  }
+});
