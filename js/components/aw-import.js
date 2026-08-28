@@ -123,6 +123,12 @@ class AwImport extends AwElement {
           logoMark(),
           el('span', { class: 'brand__name', text: 'Allyway' }),
         ]),
+        // What the thing is, in one line, before what to do with it. The name
+        // above says nothing on its own to anyone arriving from a link.
+        el('p', {
+          class: 'import__tagline',
+          text: 'An OpenAPI browser whose point is that it is accessible.',
+        }),
         el('p', {
           class: 'import__lede',
           text: 'Load an OpenAPI schema — JSON or YAML, 2.0 through 3.1. '
