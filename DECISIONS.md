@@ -98,11 +98,31 @@ somewhere to live and the mocks predate the theming decision. It sits before
 `Authorise` in the right cluster, in the same outline-button style. It was
 called `Display` first; `Settings` is the word people go looking for.
 
-**`DEPRECATED 3` and `Hide deprecated` are both in the dense verb bar.** The
-mock shows `DEPRECATED 3` in `1a` and `Hide deprecated` in `1b`. They do
-different things — show only these, versus remove these — so `1a` gets both, the
-second right-aligned and dashed exactly as `1b` draws it. They are mutually
-exclusive; pressing one releases the other.
+**`DEPRECATED 3` and `Hide deprecated` are both in the bar above the dense
+list.** The mock shows `DEPRECATED 3` in `1a` and `Hide deprecated` in `1b`.
+They do different things — show only these, versus remove these — so `1a` gets
+both, the second right-aligned and dashed exactly as `1b` draws it. They are
+mutually exclusive; pressing one releases the other. A schema that deprecates
+nothing gets no bar rather than an empty one.
+
+**The dense list's method chips are gone, and `⇧⌘F` with them.** `1a` draws a
+row of them above the list — `ALL 47`, `GET 21`, `POST 12` — and they were the
+only filter charging rent on every screen: a line of vertical space in the
+pane that is meant to be a long run of rows, and a stop on the way to them.
+Nothing they did was lost. The verb is on every row, typing one into the
+filter narrows by it (`post book` is POST endpoints about books), and `+ verb`
+is still a facet in roomy, which writes `verb=` into the address the way it
+always did. `filters.verbs`, the router and `search.js` are untouched — only
+the chips are gone, so the applied-filter token that clears a verb still
+appears in roomy. `⇧⌘F` focused those chips and had nothing left to focus.
+
+Worth knowing, because it looks like fallout from this and is not: **a filter
+in the URL does not survive the schema load.** `parseHash` reads `verb`, `tag`,
+`q` and `deprecated` correctly and `applyRoute` sets them, and then the
+schema-loaded branch of `loadUrl` in `main.js` clears every one of them on the
+way past. Any link naming a schema opens unfiltered — verbs, tags and query
+alike — and did so before the chips came out. Filtering by hand is unaffected,
+which is why nothing on screen ever gave it away.
 
 **An `All endpoints` row leads the tag rail, and an `All` chip leads the tag
 chip row.** The mock shows a tag selected with no drawn way back. Shift-click
@@ -439,6 +459,21 @@ in the state where it is hidden on purpose.
 What the audit could not answer still stands: it was Chromium only, no screen
 reader was involved, and no disabled person tested it. WCAG conformance is a
 floor.
+
+**The frame and its scrollers are `position: relative`, and that is not
+decoration.** `.visually-hidden` is absolutely positioned — it has to be, or a
+1px box would sit in the flow and disturb the line it is on. An absolutely
+positioned box is only clipped by an ancestor that is in its containing-block
+chain, so with every ancestor static, each screen-reader-only span inside a
+scrolled pane took its static position in the *unclipped* content and pulled
+the document's scrollable area down after it. A frame declared `height: 100dvh;
+overflow: hidden` could still be wheeled off the top of the window, and a modal
+dialog opened onto a document three times the height of the viewport. `.app`,
+`.rail`, `.pane--detail` and `.list-scroll` now each establish a containing
+block, so hidden text is clipped by the box that scrolls it. `test/a11y/
+layout.mjs` holds the line: the document's own overflow must be zero, with and
+without a dialog open.
+
 
 ## Still not designed, still not invented
 

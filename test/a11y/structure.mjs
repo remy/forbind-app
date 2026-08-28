@@ -32,6 +32,58 @@ test('every landmark is present and named', async () => {
   }
 });
 
+/*
+ * The dense list used to carry a row of method chips above the rows. They are
+ * gone; the two ways left to narrow by method have to keep working, or their
+ * removal took something with it.
+ *
+ * Reading a verb back out of the address is deliberately not checked here: no
+ * filter in the URL survives the schema load today — `main.js` clears them all
+ * when the document arrives — which is a bug of its own and predates this.
+ */
+test('the list panel offers no method filters, and still filters by method', async () => {
+  const page = await open(`#/?src=${SRC}`);
+  try {
+    const groups = await page.evaluate(() =>
+      [...document.querySelectorAll('.pane--list [role="group"]')].map((n) => n.getAttribute('aria-label')));
+    assert.ok(!groups.includes('Filter by method'), `the method filter group is still there: ${groups.join(' | ')}`);
+    assert.ok(groups.includes('Deprecated endpoints'), `the deprecated controls went too: ${groups.join(' | ')}`);
+    assert.equal(await page.getByRole('button', { name: /^GET \d+$/ }).count(), 0, 'a method chip is still on screen');
+
+    // The counter is the honest reading of what the list is showing.
+    const shown = () => page.locator('.statusbar').textContent();
+    assert.match(await shown(), /47 of 47 shown/);
+
+    // Typing a verb into the filter narrows by it, on its own and in front of
+    // a word: `post book` is POST endpoints about books.
+    await page.locator('#search').fill('delete');
+    await page.waitForTimeout(500);
+    assert.match(await shown(), /6 of 47 shown/, 'typing a verb did not narrow the list');
+    await page.locator('#search').fill('post book');
+    await page.waitForTimeout(500);
+    assert.match(await shown(), /6 of 47 shown/, 'a verb in front of a word did not narrow the list');
+    await page.locator('#search').fill('');
+    await page.waitForTimeout(500);
+
+    // And the roomy layout keeps `+ verb` among its facets.
+    await page.evaluate(() => window.__aw.actions.setDensity('roomy'));
+    await page.waitForTimeout(600);
+    await page.getByRole('button', { name: '+ verb' }).click();
+    await page.waitForTimeout(400);
+    // The facet values are toggle buttons carrying `aria-pressed`, not
+    // checkboxes, so they are pressed rather than checked.
+    const get = page.locator('#facet-panel button', { hasText: /^GET$/ });
+    await get.click();
+    await page.waitForTimeout(500);
+    assert.equal(await get.getAttribute('aria-pressed'), 'true');
+    assert.match(await shown(), /21 of 47 shown/, 'the verb facet did not narrow the list');
+    // The filter reaches the address, so the view is still shareable.
+    assert.match(await page.evaluate(() => location.hash), /verb=GET/);
+  } finally {
+    await page.close();
+  }
+});
+
 test('the skip links are the first tab stops and land on real targets', async () => {
   const page = await open();
   try {

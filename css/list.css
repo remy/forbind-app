@@ -9,7 +9,7 @@
 /* ---------------------------------------------------------------------------
    Endpoint list
 --------------------------------------------------------------------------- */
-.list-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+.list-scroll { position: relative; flex: 1; overflow-y: auto; min-height: 0; }
 
 /* Plain block flow: each <li> is a box and the row fills it. Nothing here is
    `display: contents`, which is the one thing that can quietly cost a list its

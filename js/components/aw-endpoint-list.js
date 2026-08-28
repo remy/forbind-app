@@ -25,6 +25,8 @@ import { announce } from '../lib/announce.js';
 import { verbLabel, verbClass } from '../lib/openapi.js';
 import { groupByTag, typeAheadIndex } from '../lib/search.js';
 import { markdownToText } from '../lib/markdown.js';
+// Registers <aw-deprecated-bar> and <aw-tag-chips>, which render() places.
+import './list-strips.js';
 
 const TYPEAHEAD_TIMEOUT = 800;
 
@@ -103,7 +105,7 @@ class AwEndpointList extends AwElement {
     );
 
     replace(this, [
-      roomy ? null : el('aw-verb-bar', {}),
+      roomy ? null : el('aw-deprecated-bar', {}),
       roomy ? null : el('aw-tag-chips', {}),
       this.#scroll,
       state.showHints ? this.#renderHints() : null,
@@ -278,7 +280,6 @@ class AwEndpointList extends AwElement {
       hint('↑↓', 'Up or down arrow', 'move'),
       hint('↵', 'Enter', 'open'),
       hint('/', 'Slash', 'filter'),
-      hint('⇧⌘F', 'Shift Command F, or Shift Control F', 'verbs'),
       hint('⇧⌘M', 'Shift Command M, or Shift Control M', 'wide'),
       hint('⌘K', 'Command K, or Control K', 'palette'),
     ]);
@@ -423,100 +424,4 @@ class AwEndpointList extends AwElement {
   }
 }
 
-/** The dense verb filter bar: ALL 47, GET 21, … plus the deprecated controls. */
-class AwVerbBar extends AwElement {
-  static observes = ['schema', 'filters'];
-
-  render(state) {
-    const { schema, filters } = state;
-    if (!schema) {
-      replace(this, []);
-      return;
-    }
-    const total = schema.operations.length;
-    const deprecated = schema.report.counts.deprecated;
-
-    const chip = (label, pressed, onclick, extraClass = '') =>
-      el('button', {
-        type: 'button',
-        class: `chip${extraClass}`,
-        'aria-pressed': String(pressed),
-        onclick,
-        text: label,
-      });
-
-    replace(this, [
-      el('div', { class: 'filterbar', id: 'verb-filters', role: 'group', 'aria-label': 'Filter by method' }, [
-        chip(`ALL ${total}`, filters.verbs.length === 0 && !filters.onlyDeprecated, () => this.actions.setVerbs([])),
-        ...schema.verbCounts.map((entry) =>
-          chip(`${entry.verb} ${entry.count}`, filters.verbs.includes(entry.verb), () => this.actions.toggleVerb(entry.verb)),
-        ),
-        deprecated
-          ? chip(`DEPRECATED ${deprecated}`, Boolean(filters.onlyDeprecated), () => this.actions.toggleOnlyDeprecated(), ' chip--dashed')
-          : null,
-        deprecated
-          ? chip('Hide deprecated', filters.hideDeprecated, () => this.actions.toggleHideDeprecated(), ' chip--dashed filterbar__spacer')
-          : null,
-      ]),
-    ]);
-  }
-}
-
-/**
- * The tag chips that stand in for the rail once it is off screen — whether
- * that is because the window is too narrow for it or because it has been
- * folded away by hand. Rendered always and hidden by CSS at wide widths would
- * mean two tab stops for the same control, so it is a media query in JS
- * instead.
- */
-class AwTagChips extends AwElement {
-  static observes = ['schema', 'filters', 'railCollapsed'];
-
-  #media = null;
-  #onChange = null;
-
-  connectedCallback() {
-    this.#media = globalThis.matchMedia?.('(max-width: 75rem)');
-    this.#onChange = () => this.render(this.state);
-    this.#media?.addEventListener('change', this.#onChange);
-    super.connectedCallback();
-  }
-
-  disconnectedCallback() {
-    super.disconnectedCallback();
-    this.#media?.removeEventListener('change', this.#onChange);
-  }
-
-  render(state) {
-    const { schema, filters } = state;
-    const railOffScreen = (this.#media?.matches ?? false) || state.railCollapsed;
-    if (!schema || !railOffScreen) {
-      replace(this, []);
-      return;
-    }
-    replace(this, [
-      el('div', { class: 'tagbar', id: 'tag-chips', tabindex: '-1', role: 'group', 'aria-label': 'Filter by tag' }, [
-        el('button', {
-          type: 'button',
-          class: 'chip',
-          'aria-pressed': String(filters.tags.length === 0),
-          text: `All ${schema.operations.length}`,
-          onclick: () => this.actions.setTags([]),
-        }),
-        ...schema.tags.map((tag) =>
-          el('button', {
-            type: 'button',
-            class: 'chip',
-            'aria-pressed': String(filters.tags.includes(tag.name)),
-            text: `${tag.name} ${tag.count}`,
-            onclick: (event) => this.actions.toggleTag(tag.name, { additive: event.shiftKey }),
-          }),
-        ),
-      ]),
-    ]);
-  }
-}
-
 define('aw-endpoint-list', AwEndpointList);
-define('aw-verb-bar', AwVerbBar);
-define('aw-tag-chips', AwTagChips);

@@ -30,7 +30,7 @@ aw-meta-strip,
 aw-tag-rail,
 aw-facets,
 aw-endpoint-list,
-aw-verb-bar,
+aw-deprecated-bar,
 aw-tag-chips,
 aw-detail,
 aw-code-block,
@@ -46,7 +46,18 @@ aw-import { display: block; }
   min-height: 0;
 }
 
+/*
+ * `position: relative` is load-bearing, not decoration. `.visually-hidden` is
+ * positioned, and an absolutely positioned box is only clipped by an ancestor
+ * that is in its containing-block chain — so without a positioned frame every
+ * screen-reader-only span in a scrolled pane lands at its static position in
+ * the *unclipped* content and drags the document's scrollable area down with
+ * it. The result was a fixed frame you could still wheel off the top of the
+ * window, and a modal dialog sitting on a page several times taller than the
+ * viewport. The scrollers below declare it for the same reason.
+ */
 .app {
+  position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-height: 100vh;
@@ -161,6 +172,7 @@ aw-import { display: block; }
 .app--browse .main { grid-template-rows: minmax(0, 1fr); }
 
 .rail {
+  position: relative;
   border-right: var(--rule-w-strong) solid var(--rule-strong);
   padding: var(--s-14) 0;
   overflow-y: auto;
@@ -180,7 +192,7 @@ aw-import { display: block; }
   flex-direction: column;
 }
 .pane--list { border-right: var(--rule-w-strong) solid var(--rule-strong); }
-.pane--detail { overflow-y: auto; }
+.pane--detail { position: relative; overflow-y: auto; }
 
 /* Roomy (1b): no rail, a wider list, and the search block owns the header. */
 [data-density='roomy'] .shell { grid-template-columns: minmax(0, 1fr); }

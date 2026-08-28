@@ -396,16 +396,6 @@ const actions = {
     else document.querySelector('#search')?.focus();
   },
 
-  focusVerbs() {
-    const bar = document.querySelector('#verb-filters button');
-    if (bar) {
-      bar.focus();
-      announce('Method filters.');
-    } else {
-      announce('The method filters are not available in this layout.');
-    }
-  },
-
   /* --- overlays -------------------------------------------------------- */
   openPalette() {
     lastInvoker = document.activeElement;
@@ -779,11 +769,6 @@ function installShortcuts() {
     if (mod && event.shiftKey && event.key.toLowerCase() === 'u') {
       event.preventDefault();
       actions.replaceSchema();
-      return;
-    }
-    if (mod && event.shiftKey && event.key.toLowerCase() === 'f') {
-      event.preventDefault();
-      actions.focusVerbs();
       return;
     }
     if (mod && event.shiftKey && event.key.toLowerCase() === 'm') {

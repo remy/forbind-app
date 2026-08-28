@@ -143,7 +143,6 @@ strikethrough is not announced.
 | `Enter` | Open the row under the cursor |
 | a letter | Jump to the next path starting with it |
 | `/` | Focus the filter field |
-| `⇧⌘F` | Focus the method filters |
 | `⇧⌘C` | Copy the request snippet |
 | `⇧⌘U` | Replace the schema |
 | `⇧⌘M` | Maximise the detail, and restore the columns |

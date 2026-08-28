@@ -93,7 +93,7 @@ re-render, everything else patches attributes in place.
 | `aw-app` | landmarks, skip links, live regions, the shell layout, the column flags |
 | `aw-topbar` | wordmark, search, column toggles, Settings/Authorise; also `aw-search-block` (roomy) and `aw-meta-strip` |
 | `aw-tag-rail` | the tag rail; also `aw-facets`, the filter row that replaces it |
-| `aw-endpoint-list` | the rows, the roving tabindex, type-ahead; also `aw-verb-bar` and `aw-tag-chips` |
+| `aw-endpoint-list` | the rows, the roving tabindex, type-ahead |
 | `aw-detail` | an operation, a component schema, or the empty state — an operation's sections are a tab set in every layout |
 | `aw-schema-tree` | a response body as nested `<details>` in nested `<ul>`s |
 | `aw-code-block` | the curl/fetch/python snippet and its copy button |
@@ -106,7 +106,10 @@ re-render, everything else patches attributes in place.
 
 `aw-detail` hands its field tables and the whole component-schema view to
 `detail-fields.js` — one set of rows drawn one way, for parameters, request
-bodies and schemas alike.
+bodies and schemas alike. `aw-endpoint-list` hands the two strips above it to
+`list-strips.js`: `aw-deprecated-bar` and then `aw-tag-chips`. Neither is part
+of the keyboard model the list runs, and the list file had enough subjects in
+it already.
 
 ---
 
@@ -196,9 +199,8 @@ Three models, all built, all checked in `test/a11y/keyboard.mjs` and
   PgUp PgDn`, `Enter` to open, a letter to jump. The cursor walks the rows *as
   rendered*, which is not the same order the filter returns once the roomy
   layout groups by tag.
-- **Global shortcuts** live in `installShortcuts()` in `main.js`: `/`, `⇧⌘F`,
-  `⇧⌘C`, `⇧⌘U`, `⇧⌘M`. Single-key shortcuts never fire while someone is
-  typing.
+- **Global shortcuts** live in `installShortcuts()` in `main.js`: `/`, `⇧⌘C`,
+  `⇧⌘U`, `⇧⌘M`. Single-key shortcuts never fire while someone is typing.
 
 The rule underneath all three: never destroy the element the keyboard is
 standing on. Cursor moves, column folds and toggle state all patch attributes
