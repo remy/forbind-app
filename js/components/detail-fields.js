@@ -18,20 +18,22 @@ import { verbLabel, verbClass, fieldRows, describeType, describeConstraints, der
 import { markdownBlock } from '../lib/markdown.js';
 
 /**
- * The Notes cell: the constraints as they are, then the description as the
- * markdown it is. Inline, because a table cell is not the place for a heading
- * or a fenced block, and separated so a row with only one of the two does not
- * carry a dangling separator.
+ * The Notes cell: the constraints as a terse line, then the description as the
+ * markdown the document wrote.
  *
- * @param {{notes?: string, description?: string}} row
- * @param {string} [separator]
+ * Rendered as a block rather than inline. A description is regularly a table of
+ * what a field accepts, or a list, or a fenced example — none of which survive
+ * inline rendering, where they come out as the raw pipes and dashes they were
+ * typed as. A cell is narrow, so a wide table scrolls inside it; that is a
+ * better answer than showing the syntax.
+ *
+ * @param {{notes?: string, description?: string, deprecated?: boolean}} row
  */
-function noteCell(row, separator = ' — ') {
-  const description = markdownBlock(row.description, { inline: true });
+function noteCell(row) {
+  const facts = [row.notes, row.deprecated ? 'deprecated' : null].filter(Boolean).join(' · ');
   return [
-    row.notes ? el('span', { text: row.notes }) : null,
-    row.notes && description ? el('span', { 'aria-hidden': 'true', text: separator }) : null,
-    description,
+    facts ? el('span', { class: 'col-notes__facts', text: facts }) : null,
+    markdownBlock(row.description),
   ].filter(Boolean);
 }
 
@@ -51,16 +53,16 @@ export function typeCell(type, hashFor) {
 export function paramTable({ caption, rows, narrow, hashFor }) {
   if (narrow) {
     return el('dl', { class: 'params-stack' }, rows.map((row) => {
-      const notes = noteCell(row, ' · ');
+      const facts = [row.notes, row.deprecated ? 'deprecated' : null].filter(Boolean).join(' · ');
       return el('div', {}, [
         el('dt', { text: row.name }),
         el('dd', {}, [
           typeCell(row.type, hashFor),
           el('span', { 'aria-hidden': 'true', text: ' · ' }),
           el('span', { text: row.required ? 'required' : 'optional' }),
-          notes.length ? el('span', { 'aria-hidden': 'true', text: ' · ' }) : null,
-          ...notes,
-          row.deprecated ? el('span', { text: ' · deprecated' }) : null,
+          facts ? el('span', { 'aria-hidden': 'true', text: ' · ' }) : null,
+          facts ? el('span', { text: facts }) : null,
+          markdownBlock(row.description),
         ]),
       ]);
     }));
@@ -90,12 +92,7 @@ export function paramTable({ caption, rows, narrow, hashFor }) {
         el('td', {}, [
           el('span', { class: row.required ? 'req-yes' : 'req-no', text: row.required ? 'yes' : 'no' }),
         ]),
-        el('td', { class: 'col-notes' }, [
-          ...noteCell(row),
-          row.deprecated
-            ? el('span', { text: row.notes || row.description ? ' — deprecated' : 'deprecated' })
-            : null,
-        ]),
+        el('td', { class: 'col-notes' }, noteCell(row)),
       ]),
     )),
   ]);

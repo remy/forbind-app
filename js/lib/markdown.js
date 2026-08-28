@@ -27,9 +27,14 @@
  *   because that is a surprise unless it is said, each one carries "(opens in a
  *   new tab)" in its accessible name.
  *
- * Somewhere a single line is all there is room for — a table cell, a row
- * summary, an accessible name — `markdownToText` strips the syntax rather than
- * showing it. Markup that cannot be rendered should be removed, not displayed.
+ * The rule about where it renders: **descriptions render wherever there is a
+ * block to put them in** — the overview, a request body, a schema, a field's
+ * table cell, the hint under a try-it input. They are regularly a table of what
+ * a field accepts, or a list, or a fenced example, and none of those survive
+ * being squeezed onto one line. `markdownToText` strips the syntax instead only
+ * where the design has literally one line and no more: a row in the endpoint
+ * list, a response summary, a line in the payload tree, anything that is an
+ * accessible name. Markup that cannot be rendered should be removed, not shown.
  */
 
 import markdownit from '../vendor/markdown-it.mjs';

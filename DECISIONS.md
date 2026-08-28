@@ -239,11 +239,14 @@ can neither outrank the pane it sits in nor skip a level on the way into it, ima
 origin only and a broken image box says nothing, and links open in a new tab —
 losing a half-filled try-it form to a documentation link would be its own bug —
 with "(opens in a new tab)" in the accessible name, because that is a surprise
-otherwise. Where the design has one line and no more — a list row, a table of
-contents summary, a hint tied to a field, anything that becomes an accessible
-name — the markdown is *stripped to its words* rather than rendered, since a
-link cannot live inside a `<summary>` and raw syntax is worse than emphasis
-quietly lost.
+otherwise. It renders wherever there is a block to put it in, including a field's Notes
+cell and the hint under a try-it input: descriptions are regularly a table of
+what the field accepts, and a table has to be a table — inline rendering leaves
+the pipes and dashes on screen exactly as typed. Only where the design has one
+line and no more — a list row, a disclosure summary, a line in the payload
+tree, anything that becomes an accessible name on its own — is the markdown
+*stripped to its words* instead, since a link cannot live inside a `<summary>`
+and raw syntax is worse than emphasis quietly lost.
 
 **The endpoint list lost its position counter.** The hint bar used to end with
 `12 of 47`, updated as the cursor moved. The position is still announced when

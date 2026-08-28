@@ -68,6 +68,38 @@ test('a parameter description is markdown in the table it lands in', async () =>
     const notes = page.locator('.col-notes').first();
     assert.equal(await notes.locator('code').first().textContent(), 'maxLimit');
     assert.equal(await notes.locator('strong').first().textContent(), 'settings');
+    // A description is regularly a table of what the field accepts. Inline
+    // rendering leaves that as raw pipes, so the cell takes a block.
+    const table = page.locator('.col-notes table');
+    assert.equal(await table.count(), 1);
+    assert.equal(await table.locator('tbody tr').count(), 3);
+    assert.ok(!(await page.locator('.col-notes').last().textContent()).includes('| ---'));
+  } finally {
+    await page.close();
+  }
+});
+
+test('a parameter description is markdown in the try-it form as well', async () => {
+  const page = await open(`#/op/get-notes?src=${DOCS}`);
+  try {
+    await showTab(page, 'tryit');
+    // The facts stay a terse line; the prose gets the room it needs.
+    const row = page.locator('.field-row', { has: page.getByLabel(/^q/) });
+    const facts = row.locator('.hint').first();
+    assert.equal((await facts.textContent()).trim(), 'string · optional');
+
+    const prose = row.locator('.hint--prose');
+    assert.equal(await prose.locator('table tbody tr').count(), 3);
+    assert.equal(await prose.locator('code').first().textContent(), 'elvis');
+    assert.ok(!(await prose.textContent()).includes('| ---'));
+
+    // Both are tied to the field, so neither is only there for the sighted.
+    const described = await page.getByLabel(/^q/).getAttribute('aria-describedby');
+    assert.equal(described.split(' ').length, 2);
+    for (const id of described.split(' ')) assert.equal(await page.locator(`#${id}`).count(), 1);
+
+    assert.deepEqual(await violations(page), []);
+    assert.deepEqual(page.problems, []);
   } finally {
     await page.close();
   }

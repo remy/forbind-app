@@ -385,7 +385,12 @@ aw-base-url { display: block; }
   border-inline-start: var(--rule-w-strong) solid var(--rule);
   color: var(--ink-55);
 }
+/* Its own scroll container, so a wide table in a narrow column scrolls rather
+   than crushing its cells. */
 .md table { border-collapse: collapse; display: block; overflow-x: auto; }
+/* Breaking `artist:elvis` across two lines to fit a column defeats the point
+   of quoting it, so code in a table keeps its width and the table scrolls. */
+.md table code { overflow-wrap: normal; white-space: nowrap; }
 .md th, .md td {
   padding: var(--s-4) var(--s-8);
   border: var(--rule-w) solid var(--rule);

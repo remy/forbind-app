@@ -22,7 +22,7 @@ import { announce } from '../lib/announce.js';
 import { buildRequest, sampleValue, parameterExample } from '../lib/request.js';
 import { explainFailure, renderResult, formatBytes } from './tryit-result.js';
 import { enumValues } from '../lib/enums.js';
-import { markdownToText } from '../lib/markdown.js';
+import { markdownBlock } from '../lib/markdown.js';
 
 /** Verbs that change something and deserve a word of warning first. */
 const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -231,14 +231,18 @@ class AwTryIt extends AwElement {
     const constraints = options
       ? param.constraints.filter((note) => !note.startsWith('one of'))
       : param.constraints;
-    // The hint is a single `·`-joined line tied to the field with
-    // aria-describedby, so the description contributes its words and not its
-    // markdown.
-    const hint = [param.type.label, param.required ? 'required' : 'optional', ...constraints, markdownToText(param.description)]
+    // Two things, not one line. The facts about the field stay terse and
+    // `·`-joined; the description is prose the document wrote in markdown —
+    // often a table of what the field accepts — and it gets the room to be
+    // that, because flattened into the facts line it is unreadable.
+    const facts = [param.type.label, param.required ? 'required' : 'optional', ...constraints]
       .filter(Boolean)
       .join(' · ');
+    const prose = markdownBlock(param.description, { class: 'hint hint--prose' });
+    const proseId = `${id}-desc`;
+    if (prose) prose.id = proseId;
 
-    const describedBy = [hintId, error ? errorId : null].filter(Boolean).join(' ');
+    const describedBy = [hintId, prose ? proseId : null, error ? errorId : null].filter(Boolean).join(' ');
 
     const onChange = (event) => {
       this.#values[param.in] ??= {};
@@ -247,7 +251,7 @@ class AwTryIt extends AwElement {
         delete this.#errors[key];
         event.target.removeAttribute('aria-invalid');
         this.querySelector(`#${CSS.escape(errorId)}`)?.remove();
-        event.target.setAttribute('aria-describedby', hintId);
+        event.target.setAttribute('aria-describedby', [hintId, prose ? proseId : null].filter(Boolean).join(' '));
       }
       this.#updatePreview();
     };
@@ -291,7 +295,8 @@ class AwTryIt extends AwElement {
         el('span', { class: 'visually-hidden', text: ` (${param.in} parameter)` }),
       ]),
       control,
-      el('p', { class: 'hint', id: hintId, text: hint }),
+      el('p', { class: 'hint', id: hintId, text: facts }),
+      prose,
       error ? el('p', { class: 'hint hint--error', id: errorId }, [
         el('span', { class: 'word word--fail', text: 'NEEDED' }),
         el('span', { text: ` ${error}` }),

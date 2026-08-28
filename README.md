@@ -280,10 +280,16 @@ Four things it will not do, because the schema is someone else's file:
   half-filled try-it form with it — and each one carries *(opens in a new tab)*
   in its accessible name, because otherwise that is a surprise.
 
+It renders wherever there is a block to put it in: the overview, a request
+body, a schema, a field's Notes cell, the hint under a try-it input. A
+description is regularly a *table* of what a field accepts, and a table
+flattened onto one line is unreadable — so the cell or the hint takes the
+table, scrolling it inside itself if the column is narrow.
+
 Where the design has room for one line and no more — a row in the endpoint
-list, a response summary, the hint under a field, anything that becomes part of
-an accessible name — the markdown is stripped back to its words instead. Markup
-that cannot be rendered is removed, never displayed.
+list, a response summary, a line in the payload tree, anything that becomes an
+accessible name on its own — the markdown is stripped back to its words
+instead. Markup that cannot be rendered is removed, never displayed.
 
 ## Try it out
 

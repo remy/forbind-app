@@ -32,6 +32,20 @@ paths:
           description: How many to return. See `maxLimit` in **settings**.
           schema:
             type: integer
+        - name: q
+          in: query
+          description: |
+            A search expression, in the language the search bar uses.
+
+            | Example | Matches |
+            | --- | --- |
+            | `elvis` | any text field contains it |
+            | `artist:elvis` | just that field |
+            | `-genre:live` | exclude matches |
+
+            Terms are combined with AND.
+          schema:
+            type: string
       responses:
         "200":
           description: The notes, **newest first**.
