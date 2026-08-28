@@ -35,11 +35,8 @@ test('every landmark is present and named', async () => {
 /*
  * The dense list used to carry a row of method chips above the rows. They are
  * gone; the two ways left to narrow by method have to keep working, or their
- * removal took something with it.
- *
- * Reading a verb back out of the address is deliberately not checked here: no
- * filter in the URL survives the schema load today — `main.js` clears them all
- * when the document arrives — which is a bug of its own and predates this.
+ * removal took something with it. Reading a verb back out of the address is
+ * the check below this one.
  */
 test('the list panel offers no method filters, and still filters by method', async () => {
   const page = await open(`#/?src=${SRC}`);
@@ -79,6 +76,42 @@ test('the list panel offers no method filters, and still filters by method', asy
     assert.match(await shown(), /21 of 47 shown/, 'the verb facet did not narrow the list');
     // The filter reaches the address, so the view is still shareable.
     assert.match(await page.evaluate(() => location.hash), /verb=GET/);
+  } finally {
+    await page.close();
+  }
+});
+
+/*
+ * A shared link names a document and how to look at it in one address, and the
+ * document always arrives second — the fetch has not started when the filters
+ * are read. So the load has to hand them back rather than clear them with the
+ * previous document's.
+ */
+test('a filter named in the address survives the schema load', async () => {
+  const page = await open(`#/?src=${SRC}&verb=GET`);
+  try {
+    assert.match(await page.locator('.statusbar').textContent(), /21 of 47 shown/,
+      'the verb in the link was thrown away by the schema load');
+    // Not just the count: the rows on screen are the GET ones. The pill is
+    // where a row says its method, abbreviated or not.
+    const methods = await page.evaluate(() =>
+      [...new Set([...document.querySelectorAll('.pane--list .row .pill')].map((n) => n.textContent.trim()))]);
+    assert.deepEqual(methods, ['GET'], `the list is showing ${methods.join(', ')}`);
+    // The store agrees, so the applied-filter controls can clear it.
+    assert.deepEqual(await page.evaluate(() => window.__aw.store.state.filters.verbs), ['GET']);
+    // And it is still in the address, so the link a reader copies onward says
+    // the same thing as the one they were given.
+    assert.match(await page.evaluate(() => location.hash), /verb=GET/);
+
+    // The other three spellings arrive the same way.
+    for (const [query, expected] of [['q=book', /18 of 47 shown/], ['tag=Bookings', /12 of 47 shown/], ['deprecated=only', /3 of 47 shown/]]) {
+      const other = await open(`#/?src=${SRC}&${query}`);
+      try {
+        assert.match(await other.locator('.statusbar').textContent(), expected, `${query} did not survive the load`);
+      } finally {
+        await other.close();
+      }
+    }
   } finally {
     await page.close();
   }

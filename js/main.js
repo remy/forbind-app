@@ -79,6 +79,17 @@ function hashFor(target) {
 ------------------------------------------------------------------------- */
 
 let pendingSelection = null;
+/**
+ * Filters the address asked for, held across a schema load.
+ *
+ * A document arriving clears the filters, because the ones on screen were
+ * chosen for the document before it. But an address can carry filters as well
+ * as a schema, and it always arrives first — the fetch has not even started
+ * when `applyRoute` sets them — so clearing on the far side of the load throws
+ * away the half of the link that says what to show. These are set aside
+ * instead, and put back once the document they describe is there.
+ */
+let pendingFilters = null;
 let schemaSource = null;
 
 const router = new Router((route) => {
@@ -86,6 +97,7 @@ const router = new Router((route) => {
     // The URL names a schema this tab has not loaded. Fetch it, then land on
     // whatever the rest of the URL asked for.
     pendingSelection = { view: route.view, id: route.id };
+    pendingFilters = route.filters;
     actions.loadUrl(route.src);
   }
   applyRoute(route);
@@ -147,6 +159,11 @@ function announceResultCount() {
 ------------------------------------------------------------------------- */
 
 async function ingest(promise, { note = null, restoring = false } = {}) {
+  // Claimed before the first await: whatever the address asked for belongs to
+  // this load, and a load that fails must not leave it lying around for the
+  // next schema someone opens by hand.
+  const arrivingFilters = pendingFilters;
+  pendingFilters = null;
   store.set({ schemaState: 'loading', schemaError: null, importNote: null });
   try {
     const source = await promise;
@@ -179,7 +196,14 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
       selectedSchemaName: null,
       activeRowId: null,
       baseUrl: restoredBaseUrl,
-      filters: { ...store.state.filters, query: '', tags: [], verbs: [], scopes: [], statusCodes: [], onlyDeprecated: false },
+      // A new document does not inherit the last one's filters — except the
+      // ones the address it was named in asked for, which are about this
+      // document and not the one before.
+      filters: {
+        ...store.state.filters,
+        query: '', tags: [], verbs: [], scopes: [], statusCodes: [], onlyDeprecated: false,
+        ...arrivingFilters,
+      },
       auth: {
         ...store.state.auth,
         schemeId: restoredAuth?.schemeId ?? Object.keys(model.securitySchemes)[0] ?? null,
@@ -205,9 +229,16 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
     const missingServer = model.report.baseUrl.needed && !restoredBaseUrl
       ? ' No server URL is declared, so requests need a base URL you supply.'
       : '';
+    // A link can name filters as well as a document, and the report's totals
+    // then describe a list that is not the one on screen. Say what the list is
+    // actually showing, so the narrowing is not something to discover.
+    const shown = visibleOperations().length;
+    const narrowed = shown === counts.endpoints
+      ? ''
+      : ` Filters from the link are applied: ${shown} of ${counts.endpoints} shown.`;
     announce(
       `${source.name} parsed. ${counts.endpoints} endpoints, ${counts.tags} tags, ${counts.schemas} schemas, ` +
-      `${counts.deprecated} deprecated. ${model.report.notes.length} things worth knowing.${missingServer}`,
+      `${counts.deprecated} deprecated. ${model.report.notes.length} things worth knowing.${missingServer}${narrowed}`,
     );
 
     // A link that named both a schema and an operation lands on the operation
@@ -579,7 +610,13 @@ const actions = {
     clearAuth();
     dropStoredBaseUrl();
     schemaSource = null;
-    store.set({ schemaState: 'idle', browsing: false, schemaError: null, importNote: null, baseUrl: '' });
+    // The filters go with the document they were chosen for — including out of
+    // the address, which `go` rebuilds from them. Leaving them there would
+    // make a reload restore a filter for a schema that is no longer loaded.
+    store.set({
+      schemaState: 'idle', browsing: false, schemaError: null, importNote: null, baseUrl: '',
+      filters: { ...store.state.filters, query: '', tags: [], verbs: [], scopes: [], statusCodes: [], onlyDeprecated: false },
+    });
     go({ view: 'import' });
     requestAnimationFrame(() => document.querySelector('#schema-file')?.focus());
     announce('Load a different schema.');
@@ -822,9 +859,13 @@ installShortcuts();
  * copy kept on this machine if it came from a file.
  */
 function restoreSchema() {
-  if (parseHash().src) return false;
+  const route = parseHash();
+  if (route.src) return false;
   const stored = readSchema();
   if (!stored) return false;
+  // The address is being honoured rather than replaced here, so a filter in it
+  // belongs to the document coming back — same as one arriving with a `src`.
+  pendingFilters = route.filters;
   if (stored.url) {
     ingest(loadFromUrl(stored.url), { restoring: true });
     return true;
