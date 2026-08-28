@@ -194,6 +194,15 @@ Each is either a state the design implies or a route out of a dead end.
   the value came from. Clearing a base URL clears the suggestion with it, since
   a field that refills itself with the guess you just discarded is a field
   arguing with you.
+- **The rail's disclosure marker is drawn, not `::marker`.** The summary's
+  content is a heading, and a native `::marker` stops painting once there is no
+  inline content on the summary's first line — which left the schema drawer
+  with no visible affordance at all, in either theme. It is a chevron built
+  from two borders on a square, turned 45° shut and 135° open. Two borders and
+  not the usual filled triangle, because that shape needs two *transparent*
+  borders and forced colours paints transparent borders in: the arrow becomes a
+  solid block that looks identical open and shut. Nothing here is transparent,
+  so the shape survives and the turn is what carries the state.
 - **The landing page is the mark and the name.** The `h1` was the instruction,
   `Load an OpenAPI schema`; the instruction moved into the lede under it and
   the heading became the logo beside the word `Allyway`, with what the tool is

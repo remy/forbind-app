@@ -315,14 +315,49 @@ aw-import { display: block; }
   border-top: var(--rule-w) solid var(--rule);
 }
 .rail__disclosure {
-  padding: 0 var(--s-14) var(--s-9) var(--s-24, 1.5rem);
+  display: flex;
+  align-items: center;
+  gap: var(--s-8);
+  padding: var(--s-4) var(--s-14) var(--s-9);
   cursor: pointer;
-  list-style-position: outside;
+  transition: background-color var(--dur) var(--ease);
+  /*
+   * The marker is drawn here rather than left to `::marker`. The summary's
+   * content is a heading — a block box — and a native marker stops painting
+   * once there is no inline content on the summary's first line, which left
+   * the drawer with no affordance at all in either theme. Drawing it also
+   * lets it sit in the flex row beside the count, and rotate when the drawer
+   * opens: a second cue on top of the one the element already gives assistive
+   * technology, so the state is never carried by position alone.
+   */
+  list-style: none;
 }
-.rail__disclosure::marker { color: var(--ink-55); }
+.rail__disclosure::-webkit-details-marker { display: none; }
+/*
+ * A chevron, not a filled triangle: two borders on a square, turned 45°. The
+ * triangle version is drawn with two *transparent* borders, and forced colours
+ * paints transparent borders in — which turns the arrow into a solid block
+ * that looks identical open and shut. Nothing here is transparent, so the
+ * shape survives, and the turn is what says which way it is.
+ */
+.rail__disclosure::before {
+  content: '';
+  flex: none;
+  width: 0.375rem;
+  height: 0.375rem;
+  margin-inline: 0.125rem 0.0625rem;
+  color: var(--ink-55);
+  border-top: 0.125rem solid currentColor;
+  border-right: 0.125rem solid currentColor;
+  transform: rotate(45deg);
+  transition: transform var(--dur) var(--ease);
+}
+.rail__schemas[open] > .rail__disclosure::before { transform: rotate(135deg); }
+.rail__disclosure:hover { background: var(--hover-surface); }
 .rail__disclosure:hover .rail__disclosure-title { text-decoration: underline; }
 .rail__disclosure:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .rail__disclosure-title {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;

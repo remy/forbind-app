@@ -23,14 +23,44 @@ test('the rail keeps its schemas in a real disclosure, shut on arrival', async (
     // The count is on the summary, so a shut drawer still says what is in it.
     const summary = page.locator('.rail__disclosure');
     assert.match(await summary.textContent(), /Schemas\s*9/);
+
+    // And a marker that is actually painted. The native `::marker` gives up
+    // once the summary's content is a block box, which left the drawer with
+    // no visible affordance at all — so it is drawn here, and checked here.
+    const marker = () => summary.evaluate((node) => {
+      const before = getComputedStyle(node, '::before');
+      return {
+        content: before.content,
+        width: parseFloat(before.borderTopWidth),
+        transform: before.transform,
+        borders: [before.borderTopColor, before.borderRightColor,
+          before.borderBottomColor, before.borderLeftColor]
+          .filter((_, i) => parseFloat([before.borderTopWidth, before.borderRightWidth,
+            before.borderBottomWidth, before.borderLeftWidth][i]) > 0)
+          .join(' '),
+      };
+    });
+    const shut = await marker();
+    assert.notEqual(shut.content, 'none');
+    assert.ok(shut.width > 0, 'the disclosure marker has no box to paint');
+    // Nothing about it is transparent, so forced colours cannot fill the shape
+    // in and flatten it into a block.
+    assert.ok(
+      !/transparent|rgba\(0, 0, 0, 0\)/.test(shut.borders),
+      `the marker leans on a transparent border: ${shut.borders}`,
+    );
     // And it names the list it controls, whichever state it is in.
     const listedBy = await page.locator('.rail__schemas ul').getAttribute('aria-labelledby');
     assert.match(await page.locator(`#${listedBy}`).textContent(), /Schemas/);
 
     await summary.click();
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(400);
     assert.equal(await drawer.evaluate((node) => node.open), true);
     assert.equal(await page.locator('.rail__schema').first().isVisible(), true);
+
+    // Open and shut do not look the same: the marker turns, so the state has
+    // a shape and not only a position in the list.
+    assert.notEqual((await marker()).transform, shut.transform);
 
     assert.deepEqual(await violations(page), []);
     assert.deepEqual(page.problems, []);
