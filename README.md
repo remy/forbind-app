@@ -1,6 +1,6 @@
 # allyway
 
-An OpenAPI browser whose point is that it is accessible.
+An accessibility first OpenAPI browser.
 
 Load a schema — JSON or YAML, Swagger 2.0 through OpenAPI 3.1 — and browse,
 filter and search it, read an operation in full, copy a `curl`/`fetch`/`python`
@@ -82,13 +82,13 @@ keyboard in it too, so a typo is one edit from a retry rather than a retype.
 **What is remembered, and where.** Everything below is on your own machine —
 there are no cookies, no telemetry, and nothing is sent anywhere.
 
-| What | Where | Lifetime |
-|---|---|---|
-| Theme, density, hint bar, folded columns | `localStorage` | until changed |
-| The loaded schema | `localStorage` | until you replace it |
-| A credential | `sessionStorage` | this tab, and gone when it closes |
-| …if you tick *Remember on this device* | `localStorage` | until you forget it |
-| A base URL you supplied | `localStorage` | until you clear it or load another schema |
+| What                                     | Where            | Lifetime                                  |
+| ---------------------------------------- | ---------------- | ----------------------------------------- |
+| Theme, density, hint bar, folded columns | `localStorage`   | until changed                             |
+| The loaded schema                        | `localStorage`   | until you replace it                      |
+| A credential                             | `sessionStorage` | this tab, and gone when it closes         |
+| …if you tick *Remember on this device*   | `localStorage`   | until you forget it                       |
+| A base URL you supplied                  | `localStorage`   | until you clear it or load another schema |
 
 A schema loaded from a URL is remembered as the URL and re-fetched; one loaded
 from a file keeps its text (under 3 MB — above that only its name is kept, and
@@ -140,18 +140,18 @@ strikethrough is not announced.
 
 **Keyboard.** Three models, all of them required, all of them built:
 
-| | |
-|---|---|
-| `⌘K` / `Ctrl K` | Command palette — a real combobox: focus stays in the input, results are an owned listbox, the active option is tracked with `aria-activedescendant`, the count goes to a polite live region, `Esc` closes and restores focus to the invoker |
-| `↑` `↓` `Home` `End` `PgUp` `PgDn` | Move the cursor in the endpoint list, which is a single tab stop (roving tabindex) |
-| `←` `→` `Home` `End` | Move between the detail's sections — Overview, Body, Responses, Code, Try it — which are a tab set (ARIA tabs, one tab stop, focus follows selection) |
-| `Enter` | Open the row under the cursor |
-| a letter | Jump to the next path starting with it |
-| `/` | Focus the filter field |
-| `⇧⌘C` | Copy the request snippet |
-| `⇧⌘U` | Replace the schema |
-| `⇧⌘M` | Maximise the detail, and restore the columns |
-| `Tab` (from the top) | Skip links to every landmark |
+|                                    |                                                                                                                                                                                                                                              |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `⌘K` / `Ctrl K`                    | Command palette — a real combobox: focus stays in the input, results are an owned listbox, the active option is tracked with `aria-activedescendant`, the count goes to a polite live region, `Esc` closes and restores focus to the invoker |
+| `↑` `↓` `Home` `End` `PgUp` `PgDn` | Move the cursor in the endpoint list, which is a single tab stop (roving tabindex)                                                                                                                                                           |
+| `←` `→` `Home` `End`               | Move between the detail's sections — Overview, Body, Responses, Code, Try it — which are a tab set (ARIA tabs, one tab stop, focus follows selection)                                                                                        |
+| `Enter`                            | Open the row under the cursor                                                                                                                                                                                                                |
+| a letter                           | Jump to the next path starting with it                                                                                                                                                                                                       |
+| `/`                                | Focus the filter field                                                                                                                                                                                                                       |
+| `⇧⌘C`                              | Copy the request snippet                                                                                                                                                                                                                     |
+| `⇧⌘U`                              | Replace the schema                                                                                                                                                                                                                           |
+| `⇧⌘M`                              | Maximise the detail, and restore the columns                                                                                                                                                                                                 |
+| `Tab` (from the top)               | Skip links to every landmark                                                                                                                                                                                                                 |
 
 Rows are anchors, so `Enter`, middle-click and open-in-new-tab work without
 being reimplemented, and every operation has an address you can paste into a

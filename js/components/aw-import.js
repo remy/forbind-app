@@ -127,7 +127,7 @@ class AwImport extends AwElement {
         // above says nothing on its own to anyone arriving from a link.
         el('p', {
           class: 'import__tagline',
-          text: 'An OpenAPI browser whose point is that it is accessible.',
+          text: 'An accessibility first OpenAPI browser.',
         }),
         el('p', {
           class: 'import__lede',
@@ -186,9 +186,9 @@ class AwImport extends AwElement {
       ]),
       detail.hint
         ? el('li', {}, [
-            el('span', { class: 'word word--info', text: 'INFO' }),
-            el('span', { text: detail.hint }),
-          ])
+          el('span', { class: 'word word--info', text: 'INFO' }),
+          el('span', { text: detail.hint }),
+        ])
         : null,
     ].filter(Boolean);
 
@@ -197,9 +197,9 @@ class AwImport extends AwElement {
       el('ul', { class: 'notes' }, rows),
       detail.snippet
         ? el('details', {}, [
-            el('summary', { text: `Show ${where ?? 'the line'}` }),
-            el('pre', { class: 'import__error-detail', text: `${detail.line ?? ''}  ${detail.snippet}` }),
-          ])
+          el('summary', { text: `Show ${where ?? 'the line'}` }),
+          el('pre', { class: 'import__error-detail', text: `${detail.line ?? ''}  ${detail.snippet}` }),
+        ])
         : null,
     ]);
   }
@@ -240,16 +240,16 @@ class AwImport extends AwElement {
 
         notes.length
           ? el('div', { class: 'detail__section' }, [
-              el('h2', { class: 'label', text: `${notes.length} ${notes.length === 1 ? 'thing' : 'things'} worth knowing` }),
-              el('ul', { class: 'notes' }, notes.map((note) =>
-                el('li', {}, [
-                  el('span', { class: `word word--${note.level.toLowerCase()}`, text: note.level }),
-                  el('span', {}, note.parts.map((part) =>
-                    typeof part === 'string' ? el('span', { text: part }) : el('code', { text: part.code }),
-                  )),
-                ]),
-              )),
-            ])
+            el('h2', { class: 'label', text: `${notes.length} ${notes.length === 1 ? 'thing' : 'things'} worth knowing` }),
+            el('ul', { class: 'notes' }, notes.map((note) =>
+              el('li', {}, [
+                el('span', { class: `word word--${note.level.toLowerCase()}`, text: note.level }),
+                el('span', {}, note.parts.map((part) =>
+                  typeof part === 'string' ? el('span', { text: part }) : el('code', { text: part.code }),
+                )),
+              ]),
+            )),
+          ])
           : null,
 
         el('aw-base-url'),
@@ -263,11 +263,11 @@ class AwImport extends AwElement {
           }),
           Object.keys(schema.securitySchemes).length
             ? el('button', {
-                type: 'button',
-                class: 'btn btn--lg',
-                text: 'Set up auth first',
-                onclick: () => this.actions.authThenBrowse(),
-              })
+              type: 'button',
+              class: 'btn btn--lg',
+              text: 'Set up auth first',
+              onclick: () => this.actions.authThenBrowse(),
+            })
             : null,
           el('button', {
             type: 'button',

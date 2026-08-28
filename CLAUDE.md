@@ -1,6 +1,6 @@
 # Working in this repository
 
-allyway is an OpenAPI browser whose point is that it is accessible. Everything
+Allyway (A11y Way) is an accessibility first OpenAPI browser. Everything
 below is a constraint on how it is built, not a style preference. `README.md`
 says what the app does; `KNOWLEDGE.md` says how it is put together;
 `DECISIONS.md` records why the awkward parts are the way they are.
