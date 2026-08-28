@@ -42,9 +42,15 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 code, kbd, samp, pre { font-family: var(--font-mono); }
 
 /* --- focus ---------------------------------------------------------------
-   Every focusable thing gets a visible indicator and it is never removed.
-   The default is an outline offset clear of the element; `.focus-inset` is for
-   anything whose outer ring would be clipped by a pane or scroll boundary.
+   Every focusable thing gets a visible indicator and it is never removed: a
+   2px accent outline, offset clear of the element.
+
+   There was a `.focus-inset` class here for anything whose outer ring would be
+   clipped by a pane or scroll boundary. Nothing ever wore it — rings were
+   measured at every pane edge and the browser paints all of them — so it went
+   rather than sit in the stylesheet looking load-bearing. The one inset ring
+   left is on `.field`, which draws its own because the outline would sit
+   outside the box the border already draws.
 ------------------------------------------------------------------------- */
 :focus { outline: none; }
 
@@ -53,16 +59,10 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
   outline-offset: 2px;
 }
 
-.focus-inset:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 2px var(--accent);
-}
-
 /* Windows High Contrast / forced-colors: the system picks the colours, we only
    guarantee that a ring exists and that fills never carry meaning alone. */
 @media (forced-colors: active) {
   :focus-visible { outline: 2px solid Highlight; outline-offset: 2px; }
-  .focus-inset:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; box-shadow: none; }
   /* Wherever a ring is drawn with box-shadow — which forced colours discard —
      an outline stands in for it. */
   .field:focus-within { outline: 2px solid Highlight; outline-offset: -2px; }
@@ -254,6 +254,11 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
 .input-bare {
   flex: 1;
   min-width: 0;
+  /* The field is 32px and the input's own content box is 18, so centring it
+     leaves a 7px dead band top and bottom where the pointer hits the wrapping
+     div and nothing happens. Stretching costs nothing visually and makes the
+     whole control the target. */
+  align-self: stretch;
   border: 0;
   background: transparent;
   font: 400 var(--t-12-5) / 1 var(--font-sans);

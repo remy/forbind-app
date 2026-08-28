@@ -93,6 +93,17 @@ export async function showTab(page, key) {
   await page.waitForTimeout(400);
 }
 
+/**
+ * Answer the confirmation a mutating verb puts in front of a send.
+ *
+ * @param {import('playwright').Page} page
+ * @param {'yes'|'no'} [answer]
+ */
+export async function confirmSend(page, answer = 'yes') {
+  await page.locator(`dialog.confirm [data-answer="${answer}"]`).click();
+  await page.waitForTimeout(200);
+}
+
 /** @returns {Promise<string[]>} one line per violation */
 export async function violations(page) {
   await page.addScriptTag({ content: axeSource });

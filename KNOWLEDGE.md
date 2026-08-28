@@ -132,6 +132,7 @@ browser. `npm test` covers these.
 | `dom.js` | `el`, `replace`, `uid`, `focusable`, `preserveFocus` |
 | `clipboard.js` | the clipboard write, and the select-the-text fallback when it is refused |
 | `announce.js` | the two live regions and `announce()` |
+| `title.js` | what `document.title` should be for a given state — the only pure part of naming the four screens |
 | `dialog.js` | `<dialog>` plumbing: focus return, light dismiss |
 | `context.js` | the one place components find the store, router and actions |
 
@@ -213,10 +214,15 @@ npm run test:a11y # test/a11y/*.mjs in real Chromium (needs npm install)
 ```
 
 The browser suites share `test/a11y/lib/harness.mjs`, which starts the dev
-server and a browser and exports `open()` and `violations()`. One file per
-subject: `axe` (the static sweep over every screen), `structure`, `keyboard`,
-`columns`, `layout`, `presentation`, `announcements`, `credential`, `tryit`,
-`payload`, `baseurl`, `markdown`.
+server and a browser and exports `open()`, `showTab()`, `confirmSend()` and
+`violations()`. One file per subject: `axe` (the static sweep over every
+screen), `structure`, `keyboard`, `columns`, `layout`, `presentation`,
+`announcements`, `credential`, `tryit`, `payload`, `baseurl`, `markdown`,
+`prose`.
+
+`presentation.mjs` measures contrast from computed styles rather than from the
+token values, so a token that stops reaching an element — a specificity loss, a
+theme that overrides it — fails there rather than passing on paper.
 
 `test/fixtures/local-echo.yaml` points at the dev server so a request can
 actually be sent and read in a test. The other fixtures are the documents that
@@ -242,6 +248,9 @@ markdown, raw HTML and all.
 - **Descriptions are someone else's file.** `markdown.js` runs with
   `html: false` and there is no sanitiser; never turn that on, and never put a
   document's string into `innerHTML` anywhere else.
+- **A mutating verb is confirmed before it is sent.** `send()` awaits
+  `confirmMutation()` for `POST`/`PUT`/`PATCH`/`DELETE`, so any test that sends
+  one has to answer the dialog — `confirmSend(page)` in the harness.
 - **`aw-try-it` observes `baseUrl`.** It patches the preview line in `update()`
   rather than re-rendering, because the field that sets the base URL is inside
   the panel and holds focus while it changes.

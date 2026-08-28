@@ -44,13 +44,14 @@ export function explainFailure(error, built, elapsed) {
     kind: 'error',
     title: 'The browser could not read the response',
     detail:
-      `Nothing came back that this page is allowed to see. There are only two ways that happens: ` +
-      `${host} is unreachable, or it answered without an \`Access-Control-Allow-Origin\` header that permits this origin — ` +
-      `a browser will not hand a cross-origin response to a page without one, whatever the status code was.`,
+      `Nothing came back that this page is allowed to see. ` +
+      `Either ${host} is unreachable, or its answer carried no \`Access-Control-Allow-Origin\` header for this origin. ` +
+      `A browser withholds the whole response when that header is missing. The status code makes no difference.`,
     hint:
       'The request may well have arrived and succeeded; the browser is refusing to show you the answer, not the server refusing to act. ' +
-      'Your browser’s network panel will show the real status. To make this work from here, the API needs to send CORS headers for this origin — ' +
-      'allyway does not proxy real requests, so that the credential never leaves your machine.',
+      'Your browser’s network panel will show the real status. ' +
+      'To make this work from here, the API has to send CORS headers for this origin. ' +
+      'allyway does not proxy real requests, so the credential never leaves your machine.',
     elapsed,
   };
 }
@@ -104,7 +105,9 @@ export function renderResult(result) {
           : el('p', { class: 'result__note', text: 'None readable.' }),
         el('p', {
           class: 'result__note',
-          text: 'A browser only exposes a handful of response headers cross-origin unless the server lists more in `Access-Control-Expose-Headers`, so this is what is readable from here, not everything that was sent.',
+          text: 'These are the headers this page can read, not all the headers that were sent. '
+            + 'A browser hides the rest on a cross-origin response. '
+            + 'The server can expose more by naming them in `Access-Control-Expose-Headers`.',
         }),
       ]),
     ]),

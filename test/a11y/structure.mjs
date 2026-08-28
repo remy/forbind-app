@@ -189,3 +189,24 @@ test('a query schema lands on the operation the fragment asked for', async () =>
     await page.close();
   }
 });
+
+test('the title names which of the four screens is on show', async () => {
+  // One address bar, four screens. A title that never changes leaves the tab,
+  // the history entry and the post-navigation announcement all saying the
+  // same thing.
+  const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
+  try {
+    const title = () => page.title();
+    assert.match(await title(), /^POST \/v2\/bookings — .+ — allyway$/);
+
+    await page.evaluate(() => window.__aw.actions.selectSchema('Booking'));
+    await page.waitForTimeout(300);
+    assert.match(await title(), /^Booking — .+ — allyway$/);
+
+    await page.evaluate(() => window.__aw.actions.replaceSchema());
+    await page.waitForTimeout(400);
+    assert.equal(await title(), 'Load a schema — allyway');
+  } finally {
+    await page.close();
+  }
+});

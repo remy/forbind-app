@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, showTab, violations, LOCAL } from './lib/harness.mjs';
+import { open, showTab, violations, confirmSend, LOCAL } from './lib/harness.mjs';
 
 const REF_ENUM = '/test/fixtures/ref-enum.yaml';
 
@@ -141,6 +141,7 @@ test('a request the browser cannot read explains CORS rather than shrugging', as
   try {
     await showTab(page, 'tryit');
     await page.getByRole('button', { name: /^Send POST$/ }).click();
+    await confirmSend(page);
     await page.waitForTimeout(4000);
     const text = await page.locator('.result--error').textContent();
     assert.match(text, /Access-Control-Allow-Origin/);
@@ -183,6 +184,68 @@ test('an enum named elsewhere in the document is still a dropdown, not a text bo
     await page.waitForTimeout(200);
     assert.match(await page.locator('.tryit__status').textContent(), /sort=composer/);
     assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a request that changes something is confirmed before it is sent', async () => {
+  // 3.3.6: a real POST cannot be taken back from here, so it gets a question
+  // first. Escape has to mean no, and the keyboard has to end up back where
+  // it started.
+  const page = await open();
+  try {
+    await showTab(page, 'tryit');
+    await page.getByRole('button', { name: /^Send POST$/ }).click();
+    await page.waitForTimeout(300);
+
+    const dialog = page.locator('dialog.confirm');
+    assert.equal(await dialog.count(), 1, 'a POST went out without being confirmed');
+    assert.equal(await dialog.getAttribute('role'), 'alertdialog');
+    // Named and described by its own content, not by a bare label.
+    const [labelledBy, describedBy] = await dialog.evaluate((d) => [
+      d.querySelector(`#${d.getAttribute('aria-labelledby')}`)?.textContent,
+      d.querySelector(`#${d.getAttribute('aria-describedby')}`)?.textContent,
+    ]);
+    assert.match(labelledBy, /Send this POST\?/);
+    assert.match(describedBy, /not a sandbox/);
+
+    // It opens on the answer that changes nothing.
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.answer), 'no');
+    assert.deepEqual(await violations(page), []);
+
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+    assert.equal(await dialog.count(), 0);
+    assert.equal(await page.locator('aw-try-it .result').count(), 0, 'Escape sent the request anyway');
+    assert.match(await page.locator('#aw-live-polite').textContent(), /Nothing sent/);
+    // And focus is back on the button that asked.
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.focusKey), 'tryit-send');
+
+    // Confirming goes through — it fails on CORS against a host that is not
+    // there, which is still proof the send happened.
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(300);
+    await confirmSend(page);
+    await page.waitForTimeout(4000);
+    assert.equal(await page.locator('aw-try-it .result').count(), 1);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a request that only reads is not confirmed', async () => {
+  // The question is the point; asking it about a GET would train people to
+  // dismiss it without reading.
+  const page = await open(`#/?src=${LOCAL}`);
+  try {
+    await page.locator('a.row').first().click();
+    await page.waitForTimeout(400);
+    await showTab(page, 'tryit');
+    await page.getByRole('button', { name: /^Send GET$/ }).click();
+    await page.waitForTimeout(1500);
+    assert.equal(await page.locator('dialog.confirm').count(), 0);
+    assert.match(await page.locator('.result__head').textContent(), /200/);
   } finally {
     await page.close();
   }

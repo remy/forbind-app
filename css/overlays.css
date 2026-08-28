@@ -356,3 +356,12 @@ dialog.palette {
    its consequences spelled out under the label. */
 .auth-remember { margin-top: var(--s-16); }
 .auth-remember .choice__hint { max-width: 46ch; }
+
+/* The confirmation in front of a mutating request. Narrower than a settings
+   sheet because it asks one question, and the URL inside it wraps rather than
+   pushing the dialog wider than the phone it is on. */
+.sheet--confirm { width: min(30rem, 100%); }
+.sheet--confirm code {
+  font: 400 var(--t-12-5) / var(--lh-body) var(--font-mono);
+  overflow-wrap: anywhere;
+}

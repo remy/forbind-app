@@ -14,6 +14,7 @@ import { setApp } from './lib/context.js';
 import { defineAll } from './lib/element.js';
 import { Router, buildHash, parseHash, foldQuerySchema } from './lib/router.js';
 import { announce } from './lib/announce.js';
+import { documentTitle } from './lib/title.js';
 import { normalise, parseText, SchemaError, describeScheme } from './lib/openapi.js';
 import { filterOperations, allScopes, allStatusCodes } from './lib/search.js';
 import { readJwt } from './lib/auth.js';
@@ -338,6 +339,20 @@ const actions = {
     }
     go({ view: 'operation', id });
     store.set({ selectedOperationId: id, selectedSchemaName: null, activeRowId: id, mobileView: 'detail' });
+
+    // On a phone the list and the detail are separate pages, so opening a row
+    // takes that row off screen — and the keyboard standing on it goes to
+    // <body>. Send focus after the content the way selectSchema() already
+    // does, and name what opened, because a pane arriving is otherwise
+    // silent. On every wider layout the row is still there and focus belongs
+    // on it: moving it would be the regression.
+    if (isPhoneLayout()) {
+      const op = store.state.schema?.operations.find((candidate) => candidate.id === id);
+      requestAnimationFrame(() => document.querySelector('#detail')?.focus({ preventScroll: true }));
+      if (op) announce(`${op.method} ${op.path}${op.summary ? `, ${op.summary}` : ''}. Detail open.`);
+      return;
+    }
+
     if (focusRow) {
       requestAnimationFrame(() => {
         const row = document.querySelector(`a.row[data-op-id="${CSS.escape(id)}"]`);
@@ -711,6 +726,15 @@ function prefersReducedMotion() {
   return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
+/**
+ * The width below which the list and the detail stop sharing the frame and
+ * become separate pages. The same query as aw-app's SMALL_SCREEN: what the
+ * layout does and what focus has to do about it are one decision.
+ */
+function isPhoneLayout() {
+  return globalThis.matchMedia?.('(max-width: 48rem)').matches ?? false;
+}
+
 /* -------------------------------------------------------------------------
    Theme
 ------------------------------------------------------------------------- */
@@ -795,6 +819,14 @@ store.subscribe((state, prev) => {
   if (state.density !== prev.density) document.documentElement.dataset.density = state.density;
 });
 document.documentElement.dataset.density = store.state.density;
+
+// The title names the route, so it is kept in step with the state the route
+// is mirrored into rather than being set at each of the places that navigate.
+store.subscribe((state) => {
+  const next = documentTitle(state);
+  if (document.title !== next) document.title = next;
+});
+document.title = documentTitle(store.state);
 
 installShortcuts();
 

@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open } from './lib/harness.mjs';
+import { open, SRC } from './lib/harness.mjs';
 
 test('the endpoint list is one tab stop with a roving cursor', async () => {
   const page = await open();
@@ -214,5 +214,53 @@ test('the detail sections are one tab stop, moved between with the arrows', asyn
     } finally {
       await page.close();
     }
+  }
+});
+
+test('opening an endpoint on a phone takes the keyboard with it', async () => {
+  // Below 48rem the list and the detail are separate pages, so activating a
+  // row takes the row off screen. Focus has to go somewhere deliberate:
+  // leaving it on a hidden anchor drops it to <body>, and the way back is
+  // most of the top bar.
+  const page = await open(`#/?src=${SRC}`, { viewport: { width: 390, height: 844 } });
+  try {
+    await page.locator('a.row').first().focus();
+    const opened = await page.evaluate(() => document.activeElement.dataset.opId);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.mobileView ?? document.querySelector('.app')?.dataset.mobileView), 'detail');
+    const landed = await page.evaluate(() => {
+      const detail = document.querySelector('#detail');
+      return { inDetail: detail?.contains(document.activeElement) ?? false, tag: document.activeElement.tagName };
+    });
+    assert.ok(landed.inDetail, `focus landed on ${landed.tag}, outside the detail`);
+
+    // And the pane arriving is not silent.
+    await page.waitForTimeout(200);
+    const spoken = await page.evaluate(() => [...document.querySelectorAll('[aria-live]')].map((n) => n.textContent).join(' '));
+    assert.match(spoken, /\/v2\//, 'nothing was announced when the detail replaced the list');
+
+    // Back puts the keyboard back on the row it came from.
+    await page.locator('.detail-back__link').click();
+    await page.waitForTimeout(400);
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.opId), opened);
+  } finally {
+    await page.close();
+  }
+});
+
+test('opening an endpoint on a desktop leaves focus on the row', async () => {
+  // The counterpart to the phone case: the row is still on screen, so moving
+  // focus off it would be the regression.
+  const page = await open(`#/?src=${SRC}`, { viewport: { width: 1280, height: 900 } });
+  try {
+    await page.locator('a.row').first().focus();
+    const before = await page.evaluate(() => document.activeElement.dataset.opId);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(400);
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.opId), before);
+  } finally {
+    await page.close();
   }
 });

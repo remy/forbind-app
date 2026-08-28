@@ -183,11 +183,18 @@ filters on the way past. The tags link resolves to whichever of the rail, the
 chip row or the facet buttons the current layout is actually showing.
 
 **Focus.** Every focusable element has a visible indicator and none of them are
-removed: a `2px` accent outline offset clear of the element, or an inset ring
-where an outer one would be clipped by a pane edge. Selection and focus are
-independent and can co-occur, and both remain distinguishable in Windows High
-Contrast Mode — where box-shadows are discarded, so the inset rings are
-re-declared as outlines in system colours.
+removed: a `2px` accent outline offset clear of the element. Rings were
+measured at every pane and scroll edge and none is clipped, so there is no
+inset variant except on the search field, which draws its own inside the border
+it already has. Selection and focus are independent and can co-occur, and both
+remain distinguishable in Windows High Contrast Mode — where box-shadows are
+discarded, so that inset ring is re-declared as an outline in system colours.
+
+**Opening an endpoint.** On a phone the list and the detail are separate pages,
+so activating a row takes the row off screen. Focus goes to the detail and the
+operation is announced, rather than being left on an element that is no longer
+there — which drops it to the document body. In every wider layout the row is
+still on screen and focus stays on it.
 
 **Zoom and reflow.** Every size — type, spacing, control heights, pane widths
 and the breakpoints themselves — is in `rem`, so a browser *text size* setting
@@ -209,8 +216,21 @@ announced; repeats are nudged so an identical message is not swallowed. Filter
 announcements are debounced so typing does not produce a stream of them.
 
 **Preferences honoured.** `prefers-color-scheme` (theme defaults to Auto, with
-Light and Dark in Settings), `prefers-contrast: more`, `prefers-reduced-motion`
-(transitions drop to 0ms), and `forced-colors`.
+Light and Dark in Settings), `prefers-contrast: more` — in all four
+combinations of that preference and the theme, which takes a selector list
+rather than a bare `:root`, because a media query adds no specificity —
+`prefers-reduced-motion` (transitions drop to 0ms), and `forced-colors`.
+
+**The title says which screen you are on.** Import, parse report, an operation
+and a component schema each name themselves in `document.title`, most specific
+part first (`GET /v2/bookings — Bookings API — allyway`), so the tab, the
+history entry and anything re-reading the title after a route change all say
+something useful.
+
+**Contrast.** Every colour pair in use clears WCAG AA in both themes, and every
+one of them clears AAA — including the two verb pills and the hint bar that
+previously sat in the 6s. Component boundaries that carry no fill, such as an
+unpressed filter chip, clear the 3:1 of 1.4.11.
 
 **Verified, not asserted.** `npm run test:a11y` drives a real browser and
 checks all of the above: `axe-core` over eleven screens and states (import,
@@ -298,7 +318,10 @@ There is no proxy, which is what keeps the credential local, and the cost is
 that the API must send CORS headers for the response to be readable. When it
 does not, the panel says which of the two possible causes it is and how to tell
 them apart, rather than showing a generic failure. Mutating verbs carry a `LIVE`
-warning first: it is not a sandbox.
+warning first: it is not a sandbox. They are also asked about — a `POST`, `PUT`,
+`PATCH` or `DELETE` opens a confirmation naming the exact URL, and it opens on
+*Cancel*, so <kbd>Esc</kbd> and <kbd>Enter</kbd> both mean no. A `GET` is not
+asked about; a question raised about everything is a question nobody reads.
 
 The fields come from the schema: a parameter with an `enum` is a `<select>` of
 exactly the values it allows (optional ones can stay *— not sent —*), and the

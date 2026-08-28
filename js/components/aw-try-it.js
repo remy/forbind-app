@@ -21,11 +21,9 @@ import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { buildRequest, sampleValue, parameterExample } from '../lib/request.js';
 import { explainFailure, renderResult, formatBytes } from './tryit-result.js';
+import { confirmMutation, MUTATING } from './tryit-confirm.js';
 import { enumValues } from '../lib/enums.js';
 import { markdownBlock } from '../lib/markdown.js';
-
-/** Verbs that change something and deserve a word of warning first. */
-const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** The LIVE warning, which names the host the request is actually going to. */
 function liveSentence(op, host) {
@@ -89,7 +87,7 @@ class AwTryIt extends AwElement {
         ? el('p', { class: 'tryit__warning' }, [
             el('span', { class: 'word word--warn', text: 'NO TOKEN' }),
             el('span', {}, [
-              el('span', { text: 'This operation declares a security scheme and no credential is set, so it will be sent unauthenticated. ' }),
+              el('span', { text: 'This operation asks for a credential and none is set. The request will go unauthenticated. ' }),
               el('button', {
                 type: 'button',
                 class: 'link-quiet',
@@ -122,6 +120,10 @@ class AwTryIt extends AwElement {
           el('button', {
             type: 'submit',
             class: 'btn btn--filled btn--lg',
+            // The confirmation dialog hands focus back here, and the panel
+            // will have re-rendered by then, so the button is findable by key
+            // rather than by identity.
+            dataset: { focusKey: 'tryit-send' },
             text: this.#sending ? 'Sending…' : `Send ${op.method}`,
             'aria-disabled': this.#sending ? 'true' : null,
           }),
@@ -402,6 +404,17 @@ class AwTryIt extends AwElement {
       announce('Cannot send: no base URL. Set one in the field above the form.', { assertive: true });
       this.querySelector('aw-base-url input')?.focus();
       return;
+    }
+
+    // A mutating verb is not undoable from here, and 3.3.6 asks for a
+    // reversal, a check, or a confirmation before a submission like that. Only
+    // the third is available to a client that does not own the API.
+    if (MUTATING.has(this.operation.method)) {
+      const sendButton = this.querySelector('[data-focus-key="tryit-send"]');
+      if (!await confirmMutation(built, sendButton)) {
+        announce('Nothing sent.');
+        return;
+      }
     }
 
     this.#sending = true;
