@@ -10,6 +10,12 @@
  * Theme has three states rather than two, because "follow the system" is a
  * real answer and is the default. A two-way toggle silently overrides whatever
  * the operating system was told.
+ *
+ * The base URL is here too, and only when the loaded document leaves that gap.
+ * It is not a display preference — it is the missing half of the schema's
+ * address — but it needs one permanent home that is not attached to whichever
+ * operation happens to be open, and this is the sheet that is always one
+ * keystroke away.
  */
 
 import { AwElement, define } from '../lib/element.js';
@@ -38,7 +44,19 @@ class AwOptions extends AwElement {
     super.connectedCallback();
     this.#dialog = el('dialog', { 'aria-labelledby': 'options-title' });
     this.#controller = wireDialog(this.#dialog, {
-      initialFocus: () => this.querySelector('input[name="theme"]:checked') ?? this.querySelector('input'),
+      // Normally the theme already in force, so the sheet opens on the thing
+      // it is most often opened to change. A command that named one control
+      // asks for that control instead, and gets it if it is on screen at all.
+      initialFocus: () => {
+        const asked = this.actions.takeOptionsFocus?.();
+        const named = asked === 'base-url' ? this.querySelector('aw-base-url input') : null;
+        // The sheet is focused with `preventScroll`, which is right for a
+        // control at the top and wrong for one near the bottom: bring it into
+        // view first, so the field the command named is also the field on
+        // screen.
+        named?.scrollIntoView({ block: 'center' });
+        return named ?? this.querySelector('input[name="theme"]:checked') ?? this.querySelector('input');
+      },
       onClose: () => this.actions.closeOptions(),
     });
     replace(this, [this.#dialog]);
@@ -117,6 +135,9 @@ class AwOptions extends AwElement {
             ]),
           ]),
         ]),
+
+        // Renders nothing at all unless the loaded schema left the gap.
+        el('aw-base-url', { variant: 'settings' }),
 
         el('p', { class: 'help' }, [
           el('span', { text: 'Reduced motion and increased contrast are taken from your system settings and are not overridden here.' }),

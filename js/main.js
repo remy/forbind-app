@@ -45,6 +45,7 @@ const store = new Store();
 store.set({ importNote: null, schemaError: null });
 
 let lastInvoker = null;
+let optionsFocus = null;
 let visibleCache = { key: null, value: [] };
 let paletteAnnounceTimer = null;
 
@@ -468,9 +469,21 @@ const actions = {
     announce('Credential forgotten, and removed from this browser\u2019s storage.');
   },
 
-  openOptions() {
+  /**
+   * @param {'base-url'|null} [focus] which control the sheet should open on.
+   * Settings normally opens on the theme it is already set to; a command that
+   * names one thing in it should land on that thing instead.
+   */
+  openOptions(focus = null) {
     lastInvoker = document.activeElement;
+    optionsFocus = focus;
     store.set({ optionsOpen: true });
+  },
+  /** Read once by the sheet as it opens, and forgotten. */
+  takeOptionsFocus() {
+    const focus = optionsFocus;
+    optionsFocus = null;
+    return focus;
   },
   closeOptions() {
     if (store.state.optionsOpen) store.set({ optionsOpen: false });
@@ -609,6 +622,16 @@ const actions = {
       { kind: 'command', label: 'Replace the schema', shortcut: '⇧⌘U', detail: null, run: () => actions.replaceSchema() },
       { kind: 'command', label: 'Authorise requests', detail: null, run: () => actions.openAuth() },
       { kind: 'command', label: 'Settings', detail: null, run: () => actions.openOptions() },
+      // Only worth offering for a document that left the gap — and it is the
+      // way back to a base URL once Try it has stopped asking about it.
+      ...(state.schema?.report?.baseUrl?.needed || state.baseUrl
+        ? [{
+            kind: 'command',
+            label: state.baseUrl ? 'Change the base URL' : 'Set a base URL',
+            detail: state.baseUrl || null,
+            run: () => actions.openOptions('base-url'),
+          }]
+        : []),
       {
         kind: 'command',
         label: state.density === 'dense' ? 'Switch to the roomy layout' : 'Switch to the dense layout',

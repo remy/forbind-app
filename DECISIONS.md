@@ -203,8 +203,20 @@ announced on arrival. What is typed is completed when it is only missing a
 scheme and refused with a sentence when it is not a base URL at all. It is kept
 in `localStorage` against the schema it was typed for, on the same rule as the
 credential: a host nobody chose for a document is a request sent somewhere
-nobody chose. Setting one patches the URL under the Send button in place, because
-the field that sets it is inside the panel and holds focus while it changes.
+nobody chose. Setting one patches the URL under the Send button in place,
+because the field that sets it is inside the panel and holds focus while it
+changes.
+
+It is asked **once**. Try it drops the field as soon as there is a base URL
+rather than repeating it on every operation opened afterwards: on screen that
+is clutter, and read aloud ahead of the parameters of every endpoint it is
+worse. The field does stay on the operation it was answered on — a typo has to
+be fixable, and the keyboard must never be left standing on a control that
+vanished — and afterwards it lives in Settings, with a palette command that
+opens the sheet with focus in the field. Settings is not where a base URL
+obviously belongs, being otherwise display preferences; it is chosen because it
+is the one sheet that is always one keystroke away and is not attached to
+whichever operation happens to be open.
 
 **Enum dropdowns follow the `$ref`.** Documents rarely write an enum where the
 field is; they name it once as a schema and point at it, often through an
@@ -232,6 +244,11 @@ contents summary, a hint tied to a field, anything that becomes an accessible
 name — the markdown is *stripped to its words* rather than rendered, since a
 link cannot live inside a `<summary>` and raw syntax is worse than emphasis
 quietly lost.
+
+**The endpoint list lost its position counter.** The hint bar used to end with
+`12 of 47`, updated as the cursor moved. The position is still announced when
+the cursor actually moves — which is when it is news — but a number parked in
+the corner is one more thing on screen saying what the list already shows.
 
 **Try-it is a real form.** The fields and the send button are in a `<form>`, so
 Enter sends — previously nothing happened, because Enter has no meaning outside

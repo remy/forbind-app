@@ -330,6 +330,15 @@ request that fails a long way from here. Once set it feeds the snippet, the
 try-it preview and the auth probe alike, and the panel patches the URL under
 the Send button in place rather than rebuilding the form under your keyboard.
 
+**It asks once.** Once there is a base URL, Try it stops raising it: the field
+does not come back on the next operation you open, because a question already
+answered is clutter on screen and, read out before the parameters of every
+endpoint, it is worse than clutter. It stays on the operation you answered it
+on, so a typo can be fixed and so the keyboard is never left standing on a
+control that vanished. After that it lives in **Settings**, which is where it
+can be changed or cleared — and `⌘K` → *Change the base URL* opens the sheet
+with focus already in the field.
+
 ## Deployment
 
 Netlify, static. `netlify.toml` publishes the repository root, wires

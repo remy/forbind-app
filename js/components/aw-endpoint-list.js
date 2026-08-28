@@ -34,7 +34,6 @@ class AwEndpointList extends AwElement {
   #typeBuffer = '';
   #typeTimer = null;
   #scroll = null;
-  #hintCount = null;
 
   /**
    * The operations in the order they were actually rendered.
@@ -74,14 +73,6 @@ class AwEndpointList extends AwElement {
       else row.removeAttribute('aria-current');
     }
     this.#syncRoving(state);
-    this.#updateCount(state);
-  }
-
-  #updateCount(state) {
-    if (!this.#hintCount) return;
-    const total = this.#ordered.length;
-    const index = this.#ordered.findIndex((op) => op.id === state.activeRowId);
-    this.#hintCount.textContent = total ? `${Math.max(0, index) + 1} of ${total}` : '0 of 0';
   }
 
   render(state) {
@@ -111,8 +102,6 @@ class AwEndpointList extends AwElement {
       listBody,
     );
 
-    this.#hintCount = el('span', { class: 'hintbar__count' });
-
     replace(this, [
       roomy ? null : el('aw-verb-bar', {}),
       roomy ? null : el('aw-tag-chips', {}),
@@ -122,7 +111,6 @@ class AwEndpointList extends AwElement {
     ]);
 
     this.#syncRoving(state);
-    this.#updateCount(state);
   }
 
   /* --- rows ------------------------------------------------------------- */
@@ -293,7 +281,6 @@ class AwEndpointList extends AwElement {
       hint('⇧⌘F', 'Shift Command F, or Shift Control F', 'verbs'),
       hint('⇧⌘M', 'Shift Command M, or Shift Control M', 'wide'),
       hint('⌘K', 'Command K, or Control K', 'palette'),
-      this.#hintCount,
     ]);
   }
 
@@ -335,7 +322,8 @@ class AwEndpointList extends AwElement {
     row.tabIndex = 0;
     row.focus({ preventScroll: false });
     if (op) this.actions.setActiveRow(op.id);
-    if (this.#hintCount) this.#hintCount.textContent = `${clamped + 1} of ${rows.length}`;
+    // The position is announced to whoever moved the cursor rather than being
+    // parked on screen: it is only ever news at the moment of the move.
     if (announceRow && op) {
       announce(`${op.method} ${op.path}, ${clamped + 1} of ${rows.length}`);
     }

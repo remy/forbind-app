@@ -136,10 +136,54 @@ test('try-it asks for the base URL itself, and keeps focus when one arrives', as
     await field.press('Enter');
     await page.waitForTimeout(400);
 
-    // The form around the field is patched, never rebuilt under the keyboard.
+    // The form around the field is patched, never rebuilt under the keyboard,
+    // and the field itself stays for the operation it was answered on.
     assert.equal(await page.evaluate(() => document.activeElement?.closest('aw-base-url') !== null), true);
+    assert.equal(await field.count(), 1);
     assert.match(await page.locator('.tryit__status').textContent(), /https:\/\/api\.example\.com\/notes/);
     assert.match(await page.locator('[data-live-warning]').textContent(), /a real POST to api\.example\.com/);
+
+    assert.deepEqual(await violations(page), []);
+    assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test('the question is asked once, not on every operation opened after it', async () => {
+  const page = await open(`#/?src=${NO_SERVER}`);
+  try {
+    await page.evaluate(() => {
+      const op = window.__aw.store.state.schema.operations.find((o) => o.method === 'POST');
+      window.__aw.actions.selectOperation(op.id);
+    });
+    await page.waitForTimeout(600);
+    await showTab(page, 'tryit');
+    await page.locator('aw-try-it').getByRole('textbox', { name: 'Base URL' }).fill('https://api.example.com');
+    await page.getByRole('button', { name: 'Use this' }).click();
+    await page.waitForTimeout(300);
+
+    // The next operation is not asked a question that has been answered — on
+    // screen it is clutter, and read aloud before every set of parameters it
+    // is worse than clutter.
+    await page.evaluate(() => {
+      const op = window.__aw.store.state.schema.operations.find((o) => o.method === 'GET');
+      window.__aw.actions.selectOperation(op.id);
+    });
+    await page.waitForTimeout(600);
+    await showTab(page, 'tryit');
+    assert.equal(await page.locator('aw-try-it .baseurl').count(), 0);
+    // It still reaches the request that operation would send.
+    assert.match(await page.locator('.tryit__status').textContent(), /https:\/\/api\.example\.com\/notes/);
+
+    // And it is still changeable, in the one place it lives afterwards.
+    await page.evaluate(() => window.__aw.actions.openOptions('base-url'));
+    await page.waitForTimeout(400);
+    const inSettings = page.locator('dialog[open]').getByRole('textbox', { name: 'Base URL' });
+    assert.equal(await inSettings.count(), 1);
+    assert.equal(await inSettings.inputValue(), 'https://api.example.com');
+    // The command named the field, so the sheet opens on it.
+    assert.equal(await page.evaluate(() => document.activeElement?.closest('aw-base-url') !== null), true);
 
     assert.deepEqual(await violations(page), []);
     assert.deepEqual(page.problems, []);

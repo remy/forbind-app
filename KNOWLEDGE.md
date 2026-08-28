@@ -100,9 +100,9 @@ re-render, everything else patches attributes in place.
 | `aw-try-it` | the real request form and its result |
 | `aw-palette` | ⌘K — a real combobox over operations, schemas and commands |
 | `aw-auth-sheet` | the credential, where it is stored, and verification |
-| `aw-options` | theme, density, hint bar |
+| `aw-options` | theme, density, hint bar, and the base URL once one is needed |
 | `aw-import` | the load screen and the parse report |
-| `aw-base-url` | the base URL field, on the parse report and inside Try it |
+| `aw-base-url` | the base URL field — on the parse report, in Settings, and in Try it until it is answered |
 
 `aw-detail` hands its field tables and the whole component-schema view to
 `detail-fields.js` — one set of rows drawn one way, for parameters, request

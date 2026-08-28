@@ -3,15 +3,23 @@
  *
  * `servers` is optional in OpenAPI. When it is absent — or relative, or still
  * holding a `{variable}` — the document describes paths with nothing in front
- * of them, and the reader is the only one who knows the host. So this asks,
- * once, at the two moments it matters: on the parse report, before anything is
- * browsed, and in Try it, where the missing half is about to stop a request.
+ * of them, and the reader is the only one who knows the host.
+ *
+ * It asks **once**. On the parse report, before anything is browsed; in Try it,
+ * on the operation where the missing half is about to stop a request; and in
+ * Settings, which is where it lives afterwards. What it does not do is ask
+ * again on every operation you open: a question already answered is noise on
+ * screen and, read aloud before the parameters of every single endpoint, it is
+ * worse than noise.
+ *
+ * Once it has offered itself for an operation it stays for that operation, so
+ * the answer can be corrected and so the keyboard is never standing on a
+ * control that vanishes underneath it. The next operation gets a fresh element,
+ * and by then there is nothing to ask.
  *
  * Supplying one is never a condition of reading the schema. The report keeps
  * its "Browse" button beside this, and this element says so in words, because
  * browsing an API you cannot call is a perfectly ordinary thing to want.
- *
- * It renders nothing at all when the schema declares a server that works.
  */
 
 import { AwElement, define } from '../lib/element.js';
@@ -19,16 +27,25 @@ import { el, replace, preserveFocus, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { describeServerGap, inspectServers } from '../lib/servers.js';
 
+/**
+ * What the block leads with, per variant. The report is a page of its own so
+ * it takes an `<h2>`; the sheet already has one, so it takes an `<h3>`; the
+ * try-it panel is a run of fields, where a heading would be a level out of
+ * nowhere.
+ */
+const HEADING = { report: 'h2', settings: 'h3', inline: 'p' };
+
 class AwBaseUrl extends AwElement {
   static observes = ['schema', 'baseUrl'];
 
   /**
-   * 'report' leads with the heading and the reason; 'inline' is the terser
-   * face used inside Try it, where the panel around it has already said what
-   * is being built.
+   * 'report' leads with a heading and the reason and is the first-run face;
+   * 'settings' is the same thing where it lives permanently; 'inline' is the
+   * terser one inside Try it, which asks only while there is something to ask.
    */
   get variant() {
-    return this.getAttribute('variant') === 'inline' ? 'inline' : 'report';
+    const declared = this.getAttribute('variant');
+    return declared === 'inline' || declared === 'settings' ? declared : 'report';
   }
 
   /**
@@ -40,20 +57,25 @@ class AwBaseUrl extends AwElement {
 
   #error = null;
   #ids = null;
+  /** Whether this element has already put the question on screen. */
+  #offered = false;
 
-  /**
-   * The gap this element is offering to fill, or null when there is none.
-   * A base URL already in force still gets the field, wherever it applies, so
-   * that it is never in effect somewhere it cannot be changed.
-   */
+  /** The gap this element is offering to fill, or null when there is none. */
   #gap(state) {
     const report = state.schema?.report?.baseUrl;
     if (!report) return null;
-    if (this.operation) {
-      const check = inspectServers(this.operation.servers);
-      if (check.usable) return state.baseUrl ? { needed: true, reason: null, declared: check.url } : null;
-      return { needed: true, reason: check.reason, declared: this.operation.servers?.[0]?.url ?? null };
+
+    if (this.variant === 'inline') {
+      const check = inspectServers(this.operation?.servers);
+      // This operation has a host of its own: nothing to ask, ever.
+      if (check.usable) return null;
+      // Answered already, somewhere else. Stay only if this element is the
+      // one that was answered — the keyboard may still be in it.
+      if (state.baseUrl && !this.#offered) return null;
+      this.#offered = true;
+      return { needed: true, reason: check.reason, declared: this.operation?.servers?.[0]?.url ?? null };
     }
+
     return report.needed || state.baseUrl ? { ...report, needed: true } : null;
   }
 
@@ -97,8 +119,8 @@ class AwBaseUrl extends AwElement {
       },
     });
 
-    return el('div', { class: `baseurl baseurl--${inline ? 'inline' : 'report'}` }, [
-      el(inline ? 'p' : 'h2', {
+    return el('div', { class: `baseurl baseurl--${this.variant}` }, [
+      el(HEADING[this.variant], {
         class: inline ? 'baseurl__title' : 'label',
         text: current ? 'Base URL' : 'This schema needs a base URL',
       }),

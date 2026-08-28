@@ -132,7 +132,6 @@
   font: 400 var(--t-10-5) / 1.6 var(--font-mono);
   color: var(--ink-55);
 }
-.hintbar__count { margin-left: auto; }
 .hintbar kbd {
   font: inherit;
   border: 0;

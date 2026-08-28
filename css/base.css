@@ -308,6 +308,7 @@ aw-base-url { display: block; }
   background: var(--paper-alt);
 }
 .baseurl--report { margin-top: var(--s-22); }
+.baseurl--settings { margin-top: var(--s-16); }
 .baseurl--inline { margin-bottom: var(--s-14); }
 
 .baseurl__title {
