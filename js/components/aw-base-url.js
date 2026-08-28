@@ -36,7 +36,7 @@ import { describeServerGap, inspectServers } from '../lib/servers.js';
 const HEADING = { report: 'h2', settings: 'h3', inline: 'p' };
 
 class AwBaseUrl extends AwElement {
-  static observes = ['schema', 'baseUrl'];
+  static observes = ['schema', 'baseUrl', 'baseUrlHint'];
 
   /**
    * 'report' leads with a heading and the reason and is the first-run face;
@@ -96,6 +96,12 @@ class AwBaseUrl extends AwElement {
   #build(state, gap) {
     const { input: inputId, help: helpId, error: errorId } = this.#ids;
     const current = state.baseUrl;
+    // Where the schema was fetched from, offered as a starting value. It fills
+    // the field but is not the base URL: the heading still says one is needed,
+    // the button still says "Use this", and the sentence below says where the
+    // value came from — a field that quietly pre-fills itself with a guess is
+    // a request sent to a host nobody chose.
+    const suggested = current ? '' : (state.baseUrlHint ?? '');
     const inline = this.variant === 'inline';
 
     const field = el('input', {
@@ -107,7 +113,7 @@ class AwBaseUrl extends AwElement {
       autocomplete: 'url',
       spellcheck: 'false',
       placeholder: 'https://api.example.com',
-      '.value': current,
+      '.value': current || suggested,
       'aria-describedby': this.#error ? `${errorId} ${helpId}` : helpId,
       'aria-invalid': this.#error ? 'true' : null,
       onkeydown: (event) => {
@@ -128,7 +134,9 @@ class AwBaseUrl extends AwElement {
         el('span', {
           text: current
             ? `Requests and snippets are built against ${current}. It is kept in this browser for this schema only, and can be changed or cleared at any time. `
-            : `${describeServerGap(gap.reason, gap.declared ?? '')} Add one and every snippet and request is complete; leave it and the paths are still yours to read. `,
+            : `${describeServerGap(gap.reason, gap.declared ?? '')} ${suggested
+              ? `The field starts at ${suggested}, the origin this schema was fetched from — a guess rather than something the document says, so check it before you send. Accept it, change it, or leave it: the paths are still yours to read either way. `
+              : 'Add one and every snippet and request is complete; leave it and the paths are still yours to read. '}`,
         }),
       ]),
 

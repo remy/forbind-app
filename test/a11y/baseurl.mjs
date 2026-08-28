@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, showTab, violations } from './lib/harness.mjs';
+import { BASE, open, showTab, violations } from './lib/harness.mjs';
 
 const NO_SERVER = '/test/fixtures/no-server.yaml';
 
@@ -46,6 +46,48 @@ test('the parse report names the missing server and offers a field for it', asyn
 
     assert.deepEqual(await violations(page), []);
     assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test('the field starts at the origin the schema came from, and says it is a guess', async () => {
+  const page = await openReport();
+  try {
+    const field = page.getByRole('textbox', { name: 'Base URL' });
+    assert.equal(await field.inputValue(), BASE);
+
+    // Pre-filled is not applied. The question is still being asked, the button
+    // still offers to accept it, and nothing is resolved against it yet.
+    assert.equal(await page.getByRole('heading', { name: /needs a base URL/i }).count(), 1);
+    assert.equal(await page.getByRole('button', { name: 'Use this' }).count(), 1);
+    assert.equal(await page.evaluate(() => window.__aw.store.state.baseUrl), '');
+
+    // And where the value came from is said in words, not left to be inferred
+    // from a field that mysteriously filled itself in.
+    const help = await page.locator(`#${await field.getAttribute('aria-describedby')}`).textContent();
+    assert.match(help, new RegExp(`starts at ${BASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+    assert.match(help, /a guess rather than something the document says/);
+
+    assert.deepEqual(await violations(page), []);
+    assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a guess the reader throws away does not come straight back', async () => {
+  const page = await openReport();
+  try {
+    const field = page.getByRole('textbox', { name: 'Base URL' });
+    await field.fill('https://api.example.com');
+    await page.getByRole('button', { name: 'Use this' }).click();
+    await page.waitForTimeout(300);
+    assert.equal(await page.evaluate(() => window.__aw.store.state.baseUrl), 'https://api.example.com');
+
+    await page.getByRole('button', { name: 'Clear the base URL' }).click();
+    await page.waitForTimeout(300);
+    assert.equal(await page.getByRole('textbox', { name: 'Base URL' }).inputValue(), '');
   } finally {
     await page.close();
   }

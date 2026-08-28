@@ -148,9 +148,23 @@ class AwApp extends AwElement {
     registerRegions(polite, assertive);
   }
 
+  /**
+   * The import screen, and the only screen with a footer.
+   *
+   * The `<footer>` is a child of the shell rather than of `<main>`, which is
+   * what makes it a real `contentinfo` landmark — a footer nested inside
+   * sectioning content is scoped to that section and lands in no landmark at
+   * all. The browser screen has no room for it and does not get one.
+   */
   #renderImport() {
-    return el('div', { class: 'app', 'data-density': 'dense' }, [
+    return el('div', { class: 'app app--import', 'data-density': 'dense' }, [
       el('main', { id: 'main', tabindex: '-1', 'aria-label': 'Load a schema' }, [el('aw-import', {})]),
+      el('footer', { class: 'site-foot' }, [
+        el('p', {}, [
+          'Accessibility centred API browser developed using LLMs guided and checked by ',
+          el('a', { href: 'https://remysharp.com', text: 'Remy Sharp' }),
+        ]),
+      ]),
     ]);
   }
 

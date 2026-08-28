@@ -65,6 +65,14 @@ aw-import { display: block; }
 }
 
 /*
+ * The import screen is the one screen with a footer, so its rows run the other
+ * way round: the form takes the space that is going and the footer settles
+ * under it, at the foot of the viewport when the form is short and after the
+ * content when it is not.
+ */
+.app--import { grid-template-rows: minmax(0, 1fr) auto; }
+
+/*
  * The browser is a fixed frame, as the design draws it: the banner stays put
  * and each pane scrolls inside its own bounds, so the endpoint list is a column
  * you can run down without the whole page moving under the detail beside it.

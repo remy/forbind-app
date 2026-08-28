@@ -80,7 +80,7 @@ test('a reload comes back to the schema that was loaded', async () => {
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(900);
     assert.equal(await page.evaluate(() => window.__aw.store.state.schemaState), 'idle');
-    assert.match(await page.locator('h1').first().textContent(), /Load an OpenAPI schema/);
+    assert.match(await page.locator('h1').first().textContent(), /Allyway/);
   } finally {
     await page.close();
   }

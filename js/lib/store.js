@@ -17,6 +17,12 @@ export function initialState() {
     /** 'idle' | 'loading' | 'ready' | 'error' */
     schemaState: 'idle',
     schemaError: null,
+    /**
+     * The address the import form was last asked to fetch. Kept across a
+     * failure so a wrong or unreachable URL can be corrected rather than
+     * retyped; cleared the moment a schema parses.
+     */
+    importUrl: '',
     /** A parsed schema shows its report first; this is the step past it. */
     browsing: false,
 
@@ -57,6 +63,12 @@ export function initialState() {
      * `servers` are doing the job.
      */
     baseUrl: '',
+    /**
+     * Where the schema was fetched from, offered as the field's starting value
+     * when the document declares no server of its own. A suggestion, not a
+     * setting: nothing is sent anywhere until the reader accepts it.
+     */
+    baseUrlHint: '',
 
     /** Overlays. Kept in the store so the palette can open them too. */
     authOpen: false,

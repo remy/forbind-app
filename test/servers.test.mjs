@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  inspectServers, baseUrlFor, normaliseBaseUrl, describeServerGap, isAbsoluteBase,
+  inspectServers, baseUrlFor, normaliseBaseUrl, describeServerGap, isAbsoluteBase, originFrom,
 } from '../js/lib/servers.js';
 import { normalise } from '../js/lib/openapi.js';
 
@@ -107,4 +107,32 @@ test('the sample schema declares a server, so nothing is asked of the reader', (
   assert.match(describeServerGap('missing'), /declares no server URL/);
   assert.match(describeServerGap('relative', '/v1'), /relative \(\/v1\)/);
   assert.match(describeServerGap('placeholder', 'https://{r}.x'), /variable in it/);
+});
+
+test('the address a schema was fetched from offers its origin as a starting value', () => {
+  assert.equal(originFrom('https://api.example.com/v2/openapi.json'), 'https://api.example.com');
+  // A port is part of the origin; a path, a query and a fragment are not.
+  assert.equal(originFrom('http://localhost:8080/docs/openapi.yaml?v=2#x'), 'http://localhost:8080');
+});
+
+test('an address there is nothing to suggest from suggests nothing', () => {
+  // A file the reader dropped in never had an address at all.
+  assert.equal(originFrom(null), '');
+  assert.equal(originFrom(undefined), '');
+  assert.equal(originFrom(''), '');
+  assert.equal(originFrom('not a url'), '');
+  // And a scheme no request can be sent to is not a base URL.
+  assert.equal(originFrom('file:///Users/someone/openapi.yaml'), '');
+  assert.equal(originFrom('data:text/yaml,openapi: 3.1.0'), '');
+});
+
+test('a suggested origin is a starting value, not a base URL that is in force', () => {
+  // Whatever the field is pre-filled with, nothing is resolved against it
+  // until the reader has actually applied it.
+  const model = normalise({
+    openapi: '3.1.0', paths: { '/things': { get: { responses: {} } } },
+  }, 'no-servers');
+  assert.equal(model.report.baseUrl.needed, true);
+  assert.equal(baseUrlFor({ model }), '');
+  assert.equal(baseUrlFor({ model, baseUrl: originFrom('https://api.example.com/openapi.json') }), 'https://api.example.com');
 });

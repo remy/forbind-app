@@ -24,7 +24,7 @@ import {
   readAuth, writeAuth, clearAuth,
   readBaseUrl, writeBaseUrl, clearBaseUrl as dropStoredBaseUrl,
 } from './lib/persist.js';
-import { normaliseBaseUrl } from './lib/servers.js';
+import { normaliseBaseUrl, originFrom } from './lib/servers.js';
 
 import './components/aw-app.js';
 import './components/aw-topbar.js';
@@ -158,13 +158,13 @@ function announceResultCount() {
    Schema loading
 ------------------------------------------------------------------------- */
 
-async function ingest(promise, { note = null, restoring = false } = {}) {
+async function ingest(promise, { note = null, restoring = false, url = '' } = {}) {
   // Claimed before the first await: whatever the address asked for belongs to
   // this load, and a load that fails must not leave it lying around for the
   // next schema someone opens by hand.
   const arrivingFilters = pendingFilters;
   pendingFilters = null;
-  store.set({ schemaState: 'loading', schemaError: null, importNote: null });
+  store.set({ schemaState: 'loading', schemaError: null, importNote: null, importUrl: url });
   try {
     const source = await promise;
     const doc = parseText(source.text, { loadYaml: (text) => yaml.load(text) });
@@ -182,6 +182,13 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
     // A base URL typed for this schema last time is not a preference — it is
     // the missing half of the document — so it comes back with it.
     const restoredBaseUrl = model.report.baseUrl.needed ? readBaseUrl(schemaKeyFor(source)) : '';
+    // Nothing was remembered, but the schema came from somewhere, and where it
+    // came from is usually where the API is. That is offered as the field's
+    // starting value — a guess the reader accepts, edits or ignores — rather
+    // than set as the base URL behind their back.
+    const suggestedBaseUrl = model.report.baseUrl.needed && !restoredBaseUrl
+      ? originFrom(source.url)
+      : '';
 
     store.set({
       schema: model,
@@ -192,10 +199,13 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
       browsing: Boolean(pendingSelection) || restoring,
       schemaError: null,
       importNote: source.note ?? note,
+      // The form is behind us now; the address has nothing left to correct.
+      importUrl: '',
       selectedOperationId: null,
       selectedSchemaName: null,
       activeRowId: null,
       baseUrl: restoredBaseUrl,
+      baseUrlHint: suggestedBaseUrl,
       // A new document does not inherit the last one's filters — except the
       // ones the address it was named in asked for, which are about this
       // document and not the one before.
@@ -228,6 +238,7 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
     // said out loud instead of waiting to be discovered at send time.
     const missingServer = model.report.baseUrl.needed && !restoredBaseUrl
       ? ' No server URL is declared, so requests need a base URL you supply.'
+        + (suggestedBaseUrl ? ` The field starts at ${suggestedBaseUrl}, the origin this schema was fetched from.` : '')
       : '';
     // A link can name filters as well as a document, and the report's totals
     // then describe a list that is not the one on screen. Say what the list is
@@ -238,7 +249,8 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
       : ` Filters from the link are applied: ${shown} of ${counts.endpoints} shown.`;
     announce(
       `${source.name} parsed. ${counts.endpoints} endpoints, ${counts.tags} tags, ${counts.schemas} schemas, ` +
-      `${counts.deprecated} deprecated. ${model.report.notes.length} things worth knowing.${missingServer}${narrowed}`,
+      `${counts.deprecated} deprecated. ${model.report.notes.length} `
+      + `${model.report.notes.length === 1 ? 'thing' : 'things'} worth knowing.${missingServer}${narrowed}`,
     );
 
     // A link that named both a schema and an operation lands on the operation
@@ -492,7 +504,10 @@ const actions = {
 
   clearBaseUrl() {
     if (!store.state.baseUrl) return;
-    store.set({ baseUrl: '' });
+    // The suggestion goes with it. Clearing is a deliberate act of removal, and
+    // an emptied field that refills itself with the guess the reader just threw
+    // away is a field arguing with them.
+    store.set({ baseUrl: '', baseUrlHint: '' });
     dropStoredBaseUrl();
     announce('Base URL cleared. Paths are shown on their own again.');
   },
@@ -600,7 +615,7 @@ const actions = {
     return ingest(loadFromFile(file));
   },
   loadUrl(url) {
-    return ingest(loadFromUrl(url));
+    return ingest(loadFromUrl(url), { url });
   },
   loadSample(path) {
     return ingest(loadSample(path), { note: 'This is the example schema bundled with allyway. It describes an imaginary service.' });
@@ -614,7 +629,8 @@ const actions = {
     // the address, which `go` rebuilds from them. Leaving them there would
     // make a reload restore a filter for a schema that is no longer loaded.
     store.set({
-      schemaState: 'idle', browsing: false, schemaError: null, importNote: null, baseUrl: '',
+      schemaState: 'idle', browsing: false, schemaError: null, importNote: null, importUrl: '',
+      baseUrl: '', baseUrlHint: '',
       filters: { ...store.state.filters, query: '', tags: [], verbs: [], scopes: [], statusCodes: [], onlyDeprecated: false },
     });
     go({ view: 'import' });

@@ -76,7 +76,8 @@ wants open.
 
 Fetching is your browser's, first; only if the host sends no CORS headers does
 `/api/fetch-schema` fetch it server-side, and the UI says so. Only `http` and
-`https` are accepted.
+`https` are accepted. A fetch that fails keeps the address in the field and the
+keyboard in it too, so a typo is one edit from a retry rather than a retype.
 
 **What is remembered, and where.** Everything below is on your own machine —
 there are no cookies, no telemetry, and nothing is sent anywhere.
@@ -372,6 +373,14 @@ Three shapes count as missing, because all three leave the same gap: no
 `servers` at all, a relative URL (`/v1`), and one still holding a `{variable}`
 with no default to fill it. The reason is named in the warning rather than
 flattened into "no server".
+
+Where the schema was fetched from a URL, the field starts at that URL's origin
+— `https://api.example.com/openapi.json` describes paths that usually hang off
+`https://api.example.com`. It is pre-filled, not applied: the heading still
+says one is needed, the button still says *Use this*, nothing is resolved
+against it until you press that, and the sentence above the field says the
+value is a guess rather than something the document states. A schema you
+dropped in as a file never had an address, so it is offered nothing.
 
 A link that opens an operation directly never sees the report, so the same
 field is in the Try it panel, above the parameters, and the gap is announced on

@@ -176,7 +176,28 @@ Each is either a state the design implies or a route out of a dead end.
   `#0F2775`, transitions ≤120ms and dropped under `prefers-reduced-motion`).
 - **The parse *failure* state** — described in prose, not drawn. Same "things
   worth knowing" list, a `FAIL` word-led row, the YAML or JSON line and column,
-  and a `Show line …` disclosure. Never a modal alert.
+  and a `Show line …` disclosure. Never a modal alert. The heading counts the
+  rows it is standing over, because a failure that also carries a hint lists
+  two of them; and because the failed form is a rebuilt form, the URL that was
+  fetched is written back into the field and the keyboard put back in it —
+  otherwise the address disappears and focus falls to the body at the one
+  moment the reader wants to correct a character and try again.
+- **A base URL guessed from where the schema came from.** A document with no
+  `servers` leaves the reader to supply the host, and the address the schema
+  was fetched from is the best guess available — but only a guess, so it fills
+  the field and stops there. It is not written to storage, not resolved
+  against, and not hidden behind a pre-filled input that looks settled: the
+  heading still asks, the button still says *Use this*, and the lede says where
+  the value came from. Clearing a base URL clears the suggestion with it, since
+  a field that refills itself with the guess you just discarded is a field
+  arguing with you.
+- **The landing page is the mark and the name.** The `h1` was the instruction,
+  `Load an OpenAPI schema`; the instruction moved into the lede under it and
+  the heading became the logo beside the word `Allyway`, with what the tool is
+  said once in a real `contentinfo` footer. The mark is `currentColor` and
+  sized in `em`, so it follows the ink into dark mode and forced colours and
+  grows with a text-size preference rather than leaving the word to outgrow it;
+  it is `aria-hidden`, because the word beside it already is the name.
 - **A component schema view** (`#/schema/Booking`) — the mock's rail lists
   schemas and its params table links to one, so both needed a destination. It
   shows the fields and which operations use it.

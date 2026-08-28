@@ -191,7 +191,6 @@ dialog.palette {
    Import screen (1d)
 --------------------------------------------------------------------------- */
 .import {
-  min-height: 100dvh;
   display: grid;
   align-content: start;
   justify-items: center;
@@ -207,6 +206,14 @@ dialog.palette {
   text-wrap: balance;
 }
 .import__lede { margin-top: var(--s-12); font: 400 var(--t-13-5) / 1.65 var(--font-sans); color: var(--ink-70); }
+
+/* The mark sits on the text baseline-ish and is sized in `em`, so a text-size
+   preference scales the lockup rather than leaving the word to grow past a
+   fixed logo. It is `currentColor`, so it follows the ink into dark mode and
+   into forced colours without a second asset. */
+.brand { display: flex; align-items: center; gap: var(--s-10); }
+.brand__mark { width: 1.15em; height: 1.15em; flex: none; }
+.brand__name { display: block; }
 
 .dropzone {
   margin-top: var(--s-22);
@@ -278,6 +285,15 @@ dialog.palette {
 .urlrow button:hover { background: var(--hover-surface); }
 
 .import__foot { margin-top: var(--s-14); font: 400 var(--t-11-5) / 1.6 var(--font-sans); color: var(--ink-55); }
+
+/* --- page footer --------------------------------------------------------- */
+.site-foot {
+  padding: var(--s-20);
+  border-top: var(--rule-w) solid var(--rule);
+  text-align: center;
+  font: 400 var(--t-11-5) / 1.6 var(--font-sans);
+  color: var(--ink-55);
+}
 
 /* --- parsed report ------------------------------------------------------- */
 .report__head { display: flex; align-items: baseline; gap: var(--s-10); flex-wrap: wrap; }

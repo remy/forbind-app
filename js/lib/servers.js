@@ -53,6 +53,29 @@ function stripTrailingSlash(url) {
 }
 
 /**
+ * The origin of the address a document was fetched from.
+ *
+ * A schema pulled over the network was served by something, and that something
+ * is very often the API it describes — `https://api.example.com/openapi.json`
+ * describes paths that hang off `https://api.example.com`. It is a guess, not a
+ * fact the document states, so it is offered as a starting value for the reader
+ * to accept or correct and never applied on their behalf.
+ *
+ * @param {string} [url] the address the schema came from, if it came from one
+ * @returns {string} the origin, or '' for a file, a bad URL, or a scheme
+ *   nothing can be sent to
+ */
+export function originFrom(url) {
+  try {
+    const parsed = new URL(String(url ?? ''));
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+    return parsed.origin;
+  } catch {
+    return '';
+  }
+}
+
+/**
  * The base URL to build a request against.
  *
  * One supplied by the reader wins: they typed it after being told the schema

@@ -21,11 +21,12 @@
 import { AwElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
+import { logoMark } from '../lib/logo.js';
 
 const SAMPLE = '/samples/bookings-api.v2.yaml';
 
 class AwImport extends AwElement {
-  static observes = ['schema', 'schemaState', 'schemaError', 'importNote'];
+  static observes = ['schema', 'schemaState', 'schemaError', 'importNote', 'importUrl'];
 
   #dragDepth = 0;
 
@@ -36,6 +37,23 @@ class AwImport extends AwElement {
       return;
     }
     replace(this, [this.#renderForm(state)]);
+
+    // The failed form is a rebuilt form: whatever the reader pressed to start
+    // the fetch — the Fetch button, or Enter in the field — no longer exists,
+    // and focus would otherwise fall to the body. Where the address is still
+    // there to be corrected, the caret goes back to the end of it.
+    if (state.schemaState === 'error' && state.importUrl) {
+      const field = this.querySelector('#schema-url');
+      if (field) {
+        field.focus({ preventScroll: true });
+        const end = field.value.length;
+        try {
+          field.setSelectionRange(end, end);
+        } catch {
+          /* `type="url"` does not support a selection range everywhere. */
+        }
+      }
+    }
   }
 
   /* --- empty / loading / error ------------------------------------------ */
@@ -83,6 +101,10 @@ class AwImport extends AwElement {
     const urlInput = el('input', {
       type: 'url',
       id: 'schema-url',
+      // A fetch that failed is a fetch worth retrying, usually after a small
+      // edit. Emptying the field would make the reader retype an address the
+      // app is still holding, so it is written back as the value.
+      '.value': state.importUrl ?? '',
       placeholder: 'https://…/openapi.yaml',
       autocomplete: 'url',
       spellcheck: 'false',
@@ -97,10 +119,14 @@ class AwImport extends AwElement {
 
     return el('div', { class: 'import' }, [
       el('div', { class: 'import__inner' }, [
-        el('h1', { text: 'Load an OpenAPI schema' }),
+        el('h1', { class: 'brand' }, [
+          logoMark(),
+          el('span', { class: 'brand__name', text: 'Allyway' }),
+        ]),
         el('p', {
           class: 'import__lede',
-          text: 'JSON or YAML, 2.0 through 3.1. Nothing leaves your browser unless you send a request.',
+          text: 'Load an OpenAPI schema — JSON or YAML, 2.0 through 3.1. '
+            + 'Nothing leaves your browser unless you send a request.',
         }),
 
         dropzone,
@@ -138,24 +164,30 @@ class AwImport extends AwElement {
     const detail = error.detail ?? {};
     const where = detail.line ? `line ${detail.line}${detail.column ? `, column ${detail.column}` : ''}` : null;
 
-    return el('div', { class: 'detail__section' }, [
-      el('h2', { class: 'label', text: '1 thing worth knowing' }),
-      el('ul', { class: 'notes' }, [
-        el('li', {}, [
-          el('span', { class: 'word word--fail', text: 'FAIL' }),
-          el('span', {}, [
-            el('span', { text: error.message }),
-            where ? el('span', { text: ` (${where})` }) : null,
-            detail.message ? el('span', { text: ` ${detail.message}` }) : null,
-          ]),
+    // The heading counts the rows underneath it rather than assuming one. A
+    // failure that also carries a hint puts two things on the list, and a
+    // heading that says "1 thing" while showing two is a heading nobody can
+    // trust the next time.
+    const rows = [
+      el('li', {}, [
+        el('span', { class: 'word word--fail', text: 'FAIL' }),
+        el('span', {}, [
+          el('span', { text: error.message }),
+          where ? el('span', { text: ` (${where})` }) : null,
+          detail.message ? el('span', { text: ` ${detail.message}` }) : null,
         ]),
-        detail.hint
-          ? el('li', {}, [
-              el('span', { class: 'word word--info', text: 'INFO' }),
-              el('span', { text: detail.hint }),
-            ])
-          : null,
       ]),
+      detail.hint
+        ? el('li', {}, [
+            el('span', { class: 'word word--info', text: 'INFO' }),
+            el('span', { text: detail.hint }),
+          ])
+        : null,
+    ].filter(Boolean);
+
+    return el('div', { class: 'detail__section' }, [
+      el('h2', { class: 'label', text: `${rows.length} ${rows.length === 1 ? 'thing' : 'things'} worth knowing` }),
+      el('ul', { class: 'notes' }, rows),
       detail.snippet
         ? el('details', {}, [
             el('summary', { text: `Show ${where ?? 'the line'}` }),
