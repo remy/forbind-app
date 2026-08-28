@@ -209,7 +209,7 @@ class AwAuthSheet extends AwElement {
             class: 'btn btn--filled btn--lg',
             dataset: { focusKey: 'auth-save' },
             text: 'Save for this session',
-            onclick: () => this.#save(),
+            onclick: () => this.#save({ closeAfter: true }),
           }),
           el('button', {
             type: 'button',
@@ -307,7 +307,19 @@ class AwAuthSheet extends AwElement {
     });
   }
 
-  #save() {
+  /**
+   * Take what is in the field and hold it.
+   *
+   * `closeAfter` is the Save button's own behaviour, and only its own: the
+   * credential is in hand, the sheet has nothing further to say, and leaving
+   * it standing means the reader dismisses a dialog they already finished
+   * with. Test saves through here too and stays open, because it has a
+   * verdict to put on screen.
+   *
+   * @param {object} [options]
+   * @param {boolean} [options.closeAfter] close the sheet once it is saved
+   */
+  #save({ closeAfter = false } = {}) {
     const input = this.querySelector('#auth-credential');
     const raw = input ? input.value : (this.#draft ?? '');
     const credential = normaliseCredential(raw);
@@ -324,7 +336,11 @@ class AwAuthSheet extends AwElement {
       message: jwt && jwt.issuer ? `Issued by ${jwt.issuer}` : '',
     });
     this.#draft = credential;
-    this.#renderSheet();
+    if (closeAfter) this.#controller.close();
+    else this.#renderSheet();
+    // Said after the sheet has gone, not through it: a live region outside an
+    // open modal is in the inert half of the document, and what it says there
+    // is not reliably read out.
     announce(
       credential
         ? `Credential saved ${this.state.auth.remember ? 'on this device' : 'for this tab'}${jwt ? `. The token declares ${jwt.scopes.length} ${jwt.scopes.length === 1 ? 'scope' : 'scopes'}${describeExpiry(jwt.expiresAt) ? ` and ${describeExpiry(jwt.expiresAt)}` : ''}.` : '.'}`

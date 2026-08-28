@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, showTab, BASE } from './lib/harness.mjs';
+import { open, showTab, BASE, SRC } from './lib/harness.mjs';
 
 test('a saved credential reaches the clipboard from nowhere, and disk only if asked', async () => {
   const page = await open();
@@ -18,6 +18,15 @@ test('a saved credential reaches the clipboard from nowhere, and disk only if as
     await page.fill('#auth-credential', `Bearer ${SECRET}`);
     await page.getByRole('button', { name: 'Save for this session' }).click();
     await page.waitForTimeout(400);
+
+    // Saving is the end of the errand, so the sheet goes and the keyboard
+    // comes back to the button that opened it.
+    assert.equal(await page.evaluate(() => window.__aw.store.state.authOpen), false);
+    assert.equal(await page.locator('dialog[open]').count(), 0);
+    assert.equal(
+      await page.evaluate(() => document.activeElement?.textContent?.trim()),
+      'Authorise',
+    );
 
     // It is held, and the prefix was stripped as the help text promises.
     assert.equal(await page.evaluate(() => window.__aw.store.state.auth.credential), SECRET);
@@ -34,6 +43,8 @@ test('a saved credential reaches the clipboard from nowhere, and disk only if as
     assert.ok(!where.cookie.includes(SECRET), 'the credential reached a cookie');
 
     // Asking for it moves it to disk, and takes the session copy with it.
+    await page.getByRole('button', { name: 'Authorise' }).click();
+    await page.waitForTimeout(400);
     await page.getByRole('checkbox', { name: /Remember on this device/ }).check();
     await page.waitForTimeout(400);
     where = await stored();
@@ -57,6 +68,29 @@ test('a saved credential reaches the clipboard from nowhere, and disk only if as
     await page.waitForTimeout(400);
     where = await stored();
     assert.ok(!`${where.local}${where.session}`.includes(SECRET), 'a forgotten credential was still on disk');
+  } finally {
+    await page.close();
+  }
+});
+
+test('saving from the parse report hands the keyboard to the bar it lands in', async () => {
+  const page = await open('');
+  try {
+    await page.locator('#schema-url').fill(SRC);
+    await page.getByRole('button', { name: 'Fetch' }).click();
+    await page.waitForTimeout(1200);
+
+    // This route replaces the report with the browser, so the button that
+    // opened the sheet is gone by the time it closes.
+    await page.getByRole('button', { name: 'Set up auth first' }).click();
+    await page.waitForTimeout(400);
+    await page.fill('#auth-credential', 'Bearer a-token');
+    await page.getByRole('button', { name: 'Save for this session' }).click();
+    await page.waitForTimeout(400);
+
+    assert.equal(await page.locator('dialog[open]').count(), 0);
+    // Not the body: the same control, in the place it lives from now on.
+    assert.equal(await page.evaluate(() => document.activeElement?.id), 'open-auth');
   } finally {
     await page.close();
   }

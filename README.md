@@ -170,6 +170,13 @@ both folded the detail has the whole frame, which is all "maximise" means here
 Folding the rail hands the tags to the chip row that already stands in for it
 in the narrower layouts, so filtering by tag never goes away with the column.
 
+Inside the rail, the component schemas are a `<details>` that starts shut. A
+document of any size lists more schemas than tags and the tags are what the
+rail is for, so the browsable half stays above the fold; the summary carries
+the count, so a shut drawer still says what is in it. Opening a schema from
+anywhere else — the palette, a link in a parameters table — unfolds it, because
+marking the current item inside a closed drawer tells nobody where they are.
+
 A folded column is removed rather than shrunk to a strip: a strip would carry a
 second copy of the control that folded it, which is two tab stops for one
 state. The toggles stay in the top bar instead, so what is missing always has a
@@ -390,6 +397,15 @@ refused with a sentence if it is not a base URL at all — a wrong host is a
 request that fails a long way from here. Once set it feeds the snippet, the
 try-it preview and the auth probe alike, and the panel patches the URL under
 the Send button in place rather than rebuilding the form under your keyboard.
+Saving from the sheet closes it and hands the keyboard back to the *Authorise*
+button in the top bar, including on the route that came from the parse report
+and so has no button left to go back to.
+
+When a response arrives, focus moves to the result and the scroll lands on its
+status line — a 50 kB body is many times taller than the pane, and letting the
+browser decide what "scroll it into view" means for a box that size is how you
+end up somewhere in the middle of it, past the one line that says whether the
+request worked.
 
 **It asks once.** Once there is a base URL, Try it stops raising it: the field
 does not come back on the next operation you open, because a question already

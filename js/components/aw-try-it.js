@@ -458,8 +458,31 @@ class AwTryIt extends AwElement {
       clearTimeout(timeout);
       this.#sending = false;
       this.render(this.state);
-      this.querySelector('.result')?.focus();
+      this.#showResult();
     }
+  }
+
+  /**
+   * Land on the status line, and no further.
+   *
+   * `focus()` scrolls its target into view on its own, and what "into view"
+   * means for a box taller than the pane is the browser's business — a
+   * forty-thousand-pixel response body can leave the reader somewhere in the
+   * middle of it, past the one line that says whether the request worked. So
+   * the scroll is taken over: focus lands on the result without moving
+   * anything, and the head — a short row that cannot overshoot — is brought to
+   * the top instead.
+   *
+   * Deliberately not smooth. A response renders in one go but the browser is
+   * still laying out a very long `<pre>` behind it, and an animation running
+   * across that is an animation that can be left somewhere in the middle.
+   */
+  #showResult() {
+    const result = this.querySelector('.result');
+    if (!result) return;
+    result.focus({ preventScroll: true });
+    const head = result.querySelector('.result__head') ?? result;
+    head.scrollIntoView({ block: 'start', behavior: 'auto' });
   }
 
 }

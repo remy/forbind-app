@@ -459,10 +459,20 @@ const actions = {
     store.set({ authOpen: true });
   },
 
-  /** "Set up auth first" from the parse report: authorise, then browse. */
+  /**
+   * "Set up auth first" from the parse report: authorise, then browse.
+   *
+   * In two steps, and the order is the point. The button that started this is
+   * on the report, and the report is gone the moment browsing begins — so a
+   * sheet opened in the same breath has no invoker left to hand the keyboard
+   * back to, and closing it drops focus to the body. Browsing first puts the
+   * top bar on screen; the Authorise button there is the same control in the
+   * place it lives from now on, so that is what the sheet returns to.
+   */
   authThenBrowse() {
-    store.set({ browsing: true, authOpen: true });
-    lastInvoker = document.activeElement;
+    store.set({ browsing: true });
+    lastInvoker = document.querySelector('#open-auth');
+    store.set({ authOpen: true });
   },
   closeAuth() {
     if (store.state.authOpen) store.set({ authOpen: false });

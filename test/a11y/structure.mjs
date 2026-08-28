@@ -8,7 +8,64 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, SRC } from './lib/harness.mjs';
+import { open, SRC, violations } from './lib/harness.mjs';
+
+test('the rail keeps its schemas in a real disclosure, shut on arrival', async () => {
+  const page = await open(`#/op/get-v2-bookings?src=${SRC}`);
+  try {
+    const drawer = page.locator('.rail__schemas');
+    // A `<details>`, so the expanded state, the keyboard and the name all come
+    // from the element rather than from ARIA bolted onto a div.
+    assert.equal(await drawer.evaluate((node) => node.tagName), 'DETAILS');
+    assert.equal(await drawer.evaluate((node) => node.open), false);
+    assert.equal(await page.locator('.rail__schema').first().isVisible(), false);
+
+    // The count is on the summary, so a shut drawer still says what is in it.
+    const summary = page.locator('.rail__disclosure');
+    assert.match(await summary.textContent(), /Schemas\s*9/);
+    // And it names the list it controls, whichever state it is in.
+    const listedBy = await page.locator('.rail__schemas ul').getAttribute('aria-labelledby');
+    assert.match(await page.locator(`#${listedBy}`).textContent(), /Schemas/);
+
+    await summary.click();
+    await page.waitForTimeout(200);
+    assert.equal(await drawer.evaluate((node) => node.open), true);
+    assert.equal(await page.locator('.rail__schema').first().isVisible(), true);
+
+    assert.deepEqual(await violations(page), []);
+    assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a schema opened from elsewhere unfolds the drawer it is listed in', async () => {
+  const page = await open(`#/schema/Booking?src=${SRC}`);
+  try {
+    // Landing on a schema, the rail must not mark a current item inside a
+    // drawer nobody can see.
+    assert.equal(await page.locator('.rail__schemas').evaluate((node) => node.open), true);
+    assert.equal(
+      await page.locator('.rail__schema[aria-current="page"]').textContent(),
+      'Booking',
+    );
+
+    // Shut it, then reach a schema from a link in the fields table.
+    await page.locator('.rail__disclosure').click();
+    await page.waitForTimeout(200);
+    assert.equal(await page.locator('.rail__schemas').evaluate((node) => node.open), false);
+
+    await page.getByRole('link', { name: 'Customer', exact: true }).first().click();
+    await page.waitForTimeout(400);
+    assert.equal(await page.locator('.rail__schemas').evaluate((node) => node.open), true);
+    assert.equal(
+      await page.locator('.rail__schema[aria-current="page"]').textContent(),
+      'Customer',
+    );
+  } finally {
+    await page.close();
+  }
+});
 
 test('every landmark is present and named', async () => {
   const page = await open();

@@ -101,6 +101,43 @@ test('a request that succeeds reports its status, timing and readable headers', 
   }
 });
 
+test('a big response lands on its status line, not somewhere down its body', async () => {
+  const page = await open(`#/?src=${LOCAL}`);
+  try {
+    await page.locator('a.row').first().click();
+    await page.waitForTimeout(400);
+    await showTab(page, 'tryit');
+    await page.getByRole('button', { name: /^Send GET$/ }).click();
+    await page.waitForTimeout(1500);
+
+    // The fixture fetches the bundled sample, so the body is far taller than
+    // the pane — the case where "scroll it into view" stops meaning anything.
+    const geometry = await page.evaluate(() => {
+      const pane = document.querySelector('.pane--detail');
+      const result = document.querySelector('.result');
+      const head = document.querySelector('.result__head');
+      return {
+        paneHeight: pane.clientHeight,
+        resultHeight: Math.round(result.getBoundingClientRect().height),
+        headOffset: Math.round(head.getBoundingClientRect().top - pane.getBoundingClientRect().top),
+        focused: document.activeElement?.className,
+      };
+    });
+    assert.ok(
+      geometry.resultHeight > geometry.paneHeight * 3,
+      `the fixture response was not tall enough to test this (${geometry.resultHeight}px)`,
+    );
+    assert.ok(
+      Math.abs(geometry.headOffset) <= 4,
+      `the status line landed ${geometry.headOffset}px from the top of the pane`,
+    );
+    // Still the thing the keyboard is on, so the next Tab is inside the result.
+    assert.equal(geometry.focused, 'result');
+  } finally {
+    await page.close();
+  }
+});
+
 test('a response that came back can be copied, and says what was copied', async () => {
   const page = await open(`#/?src=${LOCAL}`);
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);

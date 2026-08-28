@@ -5,6 +5,14 @@
  * Tags are toggle buttons rather than links: they filter what the list shows
  * without changing which operation is open, so `aria-pressed` is the honest
  * state. Schemas are links, because they do navigate.
+ *
+ * The schema list is a `<details>`, shut to begin with. A document of any size
+ * lists more component schemas than tags, and the tags are what the rail is
+ * for; a real disclosure keeps the browsable half above the fold and costs
+ * nothing to open. It is `<details>` rather than a button and a hidden list
+ * because the element already carries the expanded state, the keyboard and the
+ * name — and the state is remembered on the component, so a rebuild does not
+ * shut a drawer the reader opened.
  */
 
 import { AwElement, define } from '../lib/element.js';
@@ -12,6 +20,9 @@ import { el, replace, uid } from '../lib/dom.js';
 
 class AwTagRail extends AwElement {
   static observes = ['schema', 'filters', 'selectedSchemaName'];
+
+  /** Whether the reader has opened the schema drawer. Shut on arrival. */
+  #schemasOpen = false;
 
   update(state, prev) {
     // Opening a schema only changes which link is current; rebuilding the rail
@@ -21,9 +32,20 @@ class AwTagRail extends AwElement {
         if (link.textContent === state.selectedSchemaName) link.setAttribute('aria-current', 'page');
         else link.removeAttribute('aria-current');
       }
+      // A schema can be opened from anywhere — the palette, a link in a
+      // parameters table — and marking the current one inside a shut drawer
+      // says where you are to nobody. Opening it moves nothing and takes no
+      // focus with it.
+      if (state.selectedSchemaName) this.#revealSchemas();
       return;
     }
     this.render(state);
+  }
+
+  #revealSchemas() {
+    this.#schemasOpen = true;
+    const drawer = this.querySelector('.rail__schemas');
+    if (drawer && !drawer.open) drawer.open = true;
   }
 
   render(state) {
@@ -77,21 +99,35 @@ class AwTagRail extends AwElement {
     replace(this, [
       el('h2', { class: 'label rail__label', id: tagsLabelId, text: 'Tags' }),
       el('ul', { class: 'rail__list', 'aria-labelledby': tagsLabelId }, tagRows),
-      el('h2', { class: 'label rail__divider', id: schemasLabelId, text: 'Schemas' }),
-      el(
-        'ul',
-        { class: 'rail__list', 'aria-labelledby': schemasLabelId },
-        schema.schemas.map((entry) =>
-          el('li', {}, [
-            el('a', {
-              class: 'rail__schema',
-              href: this.actions.hashFor({ view: 'schema', id: entry.name }),
-              text: entry.name,
-              'aria-current': state.selectedSchemaName === entry.name ? 'page' : null,
-            }),
+      el('details', {
+        class: 'rail__schemas',
+        // Open on arrival only if the reader opened it, or if a schema is
+        // already showing and the rail would otherwise be pointing into a
+        // closed drawer.
+        open: this.#schemasOpen || Boolean(state.selectedSchemaName) || null,
+        ontoggle: (event) => { this.#schemasOpen = event.target.open; },
+      }, [
+        el('summary', { class: 'rail__disclosure' }, [
+          el('h2', { class: 'label rail__disclosure-title', id: schemasLabelId }, [
+            el('span', { text: 'Schemas' }),
+            el('span', { class: 'rail__count', text: String(schema.schemas.length) }),
           ]),
+        ]),
+        el(
+          'ul',
+          { class: 'rail__list', 'aria-labelledby': schemasLabelId },
+          schema.schemas.map((entry) =>
+            el('li', {}, [
+              el('a', {
+                class: 'rail__schema',
+                href: this.actions.hashFor({ view: 'schema', id: entry.name }),
+                text: entry.name,
+                'aria-current': state.selectedSchemaName === entry.name ? 'page' : null,
+              }),
+            ]),
+          ),
         ),
-      ),
+      ]),
     ]);
   }
 }

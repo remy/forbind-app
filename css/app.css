@@ -307,10 +307,26 @@ aw-import { display: block; }
 .rail__item[aria-pressed='true']:hover,
 .rail__item[aria-current='true']:hover { background: var(--fill-hover); color: var(--paper); }
 
-.rail__divider {
-  margin: var(--s-16) var(--s-14) var(--s-9);
+/* The schema drawer. The rule that used to sit above the "Schemas" heading is
+   now the top of the disclosure, so the rail still reads as two halves. */
+.rail__schemas {
+  margin-top: var(--s-16);
   padding-top: var(--s-14);
   border-top: var(--rule-w) solid var(--rule);
+}
+.rail__disclosure {
+  padding: 0 var(--s-14) var(--s-9) var(--s-24, 1.5rem);
+  cursor: pointer;
+  list-style-position: outside;
+}
+.rail__disclosure::marker { color: var(--ink-55); }
+.rail__disclosure:hover .rail__disclosure-title { text-decoration: underline; }
+.rail__disclosure:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.rail__disclosure-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--s-8);
 }
 
 .rail__schema {
@@ -439,4 +455,5 @@ aw-import { display: block; }
     outline-offset: -2px;
   }
   .rail__schema[aria-current='page'] { outline: 2px solid Highlight; outline-offset: -2px; }
+  .rail__disclosure:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
 }
