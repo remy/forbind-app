@@ -229,7 +229,16 @@ something useful.
 **Contrast.** Every colour pair in use clears WCAG AA in both themes, and every
 one of them clears AAA — including the two verb pills and the hint bar that
 previously sat in the 6s. Component boundaries that carry no fill, such as an
-unpressed filter chip, clear the 3:1 of 1.4.11.
+unpressed filter chip, clear the 3:1 of 1.4.11. The two places the interface
+fades something — a deprecated row, and a button while it is busy — are
+measured as they are composited rather than as they are written, because
+`opacity` takes the text and its background down together and a pair that is
+AAA in the tokens can land under AA on screen.
+
+**Colour blindness.** Every text pair holds above 4.5:1 simulated for
+deuteranopia, protanopia and tritanopia. The verb tints do not survive that —
+under deuteranopia the POST and DELETE fills become the same colour — which is
+exactly why the verb is written in the pill and never left to the fill.
 
 **Verified, not asserted.** `npm run test:a11y` drives a real browser and
 checks all of the above: `axe-core` over eleven screens and states (import,
@@ -247,7 +256,9 @@ the credential reaching neither storage nor the clipboard, and a folded column
 keeping every route back to itself.
 
 The one place the design was overridden for an accessibility reason is
-documented in `DECISIONS.md`.
+documented in `DECISIONS.md`. `AUDIT.md` is the accessibility record: what an
+external WCAG 2.2 audit found, the changes made in response, and the findings
+it chased down and withdrew.
 
 ## Reading a response
 

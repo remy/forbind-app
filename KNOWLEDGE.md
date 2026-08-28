@@ -3,7 +3,8 @@
 A map of the codebase for anyone — human or agent — picking it up cold.
 `README.md` is the product: what it does and what it promises. `CLAUDE.md` is
 the rules for changing it. `DECISIONS.md` is the reasoning behind the parts
-that look odd on purpose. This file is the structure.
+that look odd on purpose, and `AUDIT.md` is the accessibility record — what an
+audit found, what changed, and what was withdrawn. This file is the structure.
 
 ---
 
@@ -181,6 +182,13 @@ real query string — the shape an inbound link usually takes. `foldQuerySchema`
 rewrites it into the fragment at boot and `main.js` `replaceState`s the result
 before `restoreSchema` or `router.start` look at the address, so exactly one
 representation ever reaches the app. A `src` already in the fragment wins.
+
+Both halves of a link outlive the fetch it triggers. `pendingSelection` holds
+what the address wanted open and `pendingFilters` holds how it wanted it
+filtered; `ingest` claims both, applies the filters over the cleared set (so a
+document loaded by hand still starts clean) and then opens the selection. Set
+in the router's `src` branch and in `restoreSchema`, cleared before the first
+`await` so a failed load leaves nothing behind.
 
 The fragment being the router is why skip links move focus themselves instead
 of letting the browser navigate: `#detail` would be read as a route naming no

@@ -163,9 +163,15 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
 .btn--filled:hover { background: var(--fill-hover); color: var(--paper); }
 .btn--filled:active { background: var(--fill-active); color: var(--paper); }
 
+/* Both places `aria-disabled` is used put *status* in the label — "Sending…"
+   in try-it, "Testing…" in the auth sheet — so the button is saying something
+   at the moment it is dimmed. An inactive control is exempt from 1.4.3, but a
+   label nobody can read is not much of a status. Opacity composites the whole
+   button against the page, so 0.55 landed the label at 4.21:1 on paper; 0.6
+   takes it to 5.00:1 and still reads as stood down. */
 .btn[aria-disabled='true'],
 .btn:disabled {
-  opacity: 0.55;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 .btn[aria-disabled='true']:hover,

@@ -131,6 +131,56 @@ function ratio(locator, property, { from = 'self' } = {}) {
   }, [property, from]);
 }
 
+/**
+ * Contrast where `opacity` is in play.
+ *
+ * getComputedStyle reports the colour an element was *given*, not the colour
+ * it ends up painting: opacity composites the whole element — text and fill
+ * together — against whatever is behind it. A pair can be measured at 7:1 in
+ * the tokens and land under 4.5:1 on screen because an ancestor is faded.
+ *
+ * @param {import('playwright').Locator} locator the element carrying the text
+ * @param {string} [inner] optional selector for a descendant to measure instead
+ */
+function fadedRatio(locator, inner) {
+  return locator.evaluate((host, sel) => {
+    const node = sel ? host.querySelector(sel) : host;
+    const parse = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+    const opaque = (value) => value !== 'transparent' && !/,\s*0\s*\)$/.test(value);
+    const lum = ([r, g, b]) => {
+      const channel = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : (((c / 255) + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+    };
+    const mix = (fg, bg, a) => fg.map((c, i) => c * a + bg[i] * (1 - a));
+
+    // Everything from `node` up to the first opaque backdrop fades together.
+    const chain = [];
+    for (let e = node; e; e = e.parentElement) chain.push(e);
+    const faded = chain.reduce((a, e) => a * Number(getComputedStyle(e).opacity || 1), 1);
+
+    // The backdrop is the first opaque background above the faded stack.
+    let backdrop = null;
+    for (const e of chain) {
+      const style = getComputedStyle(e);
+      if (Number(style.opacity || 1) < 1) continue;
+      if (opaque(style.backgroundColor)) { backdrop = parse(style.backgroundColor); break; }
+    }
+    backdrop ??= [255, 255, 255];
+
+    // The element's own fill, if it has one, otherwise the backdrop shows through.
+    let own = backdrop;
+    for (let e = node; e; e = e.parentElement) {
+      const value = getComputedStyle(e).backgroundColor;
+      if (opaque(value)) { own = parse(value); break; }
+    }
+
+    const fg = mix(parse(getComputedStyle(node).color), backdrop, faded);
+    const bg = mix(own, backdrop, faded);
+    const a = lum(fg), b = lum(bg);
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }, inner ?? null);
+}
+
 test('a chip border carries 3:1 against the surface behind it', async () => {
   // An unpressed chip has no fill, so its border is the whole of what says
   // "control". 1.4.11 asks 3:1 of that, in both themes. A pressed chip is a
@@ -192,5 +242,93 @@ test('the whole of the search field is the search field', async () => {
     assert.equal(hit.bottom, 'INPUT', 'the bottom of the field is not the input');
   } finally {
     await page.close();
+  }
+});
+
+test('a deprecated row is stood down without taking any verb pill under AA', async () => {
+  // The whole row fades together, so a pill's tint and its text lose contrast
+  // at the same time — and the pills are 10px, which is normal text and wants
+  // 4.5:1. Measuring the tokens alone misses this: every one of those pairs is
+  // AAA before the fade.
+  //
+  // Two traps here, and the stylesheet fell into both: the first .pill in a
+  // deprecated row is the neutral "Deprecated" marker, which is the *best* of
+  // the pairs, and the sample only ever deprecates GETs. So this reads the
+  // fade off a real deprecated row and applies it to every verb tint on
+  // screen, rather than trusting whichever pill happens to come first.
+  for (const theme of ['light', 'dark']) {
+    const page = await open(`#/?src=${SRC}`);
+    try {
+      await page.evaluate((t) => window.__aw.actions.setTheme(t), theme);
+      await page.waitForTimeout(200);
+      assert.ok(await page.locator('a.row--deprecated').count(), `${theme}: no deprecated row`);
+
+      const worst = await page.evaluate(() => {
+        const parse = (value) => value.match(/[\d.]+/g).slice(0, 3).map(Number);
+        const lum = ([r, g, b]) => {
+          const channel = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : (((c / 255) + 0.055) / 1.055) ** 2.4);
+          return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+        };
+        const mix = (fg, bg, a) => fg.map((c, i) => c * a + bg[i] * (1 - a));
+        const ratio = (a, b) => {
+          const [x, y] = [lum(a), lum(b)];
+          return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+        };
+
+        const fade = Number(getComputedStyle(document.querySelector('a.row--deprecated')).opacity);
+        const paper = parse(getComputedStyle(document.body).backgroundColor);
+
+        // One of each verb tint actually rendered, deprecated or not.
+        const seen = new Map();
+        for (const pill of document.querySelectorAll('.pill')) {
+          const kind = [...pill.classList].find((c) => c.startsWith('pill--'));
+          if (kind && !seen.has(kind)) seen.set(kind, pill);
+        }
+
+        let low = { kind: null, ratio: Infinity };
+        for (const [kind, pill] of seen) {
+          const style = getComputedStyle(pill);
+          const r = ratio(
+            mix(parse(style.color), paper, fade),
+            mix(parse(style.backgroundColor), paper, fade),
+          );
+          if (r < low.ratio) low = { kind, ratio: r };
+        }
+        return low;
+      });
+
+      assert.ok(
+        worst.ratio >= 4.5,
+        `${theme}: ${worst.kind} faded to ${worst.ratio.toFixed(2)}:1, under the 4.5:1 of 1.4.3`,
+      );
+    } finally {
+      await page.close();
+    }
+  }
+});
+
+test('a button that is busy can still be read', async () => {
+  // aria-disabled is exempt from 1.4.3, but both uses of it here put status in
+  // the label — this is the one moment the button is telling you something.
+  for (const theme of ['light', 'dark']) {
+    const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
+    try {
+      await page.evaluate((t) => window.__aw.actions.setTheme(t), theme);
+      await page.evaluate(() => {
+        window.__aw.actions.openAuth();
+        const { auth } = window.__aw.store.state;
+        window.__aw.store.set({ auth: { ...auth, verifyState: 'checking' } });
+      });
+      await page.waitForTimeout(400);
+
+      const busy = page.locator('.btn[aria-disabled="true"]').first();
+      assert.ok(await busy.count(), `${theme}: nothing was in its busy state to measure`);
+      assert.match(await busy.textContent(), /…/, 'the busy button is not showing status text');
+
+      const measured = await fadedRatio(busy);
+      assert.ok(measured >= 4.5, `${theme}: the busy button label is ${measured.toFixed(2)}:1, under AA`);
+    } finally {
+      await page.close();
+    }
   }
 });
