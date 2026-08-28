@@ -76,19 +76,16 @@ test('a URL that cannot be fetched is still in the field, with the caret in it',
   }
 });
 
-test('the heading over a failure counts the rows under it', async () => {
+test('the heading over a failure names the list rather than counting it', async () => {
   const page = await open('');
   try {
     await failedFetch(page);
 
-    const rows = await page.locator('.notes li').count();
-    assert.ok(rows > 0, 'the failure listed nothing');
+    assert.ok(await page.locator('.notes li').count() > 0, 'the failure listed nothing');
     const heading = await page.locator('.import .detail__section .label').first().textContent();
-    assert.equal(
-      heading.trim(),
-      `${rows} ${rows === 1 ? 'thing' : 'things'} worth knowing`,
-      `${rows} rows were listed under “${heading.trim()}”`,
-    );
+    assert.equal(heading.trim(), 'Worth knowing');
+    // Whatever it says, it must not claim a number the list does not have.
+    assert.doesNotMatch(heading, /\d/);
 
     assert.deepEqual(await violations(page), []);
   } finally {

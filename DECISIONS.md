@@ -176,10 +176,13 @@ Each is either a state the design implies or a route out of a dead end.
   `#0F2775`, transitions ≤120ms and dropped under `prefers-reduced-motion`).
 - **The parse *failure* state** — described in prose, not drawn. Same "things
   worth knowing" list, a `FAIL` word-led row, the YAML or JSON line and column,
-  and a `Show line …` disclosure. Never a modal alert. The heading counts the
-  rows it is standing over, because a failure that also carries a hint lists
-  two of them; and because the failed form is a rebuilt form, the URL that was
-  fetched is written back into the field and the keyboard put back in it —
+  and a `Show line …` disclosure. Never a modal alert. Its heading is `Worth
+  knowing`, with no count: a failure lists one row or two depending on whether
+  it carries a hint, and the disclosure under them is arguably a third thing on
+  screen, so the number was never one the reader could check. Counting stays on
+  the parse report, where it is the point. And because the failed form is a
+  rebuilt form, the URL that was fetched is written back into the field and the
+  keyboard put back in it —
   otherwise the address disappears and focus falls to the body at the one
   moment the reader wants to correct a character and try again.
 - **A base URL guessed from where the schema came from.** A document with no

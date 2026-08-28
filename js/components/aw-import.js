@@ -164,10 +164,11 @@ class AwImport extends AwElement {
     const detail = error.detail ?? {};
     const where = detail.line ? `line ${detail.line}${detail.column ? `, column ${detail.column}` : ''}` : null;
 
-    // The heading counts the rows underneath it rather than assuming one. A
-    // failure that also carries a hint puts two things on the list, and a
-    // heading that says "1 thing" while showing two is a heading nobody can
-    // trust the next time.
+    // A failure lists one row or two depending on whether it carries a hint,
+    // and the disclosure under it is a third thing on screen. Rather than
+    // count what is arguably countable more than one way, the heading names
+    // the list and leaves the counting to the parse report, where the number
+    // is the point.
     const rows = [
       el('li', {}, [
         el('span', { class: 'word word--fail', text: 'FAIL' }),
@@ -186,7 +187,7 @@ class AwImport extends AwElement {
     ].filter(Boolean);
 
     return el('div', { class: 'detail__section' }, [
-      el('h2', { class: 'label', text: `${rows.length} ${rows.length === 1 ? 'thing' : 'things'} worth knowing` }),
+      el('h2', { class: 'label', text: 'Worth knowing' }),
       el('ul', { class: 'notes' }, rows),
       detail.snippet
         ? el('details', {}, [
