@@ -17,24 +17,46 @@ import { el } from '../lib/dom.js';
 import { verbLabel, verbClass, fieldRows, describeType, describeConstraints, deref } from '../lib/openapi.js';
 import { markdownBlock } from '../lib/markdown.js';
 
+/** The constraints and the deprecation flag as one terse line. */
+function factsLine(row) {
+  return [row.notes, row.deprecated ? 'deprecated' : null].filter(Boolean).join(' · ');
+}
+
 /**
- * The Notes cell: the constraints as a terse line, then the description as the
+ * The notes row: the constraints as a terse line, then the description as the
  * markdown the document wrote.
  *
- * Rendered as a block rather than inline. A description is regularly a table of
- * what a field accepts, or a list, or a fenced example — none of which survive
- * inline rendering, where they come out as the raw pipes and dashes they were
- * typed as. A cell is narrow, so a wide table scrolls inside it; that is a
- * better answer than showing the syntax.
+ * It is a row of its own under the field rather than a fourth column beside
+ * it. A description is regularly a table of what a field accepts, or a list,
+ * or a fenced example, and a quarter of the pane squashes all three into a
+ * column of single words. Given the full width they are readable as written.
+ *
+ * The cost is that the notes are no longer in the field's own row, so the
+ * association is made explicitly: the cell names the field's `<th>` in
+ * `headers`, which is what a screen reader announces before the content, and
+ * carries the word the removed column heading used to say. Reading down, that
+ * is “q · string · no”, then “Notes: …” — the same order as the eye takes it.
  *
  * @param {{notes?: string, description?: string, deprecated?: boolean}} row
+ * @param {string} headerId  the id of the field's row header
  */
-function noteCell(row) {
-  const facts = [row.notes, row.deprecated ? 'deprecated' : null].filter(Boolean).join(' · ');
-  return [
-    facts ? el('span', { class: 'col-notes__facts', text: facts }) : null,
-    markdownBlock(row.description),
-  ].filter(Boolean);
+function noteRow(row, headerId) {
+  const facts = factsLine(row);
+  const description = markdownBlock(row.description);
+  if (!facts && !description) return null;
+  return el('tr', { class: 'params__notes' }, [
+    el('td', { class: 'col-notes', colspan: '3', headers: headerId }, [
+      el('span', { class: 'visually-hidden', text: 'Notes: ' }),
+      facts ? el('span', { class: 'col-notes__facts', text: facts }) : null,
+      description,
+    ].filter(Boolean)),
+  ]);
+}
+
+/** A field's row header id, stable across renders so `headers` can name it. */
+function fieldId(caption, index) {
+  const slug = caption.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `fld-${slug}-${index}`;
 }
 
 /** A type that names a component schema is a link to it. */
@@ -53,7 +75,7 @@ export function typeCell(type, hashFor) {
 export function paramTable({ caption, rows, narrow, hashFor }) {
   if (narrow) {
     return el('dl', { class: 'params-stack' }, rows.map((row) => {
-      const facts = [row.notes, row.deprecated ? 'deprecated' : null].filter(Boolean).join(' · ');
+      const facts = factsLine(row);
       return el('div', {}, [
         el('dt', { text: row.name }),
         el('dd', {}, [
@@ -68,33 +90,36 @@ export function paramTable({ caption, rows, narrow, hashFor }) {
     }));
   }
 
+  const body = [];
+  rows.forEach((row, index) => {
+    const id = fieldId(caption, index);
+    const notes = noteRow(row, id);
+    body.push(el('tr', { class: notes ? 'params__field params__field--noted' : 'params__field' }, [
+      el('th', { scope: 'row', id, text: row.name }),
+      el('td', { class: 'col-type' }, [typeCell(row.type, hashFor)]),
+      // A word, never a colour and never an asterisk.
+      el('td', {}, [
+        el('span', { class: row.required ? 'req-yes' : 'req-no', text: row.required ? 'yes' : 'no' }),
+      ]),
+    ]));
+    if (notes) body.push(notes);
+  });
+
   return el('table', { class: 'params' }, [
     el('caption', { class: 'visually-hidden', text: caption }),
     el('colgroup', {}, [
       el('col', { class: 'c-field' }),
       el('col', { class: 'c-type' }),
       el('col', { class: 'c-req' }),
-      el('col', { class: 'c-notes' }),
     ]),
     el('thead', {}, [
       el('tr', {}, [
         el('th', { scope: 'col', text: 'Field' }),
         el('th', { scope: 'col', text: 'Type' }),
         el('th', { scope: 'col', text: 'Req' }),
-        el('th', { scope: 'col', text: 'Notes' }),
       ]),
     ]),
-    el('tbody', {}, rows.map((row) =>
-      el('tr', {}, [
-        el('th', { scope: 'row', text: row.name }),
-        el('td', { class: 'col-type' }, [typeCell(row.type, hashFor)]),
-        // A word, never a colour and never an asterisk.
-        el('td', {}, [
-          el('span', { class: row.required ? 'req-yes' : 'req-no', text: row.required ? 'yes' : 'no' }),
-        ]),
-        el('td', { class: 'col-notes' }, noteCell(row)),
-      ]),
-    )),
+    el('tbody', {}, body),
   ]);
 }
 

@@ -116,3 +116,45 @@ test('where only one line fits, the syntax is stripped rather than printed', asy
     await page.close();
   }
 });
+
+test('a field and its notes read as one entry, in that order', async () => {
+  const page = await open(`#/op/get-notes?src=${DOCS}`);
+  try {
+    await showTab(page, 'body');
+    // The notes take the width, so they are a row under the field rather than
+    // a column beside it. Reading down the table that is the field, its type
+    // and its required flag, then the notes for that same field.
+    const shape = await page.evaluate(() =>
+      [...document.querySelector('table.params tbody').rows].slice(0, 2).map((row) => ({
+        cls: row.className,
+        cells: [...row.cells].map((cell) => ({
+          tag: cell.tagName.toLowerCase(),
+          id: cell.id,
+          headers: cell.getAttribute('headers'),
+          span: cell.colSpan,
+          text: cell.textContent.trim().slice(0, 20),
+        })),
+      })));
+    assert.equal(shape[0].cells.length, 3);
+    assert.equal(shape[0].cells[0].tag, 'th');
+    assert.equal(shape[1].cells.length, 1);
+    assert.equal(shape[1].cells[0].span, 3);
+    // The association the row order lost is made explicitly, so the field's
+    // name is what a screen reader announces before its notes.
+    assert.equal(shape[1].cells[0].headers, shape[0].cells[0].id);
+    assert.ok(shape[1].cells[0].headers);
+    assert.match(shape[1].cells[0].text, /^Notes:/);
+
+    // Ids are the one document's id space: they have to stay unique.
+    const dupes = await page.evaluate(() => {
+      const ids = [...document.querySelectorAll('[id]')].map((n) => n.id);
+      return [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+    });
+    assert.deepEqual(dupes, []);
+
+    assert.deepEqual(await violations(page), []);
+    assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});

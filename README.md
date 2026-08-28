@@ -124,7 +124,11 @@ list, rather than one list with headings wedged inside it, and nothing in it is
 semantics. Parameters render as a real `<table>` with
 `scope`ed headers where there is room, and as a real `<dl>` of stacked rows
 where there is not — switched on a media query, because restyling a table to
-`display: block` keeps the look and throws the semantics away.
+`display: block` keeps the look and throws the semantics away. A field's notes
+sit in a row under its name, type and required flag rather than in a column
+beside them, and that cell names the field's own `<th>` in `headers` — so the
+notes are still announced as that field's, and read in the order the eye takes
+them.
 
 **Never colour alone.** Selection is said three ways at once: a left bar, a
 background tint, and `aria-current="true"`. Verb pills always carry the word
@@ -311,10 +315,11 @@ Four things it will not do, because the schema is someone else's file:
   in its accessible name, because otherwise that is a surprise.
 
 It renders wherever there is a block to put it in: the overview, a request
-body, a schema, a field's Notes cell, the hint under a try-it input. A
+body, a schema, a field's notes row, the hint under a try-it input. A
 description is regularly a *table* of what a field accepts, and a table
-flattened onto one line is unreadable — so the cell or the hint takes the
-table, scrolling it inside itself if the column is narrow.
+flattened onto one line is unreadable — so the notes take the full width of
+the field table rather than a quarter of it, and anything still wider than
+that scrolls inside itself.
 
 Where the design has room for one line and no more — a row in the endpoint
 list, a response summary, a line in the payload tree, anything that becomes an

@@ -150,7 +150,18 @@ table.params tbody th {
 }
 table.params td { font: 400 var(--t-11-5) / 1.35 var(--font-mono); }
 table.params .col-type { color: var(--ink-70); }
-table.params .col-notes { font-family: var(--font-sans); color: var(--ink-70); }
+
+/* The notes are a row of their own under the field, spanning the width, so a
+   description that is a table or a fenced example is read at the width it was
+   written for instead of a quarter of it. The field row above it drops its
+   rule so the two read as the one entry they are. */
+table.params tbody tr.params__field--noted > th,
+table.params tbody tr.params__field--noted > td { border-bottom: 0; padding-bottom: var(--s-5); }
+table.params .col-notes {
+  padding-top: 0;
+  font: 400 var(--t-11-5) / 1.5 var(--font-sans);
+  color: var(--ink-70);
+}
 /* The constraints, then the description under them — two lines in one cell
    rather than one run-on. */
 .col-notes__facts { display: block; }
@@ -161,10 +172,9 @@ table.params .col-notes { font-family: var(--font-sans); color: var(--ink-70); }
 .req-yes { font-weight: 600; }
 .req-no { color: var(--ink-55); }
 
-.params col.c-field { width: 28%; }
-.params col.c-type { width: 20%; }
-.params col.c-req { width: 12%; }
-.params col.c-notes { width: 40%; }
+.params col.c-field { width: 42%; }
+.params col.c-type { width: 42%; }
+.params col.c-req { width: 16%; }
 
 /* Stacked definition rows replace the table on small screens — a table that
    is restyled with display:block loses its semantics, so the narrow layout is
