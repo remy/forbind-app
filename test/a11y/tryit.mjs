@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { open, showTab, LOCAL } from './lib/harness.mjs';
+import { open, showTab, violations, LOCAL } from './lib/harness.mjs';
 
 const REF_ENUM = '/test/fixtures/ref-enum.yaml';
 
@@ -96,6 +96,41 @@ test('a request that succeeds reports its status, timing and readable headers', 
     assert.match(await page.locator('.result__head').textContent(), /200/);
     assert.match(await page.locator('#aw-live-polite').textContent(), /200 OK in \d+ milliseconds/);
     assert.ok(await page.locator('.result .kv > div').count() > 0);
+  } finally {
+    await page.close();
+  }
+});
+
+test('a response that came back can be copied, and says what was copied', async () => {
+  const page = await open(`#/?src=${LOCAL}`);
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  try {
+    await page.locator('a.row').first().click();
+    await page.waitForTimeout(400);
+    await showTab(page, 'tryit');
+    // Nothing to copy until there is a response.
+    assert.equal(await page.getByRole('button', { name: /Copy response/ }).count(), 0);
+
+    await page.getByRole('button', { name: /^Send GET$/ }).click();
+    await page.waitForTimeout(1500);
+
+    const copy = page.getByRole('button', { name: 'Copy response' });
+    assert.equal(await copy.count(), 1);
+    await copy.click();
+    await page.waitForTimeout(300);
+
+    // What landed on the clipboard is what is on screen, not a re-serialising
+    // of it, and the confirmation is spoken as well as drawn on the button.
+    const pasted = await page.evaluate(() => navigator.clipboard.readText());
+    const shown = await page.locator('.result .code-block').first().textContent();
+    assert.equal(pasted, shown);
+    assert.match(await page.locator('#aw-live-polite').textContent(), /Response body copied, \d+ lines?\./);
+    assert.match(await page.getByRole('button', { name: /Copied/ }).textContent(), /Copied/);
+
+    // And the label goes back, so the button does not lie about the next press.
+    await page.waitForTimeout(2200);
+    assert.equal(await page.getByRole('button', { name: 'Copy response' }).count(), 1);
+    assert.deepEqual(await violations(page), []);
   } finally {
     await page.close();
   }

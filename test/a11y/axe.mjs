@@ -49,6 +49,18 @@ const SCREENS = [
     return page;
   }],
   ['the detail on a phone', async () => open(`#/op/post-v2-bookings?src=${SRC}`, { viewport: { width: 390, height: 720 } })],
+  ['the responses tab, opened up', async () => {
+    const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
+    await page.evaluate(() => document.querySelector('aw-detail')?.showTab('responses'));
+    await page.waitForTimeout(500);
+    return page;
+  }],
+  ['the try-it panel', async () => {
+    const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
+    await page.evaluate(() => document.querySelector('aw-detail')?.showTab('tryit'));
+    await page.waitForTimeout(500);
+    return page;
+  }],
 ];
 
 for (const [label, setup] of SCREENS) {

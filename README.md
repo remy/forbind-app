@@ -313,6 +313,14 @@ no value *and* no example to fall back on stops the send, names itself in a
 polite word-led message tied to the field, and takes focus — rather than
 sending `{bookingId}` to a real API.
 
+A response that came back carries a **Copy response** button beside its body.
+It copies exactly what is on screen — pretty-printed if the body was JSON — and
+confirms the same way the snippet's copy button does: the label flips for two
+seconds *and* a live region says what was copied and how long it is. If the
+clipboard is refused, the body is selected instead and that is said out loud,
+rather than a button claiming a copy that never happened. A response with no
+body at all does not get a button that would do nothing.
+
 ### When the schema declares no server
 
 `servers` is optional in OpenAPI, and a document without it describes paths with

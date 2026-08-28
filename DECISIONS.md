@@ -253,6 +253,14 @@ and raw syntax is worse than emphasis quietly lost.
 the cursor actually moves — which is when it is news — but a number parked in
 the corner is one more thing on screen saying what the list already shows.
 
+**A response can be copied.** The body that came back gets a copy button on
+the same terms as the snippet's: what is copied is exactly what is shown, the
+label flips for two seconds *and* the live region says what was copied, and a
+refused clipboard selects the text and says so rather than letting the button
+claim something that did not happen. It appears for any response carrying a
+body, not only a `200` — a 404's body is as worth pasting into a bug report as
+a 200's — and not at all for one carrying nothing.
+
 **Try-it is a real form.** The fields and the send button are in a `<form>`, so
 Enter sends — previously nothing happened, because Enter has no meaning outside
 a form. Validation is deliberately narrow: an empty required field is fine when

@@ -130,6 +130,7 @@ browser. `npm test` covers these.
 | `store.js` | the store |
 | `element.js` | `AwElement`, `define`, `defineAll` |
 | `dom.js` | `el`, `replace`, `uid`, `focusable`, `preserveFocus` |
+| `clipboard.js` | the clipboard write, and the select-the-text fallback when it is refused |
 | `announce.js` | the two live regions and `announce()` |
 | `dialog.js` | `<dialog>` plumbing: focus return, light dismiss |
 | `context.js` | the one place components find the store, router and actions |

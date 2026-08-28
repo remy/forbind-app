@@ -294,6 +294,21 @@ table.params .col-notes { font-family: var(--font-sans); color: var(--ink-70); }
   color: var(--ink-70);
   max-width: 68ch;
 }
+.result__section-head {
+  display: flex;
+  gap: var(--s-10);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--s-9);
+}
+.result__section-head .label { margin: 0; }
+.result__copy { margin-left: auto; }
+.result__copy[data-copied='true'] {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
 .result--error { border-color: var(--delete-fg); }
 .result--error .result__head { background: var(--delete-bg); color: var(--delete-fg); }
 

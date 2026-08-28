@@ -14,6 +14,7 @@ import { AwElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { buildRequest, SNIPPET_LANGUAGES, lineCount } from '../lib/request.js';
+import { writeClipboard, selectContents } from '../lib/clipboard.js';
 
 const COPIED_MS = 2000;
 
@@ -128,7 +129,7 @@ class AwCodeBlock extends AwElement {
 
     if (!ok) {
       announce(`Could not reach the clipboard. The ${label} snippet is selected instead — press Command C, or Control C, to copy it.`, { assertive: true });
-      selectSnippet(this.querySelector('pre'));
+      selectContents(this.querySelector('pre'));
       return;
     }
 
@@ -143,30 +144,6 @@ class AwCodeBlock extends AwElement {
       delete target.dataset.copied;
     }, COPIED_MS);
   }
-}
-
-/**
- * The clipboard API needs a secure context and a user gesture, and can still
- * be refused. Rather than pretending it worked, the caller falls back to
- * selecting the text so the browser's own copy still gets there.
- */
-export async function writeClipboard(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function selectSnippet(pre) {
-  if (!pre) return;
-  const range = document.createRange();
-  range.selectNodeContents(pre);
-  const selection = globalThis.getSelection();
-  selection?.removeAllRanges();
-  selection?.addRange(range);
-  pre.focus();
 }
 
 define('aw-code-block', AwCodeBlock);

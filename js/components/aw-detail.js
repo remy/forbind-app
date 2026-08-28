@@ -427,12 +427,12 @@ class AwDetail extends AwElement {
             : null,
         ]),
         el('div', { class: 'detail__section' }, [
-          el('h4', { class: 'label', text: 'Body' }),
+          el('h3', { class: 'label', text: 'Body' }),
           tree,
         ]),
         example !== null
           ? el('div', { class: 'detail__section' }, [
-              el('h4', { class: 'label', text: 'Example' }),
+              el('h3', { class: 'label', text: 'Example' }),
               el('pre', { class: 'code-block', tabindex: '0', text: example }),
             ])
           : null,
