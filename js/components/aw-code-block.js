@@ -18,7 +18,7 @@ import { buildRequest, SNIPPET_LANGUAGES, lineCount } from '../lib/request.js';
 const COPIED_MS = 2000;
 
 class AwCodeBlock extends AwElement {
-  static observes = ['schema', 'auth'];
+  static observes = ['schema', 'auth', 'baseUrl'];
 
   /** @type {object|null} set by the parent before insertion */
   operation = null;
@@ -37,6 +37,9 @@ class AwCodeBlock extends AwElement {
     const request = buildRequest({
       model: this.state.schema,
       operation: this.operation,
+      // A base URL the reader supplied stands in for the `servers` block the
+      // document does not have, so the snippet is a command and not a path.
+      serverUrl: this.state.baseUrl,
       // Never the real credential. A copied command is pasted into chat logs,
       // tickets and shell history; it carries a placeholder.
       revealCredential: false,

@@ -24,6 +24,7 @@ import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { verbLabel, verbClass } from '../lib/openapi.js';
 import { groupByTag, typeAheadIndex } from '../lib/search.js';
+import { markdownToText } from '../lib/markdown.js';
 
 const TYPEAHEAD_TIMEOUT = 800;
 
@@ -130,7 +131,10 @@ class AwEndpointList extends AwElement {
     const isSelected = state.selectedOperationId === op.id;
     const pillClass = op.deprecated ? 'pill pill--neutral' : `pill pill--${verbClass(op.method)}`;
 
-    const summary = op.summary || op.description.split('\n')[0] || '';
+    // A row is one line and part of a link's accessible name, so a description
+    // standing in for a missing summary is stripped to its words rather than
+    // shown with its syntax in it.
+    const summary = op.summary || markdownToText(op.description.split('\n')[0]) || '';
 
     // The verb pill shows the abbreviated word but announces the real method,
     // so DEL is never read as anything other than DELETE.

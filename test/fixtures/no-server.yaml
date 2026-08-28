@@ -1,0 +1,35 @@
+# A schema with no `servers` block at all — the case the base URL field exists
+# for. Two operations, one of them mutating, so the LIVE warning is exercised
+# alongside it.
+openapi: 3.1.0
+info:
+  title: Serverless Notes
+  version: 1.0.0
+tags:
+  - name: Notes
+paths:
+  /notes:
+    get:
+      summary: List notes
+      operationId: listNotes
+      tags: [Notes]
+      responses:
+        "200":
+          description: The notes
+    post:
+      summary: Create a note
+      operationId: createNote
+      tags: [Notes]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+      responses:
+        "201":
+          description: Created

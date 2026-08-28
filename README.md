@@ -87,11 +87,17 @@ there are no cookies, no telemetry, and nothing is sent anywhere.
 | The loaded schema | `localStorage` | until you replace it |
 | A credential | `sessionStorage` | this tab, and gone when it closes |
 | …if you tick *Remember on this device* | `localStorage` | until you forget it |
+| A base URL you supplied | `localStorage` | until you clear it or load another schema |
 
 A schema loaded from a URL is remembered as the URL and re-fetched; one loaded
 from a file keeps its text (under 3 MB — above that only its name is kept, and
 you are asked for it again). *Replace schema* forgets both the schema and any
 credential held for it.
+
+A base URL is kept the same way and under the same rule: it belongs to the
+schema it was typed against and is never handed to a different one, because
+pointing one document at another's host would be a quiet way to send a request
+somewhere nobody chose.
 
 The credential defaults to `sessionStorage`, so it survives a reload but not the
 tab. Remembering it is a labelled opt-in that says what it means, never a
@@ -209,7 +215,8 @@ Light and Dark in Settings), `prefers-contrast: more`, `prefers-reduced-motion`
 **Verified, not asserted.** `npm run test:a11y` drives a real browser and
 checks all of the above: `axe-core` over eleven screens and states (import,
 parse report, dense, roomy, dark, schema view, palette open, auth sheet,
-display options, mobile detail, columns folded away) at WCAG 2.0/2.1/2.2 A and
+display options, mobile detail, columns folded away) plus the base URL field
+and a document whose descriptions are markdown, at WCAG 2.0/2.1/2.2 A and
 AA plus best-practice, and
 then the behaviours a static scan cannot see — the roving tabindex holding
 focus through a dozen cursor moves, the combobox keeping focus in the input
@@ -252,6 +259,32 @@ A body that is a `oneOf` or `anyOf` has no fields of its own, so it lists its
 shapes instead — named where the document names them, and told apart by the
 fields they carry where it does not (`Option 1 · year, title, units`).
 
+## Descriptions
+
+`description` is CommonMark everywhere in OpenAPI, so it is rendered as
+markdown rather than printed with its syntax showing: lists become lists, a
+fenced block becomes a code block, `code` spans and **emphasis** land as
+themselves. markdown-it does the parsing, vendored alongside js-yaml — there is
+still no build step.
+
+Four things it will not do, because the schema is someone else's file:
+
+- **Raw HTML never renders.** A `<script>` in a description is escaped and shown
+  as the text it is.
+- **Headings are pushed down** to `h3`–`h6` and renumbered to run in sequence,
+  so a document's own `#` cannot outrank the pane it is sitting in and a
+  description that opens at `###` does not skip a level on the way in.
+- **Images become links** carrying their alt text. The CSP allows images from
+  this origin only, and a broken image box says nothing a link does not.
+- **Links open in a new tab** — a documentation link should not take a
+  half-filled try-it form with it — and each one carries *(opens in a new tab)*
+  in its accessible name, because otherwise that is a surprise.
+
+Where the design has room for one line and no more — a row in the endpoint
+list, a response summary, the hint under a field, anything that becomes part of
+an accessible name — the markdown is stripped back to its words instead. Markup
+that cannot be rendered is removed, never displayed.
+
 ## Try it out
 
 Try-it sends a real request from your browser to the host the schema declares.
@@ -263,11 +296,39 @@ warning first: it is not a sandbox.
 
 The fields come from the schema: a parameter with an `enum` is a `<select>` of
 exactly the values it allows (optional ones can stay *— not sent —*), and the
-rest are text inputs carrying the schema's example as a placeholder. It is a
+rest are text inputs carrying the schema's example as a placeholder. The enum is
+followed to wherever the document keeps it — a `$ref` to a named schema, or the
+`allOf: [{$ref}, {description}]` wrapper that adds prose to one — because a
+field with a fixed set of values should be a dropdown however the document
+happened to spell it, and the values are then dropped from the hint rather than
+being said twice. It is a
 real `<form>`, so <kbd>Enter</kbd> in any field sends. A required parameter with
 no value *and* no example to fall back on stops the send, names itself in a
 polite word-led message tied to the field, and takes focus — rather than
 sending `{bookingId}` to a real API.
+
+### When the schema declares no server
+
+`servers` is optional in OpenAPI, and a document without it describes paths with
+nothing in front of them — no host to send to, and a snippet that is half a
+command. allyway detects that on ingest and says so: the parse report carries a
+`WARN`, and beside it a **base URL** field, next to the *Browse* button rather
+than in front of it. Supplying one is an offer, not a toll; browsing an API you
+cannot call is an ordinary thing to want.
+
+Three shapes count as missing, because all three leave the same gap: no
+`servers` at all, a relative URL (`/v1`), and one still holding a `{variable}`
+with no default to fill it. The reason is named in the warning rather than
+flattened into "no server".
+
+A link that opens an operation directly never sees the report, so the same
+field is in the Try it panel, above the parameters, and the gap is announced on
+arrival rather than saved up for the send button. What you type is completed if
+it is only missing a scheme (`api.example.com` → `https://api.example.com`) and
+refused with a sentence if it is not a base URL at all — a wrong host is a
+request that fails a long way from here. Once set it feeds the snippet, the
+try-it preview and the auth probe alike, and the panel patches the URL under
+the Send button in place rather than rebuilding the form under your keyboard.
 
 ## Deployment
 

@@ -5,6 +5,7 @@ import {
   readPrefs, writePrefs,
   readSchema, writeSchema, clearSchema,
   readAuth, writeAuth, clearAuth, hasRememberedAuth,
+  readBaseUrl, writeBaseUrl, clearBaseUrl,
 } from '../js/lib/persist.js';
 
 /** A storage stand-in with an optional quota, so the failure path is testable. */
@@ -201,5 +202,31 @@ test('storage that is blocked outright does not throw on the way past', () => {
     assert.equal(readAuth('k'), null);
     assert.doesNotThrow(() => writeAuth({ credential: SECRET, schemeId: null, remember: true, schemaKey: 'k' }));
     assert.doesNotThrow(() => clearAuth());
+  });
+});
+
+/* --- the base URL -------------------------------------------------------- */
+
+test('a base URL comes back for the schema it was typed against, and no other', () => {
+  const local = fakeStorage();
+  withStorage(local, fakeStorage(), () => {
+    writeBaseUrl({ url: 'https://api.example.com', schemaKey: 'https://example.com/openapi.yaml' });
+    assert.equal(readBaseUrl('https://example.com/openapi.yaml'), 'https://api.example.com');
+    // Another document must not inherit a host nobody chose for it.
+    assert.equal(readBaseUrl('file:other.yaml'), '');
+  });
+});
+
+test('clearing the base URL takes it off the device', () => {
+  const local = fakeStorage();
+  withStorage(local, fakeStorage(), () => {
+    writeBaseUrl({ url: 'https://api.example.com', schemaKey: 'k' });
+    clearBaseUrl();
+    assert.equal(readBaseUrl('k'), '');
+    assert.deepEqual(local.keys, []);
+    // Writing an empty one is the same as clearing it.
+    writeBaseUrl({ url: 'https://api.example.com', schemaKey: 'k' });
+    writeBaseUrl({ url: '', schemaKey: 'k' });
+    assert.equal(readBaseUrl('k'), '');
   });
 });

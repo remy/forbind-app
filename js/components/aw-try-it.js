@@ -8,19 +8,33 @@
  * cannot read a cross-origin response unless the API says it may. So when a
  * request fails that way, the panel says so in those words instead of showing
  * a shrug.
+ *
+ * The other thing that can be missing is the host itself: a document with no
+ * `servers` block describes a path and nothing to put in front of it. That is
+ * asked for here, in the panel, rather than only failing at send time — the
+ * field appears above the parameters, because it is the first thing the
+ * request needs and the reader is the only one who knows it.
  */
 
 import { AwElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { buildRequest, sampleValue, parameterExample } from '../lib/request.js';
-import { statusClass } from '../lib/openapi.js';
+import { explainFailure, renderResult, formatBytes } from './tryit-result.js';
+import { enumValues } from '../lib/enums.js';
+import { markdownToText } from '../lib/markdown.js';
 
 /** Verbs that change something and deserve a word of warning first. */
 const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+/** The LIVE warning, which names the host the request is actually going to. */
+function liveSentence(op, host) {
+  return `This sends a real ${op.method} to ${host || 'the declared server'}. `
+    + 'It is not a sandbox — whatever it changes, stays changed.';
+}
+
 class AwTryIt extends AwElement {
-  static observes = ['schema', 'auth'];
+  static observes = ['schema', 'auth', 'baseUrl'];
 
   /** @type {object|null} */
   operation = null;
@@ -57,13 +71,17 @@ class AwTryIt extends AwElement {
     const authRequired = op.security.length > 0;
     const haveCredential = Boolean(state.auth.credential) && op.security.some((s) => s.schemeId === state.auth.schemeId);
 
+    // Built rather than declared so the operation reaches it: an operation
+    // with its own `servers` needs nothing here even when the document does.
+    const baseUrlField = el('aw-base-url', { variant: 'inline', '.operation': op });
+
     replace(this, [
+      baseUrlField,
+
       MUTATING.has(op.method)
         ? el('p', { class: 'tryit__warning' }, [
             el('span', { class: 'word word--warn', text: 'LIVE' }),
-            el('span', {
-              text: `This sends a real ${op.method} to ${preview.host || 'the declared server'}. It is not a sandbox — whatever it changes, stays changed.`,
-            }),
+            el('span', { dataset: { liveWarning: '' }, text: liveSentence(op, preview.host) }),
           ])
         : null,
 
@@ -123,8 +141,29 @@ class AwTryIt extends AwElement {
         ]),
       ]),
 
-      this.#result ? this.#renderResult(this.#result) : null,
+      this.#result ? renderResult(this.#result) : null,
     ]);
+  }
+
+  /**
+   * A base URL arrives while the keyboard is standing in the field that set
+   * it, so the panel patches the two things it changes — the URL under the
+   * Send button and the host in the LIVE warning — rather than rebuilding the
+   * form around the focused input.
+   */
+  update(state, prev) {
+    const onlyBaseUrl = !Object.is(state.baseUrl, prev.baseUrl)
+      && Object.is(state.schema, prev.schema)
+      && Object.is(state.auth, prev.auth);
+    if (!onlyBaseUrl || !this.operation) {
+      this.render(state, prev);
+      return;
+    }
+    const preview = this.#preview(state);
+    const status = this.querySelector('.tryit__status');
+    if (status) status.textContent = preview.url;
+    const live = this.querySelector('[data-live-warning]');
+    if (live) live.textContent = liveSentence(this.operation, preview.host);
   }
 
   #preview(state) {
@@ -132,6 +171,7 @@ class AwTryIt extends AwElement {
       const request = buildRequest({
         model: state.schema,
         operation: this.operation,
+        serverUrl: state.baseUrl,
         auth: state.auth,
         values: this.#values,
         revealCredential: true,
@@ -144,11 +184,15 @@ class AwTryIt extends AwElement {
     }
   }
 
-  /** The values a parameter is allowed to take, if the schema says. */
+  /**
+   * The values a parameter is allowed to take, if the schema says.
+   *
+   * Resolved through `$ref` and `allOf`, because a named enum pointed at from
+   * the parameter is the same promise as one written out in place — and a
+   * field with a fixed set of values should be a dropdown either way.
+   */
   #enumFor(param) {
-    const schema = param.schema ?? {};
-    const values = Array.isArray(schema.enum) ? schema.enum : null;
-    return values && values.length ? values.map(String) : null;
+    return enumValues(this.state.schema?.doc ?? {}, param.schema ?? {});
   }
 
   /**
@@ -187,7 +231,10 @@ class AwTryIt extends AwElement {
     const constraints = options
       ? param.constraints.filter((note) => !note.startsWith('one of'))
       : param.constraints;
-    const hint = [param.type.label, param.required ? 'required' : 'optional', ...constraints, param.description]
+    // The hint is a single `·`-joined line tied to the field with
+    // aria-describedby, so the description contributes its words and not its
+    // markdown.
+    const hint = [param.type.label, param.required ? 'required' : 'optional', ...constraints, markdownToText(param.description)]
       .filter(Boolean)
       .join(' · ');
 
@@ -334,6 +381,7 @@ class AwTryIt extends AwElement {
     const built = buildRequest({
       model: state.schema,
       operation: this.operation,
+      serverUrl: state.baseUrl,
       auth: state.auth,
       values: this.#values,
       revealCredential: true,
@@ -343,10 +391,11 @@ class AwTryIt extends AwElement {
       this.#result = {
         kind: 'error',
         title: 'No server to send to',
-        detail: 'This schema declares no server URL, so there is no host to send the request to. Add one to the document, or use the snippet with a base URL of your own.',
+        detail: 'There is no host in front of this path, so the request has nowhere to go. The base URL field above this form takes one — or copy the snippet and supply a base URL of your own.',
       };
       this.render(this.state);
-      announce('Cannot send: this schema declares no server URL.', { assertive: true });
+      announce('Cannot send: no base URL. Set one in the field above the form.', { assertive: true });
+      this.querySelector('aw-base-url input')?.focus();
       return;
     }
 
@@ -385,7 +434,7 @@ class AwTryIt extends AwElement {
       announce(`${response.status} ${response.statusText} in ${elapsed} milliseconds, ${formatBytes(this.#result.bytes)}.`);
     } catch (error) {
       const elapsed = Math.round(performance.now() - started);
-      this.#result = this.#explainFailure(error, built, elapsed);
+      this.#result = explainFailure(error, built, elapsed);
       announce(`Request failed: ${this.#result.title}.`, { assertive: true });
     } finally {
       clearTimeout(timeout);
@@ -395,96 +444,6 @@ class AwTryIt extends AwElement {
     }
   }
 
-  /**
-   * `fetch` deliberately hides why a cross-origin request failed, so this is
-   * the one place in the app that has to reason about a black box. It says
-   * what the two possibilities are and how to tell them apart, rather than
-   * asserting one.
-   */
-  #explainFailure(error, built, elapsed) {
-    if (error?.name === 'AbortError') {
-      return {
-        kind: 'error',
-        title: 'Timed out after 30 seconds',
-        detail: 'The host accepted the connection but did not answer in time.',
-        elapsed,
-      };
-    }
-    let host = built.url;
-    try { host = new URL(built.url).host; } catch { /* keep the raw string */ }
-    return {
-      kind: 'error',
-      title: 'The browser could not read the response',
-      detail:
-        `Nothing came back that this page is allowed to see. There are only two ways that happens: ` +
-        `${host} is unreachable, or it answered without an \`Access-Control-Allow-Origin\` header that permits this origin — ` +
-        `a browser will not hand a cross-origin response to a page without one, whatever the status code was.`,
-      hint:
-        'The request may well have arrived and succeeded; the browser is refusing to show you the answer, not the server refusing to act. ' +
-        'Your browser’s network panel will show the real status. To make this work from here, the API needs to send CORS headers for this origin — ' +
-        'allyway does not proxy real requests, so that the credential never leaves your machine.',
-      elapsed,
-    };
-  }
-
-  #renderResult(result) {
-    if (result.kind === 'error') {
-      return el('div', { class: 'result result--error', tabindex: '-1', role: 'group', 'aria-label': 'Request result' }, [
-        el('div', { class: 'result__head' }, [
-          el('span', { class: 'word word--fail', text: 'FAILED' }),
-          el('span', { text: result.title }),
-          result.elapsed !== undefined ? el('span', { text: `${result.elapsed} ms` }) : null,
-        ]),
-        el('div', { class: 'result__body' }, [
-          el('p', { class: 'result__note', text: result.detail }),
-          result.hint ? el('p', { class: 'result__note', text: result.hint }) : null,
-        ]),
-      ]);
-    }
-
-    const klass = statusClass(String(result.status));
-    return el('div', { class: 'result', tabindex: '-1', role: 'group', 'aria-label': 'Request result' }, [
-      el('div', { class: 'result__head' }, [
-        el('span', { class: `response-chip pill--${klass}`, text: `${result.status} ${result.statusText}`.trim() }),
-        el('span', { text: `${result.elapsed} ms` }),
-        el('span', { text: formatBytes(result.bytes) }),
-      ]),
-      el('div', { class: 'result__body' }, [
-        ...result.warnings.map((warning) => el('p', { class: 'result__note', text: warning })),
-        el('div', { class: 'result__section' }, [
-          el('h4', { class: 'label', text: 'Body' }),
-          el('pre', { class: 'code-block', tabindex: '0', text: prettify(result.body, result.contentType) || '(empty)' }),
-        ]),
-        el('div', { class: 'result__section' }, [
-          el('h4', { class: 'label', text: `Response headers — ${result.headers.length} readable` }),
-          result.headers.length
-            ? el('dl', { class: 'kv' }, result.headers.map(([name, value]) =>
-                el('div', {}, [el('dt', { text: name }), el('dd', { text: value })]),
-              ))
-            : el('p', { class: 'result__note', text: 'None readable.' }),
-          el('p', {
-            class: 'result__note',
-            text: 'A browser only exposes a handful of response headers cross-origin unless the server lists more in `Access-Control-Expose-Headers`, so this is what is readable from here, not everything that was sent.',
-          }),
-        ]),
-      ]),
-    ]);
-  }
-}
-
-function prettify(text, contentType) {
-  if (!contentType.includes('json')) return text;
-  try {
-    return JSON.stringify(JSON.parse(text), null, 2);
-  } catch {
-    return text;
-  }
-}
-
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes} bytes`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 define('aw-try-it', AwTryIt);

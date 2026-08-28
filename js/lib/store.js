@@ -51,6 +51,13 @@ export function initialState() {
       remember: false,
     },
 
+    /**
+     * A base URL the reader supplied because the schema declares none (or
+     * declares one nothing can be sent to). Empty when the document's own
+     * `servers` are doing the job.
+     */
+    baseUrl: '',
+
     /** Overlays. Kept in the store so the palette can open them too. */
     authOpen: false,
     optionsOpen: false,

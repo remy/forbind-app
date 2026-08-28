@@ -1,0 +1,49 @@
+# An enum named once and pointed at, which is how documents usually write one.
+# The try-it panel has to follow the `$ref` — and the `allOf` wrapper that adds
+# a description to it — or the field lands as free text.
+openapi: 3.1.0
+info:
+  title: Metadata
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Tracks
+paths:
+  /tracks:
+    get:
+      summary: List tracks
+      operationId: listTracks
+      tags: [Tracks]
+      parameters:
+        - name: sort
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/FieldName"
+        - name: group
+          in: query
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/FieldName"
+              - description: Which field to group by.
+      responses:
+        "200":
+          description: The tracks
+components:
+  schemas:
+    FieldName:
+      description: A metadata field.
+      enum:
+        - title
+        - artist
+        - albumartist
+        - album
+        - genre
+        - composer
+        - comment
+        - year
+        - track
+        - disc
+        - path
+      type: string

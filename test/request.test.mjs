@@ -133,7 +133,43 @@ test('a document with no server says so instead of inventing a host', () => {
   const model = normalise({ openapi: '3.1.0', paths: { '/things': { get: { responses: {} } } } }, 'noserver');
   const request = buildRequest({ model, operation: model.operations[0] });
   assert.equal(request.url, '/things');
-  assert.ok(request.warnings.some((w) => /No server URL/.test(w)));
+  assert.ok(request.warnings.some((w) => /declares no server URL/.test(w)));
+});
+
+test('a base URL supplied by the reader stands in for the missing servers block', () => {
+  const model = normalise({ openapi: '3.1.0', paths: { '/things': { get: { responses: {} } } } }, 'noserver');
+  const request = buildRequest({
+    model,
+    operation: model.operations[0],
+    serverUrl: 'https://api.example.com/v1/',
+  });
+  assert.equal(request.url, 'https://api.example.com/v1/things');
+  assert.deepEqual(request.warnings, []);
+});
+
+test('a supplied base URL wins over the one the document declares', () => {
+  const model = normalise({
+    openapi: '3.1.0',
+    servers: [{ url: 'https://live.example.com' }],
+    paths: { '/things': { get: { responses: {} } } },
+  }, 'staging');
+  const request = buildRequest({
+    model,
+    operation: model.operations[0],
+    serverUrl: 'https://staging.example.com',
+  });
+  assert.equal(request.url, 'https://staging.example.com/things');
+});
+
+test('a relative server URL is used but still named as a gap', () => {
+  const model = normalise({
+    openapi: '3.1.0',
+    servers: [{ url: '/v1' }],
+    paths: { '/things': { get: { responses: {} } } },
+  }, 'relative');
+  const request = buildRequest({ model, operation: model.operations[0] });
+  assert.equal(request.url, '/v1/things');
+  assert.ok(request.warnings.some((w) => /relative/.test(w)));
 });
 
 test('the body draft carries required fields and anything the document exemplified', () => {

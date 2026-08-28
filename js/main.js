@@ -21,7 +21,9 @@ import { loadFromFile, loadFromUrl, loadSample } from './lib/loader.js';
 import {
   readSchema, writeSchema, clearSchema,
   readAuth, writeAuth, clearAuth,
+  readBaseUrl, writeBaseUrl, clearBaseUrl as dropStoredBaseUrl,
 } from './lib/persist.js';
+import { normaliseBaseUrl } from './lib/servers.js';
 
 import './components/aw-app.js';
 import './components/aw-topbar.js';
@@ -35,6 +37,7 @@ import './components/aw-palette.js';
 import './components/aw-auth-sheet.js';
 import './components/aw-options.js';
 import './components/aw-import.js';
+import './components/aw-base-url.js';
 
 const store = new Store();
 
@@ -157,6 +160,9 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
     // A credential belongs to the API it was issued for, so it comes back only
     // for the schema it was entered against.
     const restoredAuth = readAuth(schemaKeyFor(source));
+    // A base URL typed for this schema last time is not a preference — it is
+    // the missing half of the document — so it comes back with it.
+    const restoredBaseUrl = model.report.baseUrl.needed ? readBaseUrl(schemaKeyFor(source)) : '';
 
     store.set({
       schema: model,
@@ -170,6 +176,7 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
       selectedOperationId: null,
       selectedSchemaName: null,
       activeRowId: null,
+      baseUrl: restoredBaseUrl,
       filters: { ...store.state.filters, query: '', tags: [], verbs: [], scopes: [], statusCodes: [], onlyDeprecated: false },
       auth: {
         ...store.state.auth,
@@ -190,9 +197,15 @@ async function ingest(promise, { note = null, restoring = false } = {}) {
       if (claims) store.patch('auth', { scopes: claims.scopes, expiresAt: claims.expiresAt });
     }
     const { counts } = model.report;
+    // Landing straight on an operation means the report — and its warnings —
+    // were never on screen, so the one warning that stops Try it working is
+    // said out loud instead of waiting to be discovered at send time.
+    const missingServer = model.report.baseUrl.needed && !restoredBaseUrl
+      ? ' No server URL is declared, so requests need a base URL you supply.'
+      : '';
     announce(
       `${source.name} parsed. ${counts.endpoints} endpoints, ${counts.tags} tags, ${counts.schemas} schemas, ` +
-      `${counts.deprecated} deprecated. ${model.report.notes.length} things worth knowing.`,
+      `${counts.deprecated} deprecated. ${model.report.notes.length} things worth knowing.${missingServer}`,
     );
 
     // A link that named both a schema and an operation lands on the operation
@@ -418,6 +431,35 @@ const actions = {
     });
   },
 
+  /* --- base URL --------------------------------------------------------- */
+
+  /**
+   * Take the base URL someone typed for a schema that declares none.
+   *
+   * Refusing a URL is not a silent no-op: the sentence saying why comes back
+   * to the caller so it can be shown beside the field and announced, because
+   * a base URL that quietly did not stick is a request sent somewhere else.
+   *
+   * @param {string} input
+   * @returns {{ok: boolean, url: string|null, error: string|null}}
+   */
+  setBaseUrl(input) {
+    const { url, error } = normaliseBaseUrl(input);
+    if (error) return { ok: false, url: null, error };
+    store.set({ baseUrl: url });
+    const schema = store.state.schema;
+    if (schema) writeBaseUrl({ url, schemaKey: schemaSource ?? `file:${schema.sourceName}` });
+    announce(`Base URL set to ${url}. Requests and snippets will use it.`);
+    return { ok: true, url, error: null };
+  },
+
+  clearBaseUrl() {
+    if (!store.state.baseUrl) return;
+    store.set({ baseUrl: '' });
+    dropStoredBaseUrl();
+    announce('Base URL cleared. Paths are shown on their own again.');
+  },
+
   forgetAuth() {
     clearAuth();
     store.patch('auth', {
@@ -517,8 +559,9 @@ const actions = {
   replaceSchema() {
     clearSchema();
     clearAuth();
+    dropStoredBaseUrl();
     schemaSource = null;
-    store.set({ schemaState: 'idle', browsing: false, schemaError: null, importNote: null });
+    store.set({ schemaState: 'idle', browsing: false, schemaError: null, importNote: null, baseUrl: '' });
     go({ view: 'import' });
     requestAnimationFrame(() => document.querySelector('#schema-file')?.focus());
     announce('Load a different schema.');

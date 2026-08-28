@@ -9,6 +9,7 @@
  * | The loaded schema | localStorage     | until another one is loaded     |
  * | A credential      | sessionStorage   | this tab, unless you ask for... |
  * | ...if remembered  | localStorage     | until you forget it             |
+ * | A base URL        | localStorage     | until the schema declares one   |
  *
  * The credential defaults to sessionStorage, which is per-tab and dies with
  * it. "Remember on this device" is an explicit, labelled opt-in — never a
@@ -22,6 +23,7 @@
 const PREFS_KEY = 'allyway:prefs';
 const SCHEMA_KEY = 'allyway:schema';
 const AUTH_KEY = 'allyway:auth';
+const BASE_URL_KEY = 'allyway:base-url';
 
 const PERSISTED_PREFS = ['theme', 'density', 'showHints', 'railCollapsed', 'listCollapsed'];
 
@@ -182,6 +184,41 @@ export function readAuth(schemaKey) {
 export function clearAuth() {
   drop(local(), AUTH_KEY);
   drop(session(), AUTH_KEY);
+}
+
+/* -------------------------------------------------------------------------
+   The base URL supplied for a schema that declares none
+------------------------------------------------------------------------- */
+
+/**
+ * A base URL is not a secret — it is the host half of a public API's address —
+ * so it is kept on the device rather than for the tab. Like the credential it
+ * belongs to the schema it was typed against and is not handed to another one:
+ * pointing document A at host B would be a quiet way to send a request
+ * somewhere nobody chose.
+ *
+ * @param {{url: string, schemaKey: string}} entry
+ */
+export function writeBaseUrl(entry) {
+  if (!entry?.url) {
+    clearBaseUrl();
+    return;
+  }
+  write(local(), BASE_URL_KEY, { url: entry.url, schemaKey: entry.schemaKey });
+}
+
+/**
+ * @param {string} schemaKey the schema now loaded
+ * @returns {string} '' when nothing was stored for it
+ */
+export function readBaseUrl(schemaKey) {
+  const stored = read(local(), BASE_URL_KEY);
+  if (!stored || typeof stored.url !== 'string') return '';
+  return stored.schemaKey === schemaKey ? stored.url : '';
+}
+
+export function clearBaseUrl() {
+  drop(local(), BASE_URL_KEY);
 }
 
 /** Whether a remembered credential is sitting on disk right now. */

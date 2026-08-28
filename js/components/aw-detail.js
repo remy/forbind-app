@@ -18,8 +18,10 @@
 
 import { AwElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
-import { verbLabel, verbClass, statusClass, fieldRows, payloadChildren, describeType, describeConstraints, deref } from '../lib/openapi.js';
+import { verbLabel, verbClass, statusClass, fieldRows, payloadChildren, describeType } from '../lib/openapi.js';
 import { sampleValue } from '../lib/request.js';
+import { markdownBlock, markdownToText } from '../lib/markdown.js';
+import { paramTable, renderSchemaView } from './detail-fields.js';
 
 const NARROW = '(max-width: 48rem)';
 
@@ -62,7 +64,7 @@ class AwDetail extends AwElement {
       return;
     }
     if (state.selectedSchemaName) {
-      replace(this, this.#renderSchema(state));
+      replace(this, renderSchemaView(state, { narrow: this.#narrow, hashFor: (t) => this.actions.hashFor(t) }));
       return;
     }
     const op = schema.operations.find((candidate) => candidate.id === state.selectedOperationId);
@@ -262,7 +264,9 @@ class AwDetail extends AwElement {
     ].filter(([, value]) => Boolean(value));
 
     return el('section', { class: 'detail__section', 'aria-label': 'Overview' }, [
-      prose ? el('p', { class: 'detail__lede', text: prose }) : null,
+      // `description` is CommonMark in OpenAPI, and documents write it that
+      // way; see js/lib/markdown.js for what is and is not rendered.
+      markdownBlock(prose, { class: 'detail__lede' }),
       op.deprecated
         ? el('p', { class: 'tryit__warning' }, [
             el('span', { class: 'word word--warn', text: 'DEPRECATED' }),
@@ -300,13 +304,14 @@ class AwDetail extends AwElement {
       if (!rows.length) return null;
       return el('div', { class: 'detail__section' }, [
         el('h3', { class: 'label', text: label }),
-        this.#paramTable(
+        this.#fieldTable(
           label,
           rows.map((p) => ({
             name: p.name,
             type: p.type,
             required: p.required,
-            notes: [p.constraints.join(' · '), p.description].filter(Boolean).join(' — '),
+            notes: p.constraints.join(' · '),
+            description: p.description,
             deprecated: p.deprecated,
           })),
         ),
@@ -327,76 +332,24 @@ class AwDetail extends AwElement {
           ? el('span', { class: 'chip chip--static', text: op.requestBody.contentType })
           : null,
       ]),
-      op.requestBody.description ? el('p', { class: 'detail__lede', text: op.requestBody.description }) : null,
+      markdownBlock(op.requestBody.description, { class: 'detail__lede' }),
       rows.length
-        ? this.#paramTable(title, rows.map((row) => ({
-            ...row,
-            notes: [row.notes, row.description].filter(Boolean).join(' — '),
-          })))
+        ? this.#fieldTable(title, rows)
         : el('p', { class: 'empty__body', text: 'The body schema does not declare named properties.' }),
     ]);
   }
 
   /**
    * @param {string} caption
-   * @param {Array<{name: string, type: {label: string, ref: string|null}, required: boolean, notes: string, deprecated?: boolean}>} rows
+   * @param {Array<{name: string, type: {label: string, ref: string|null}, required: boolean, notes: string, description?: string, deprecated?: boolean}>} rows
    */
-  #paramTable(caption, rows) {
-    if (this.#narrow) {
-      return el('dl', { class: 'params-stack' }, rows.map((row) =>
-        el('div', {}, [
-          el('dt', { text: row.name }),
-          el('dd', {}, [
-            this.#typeCell(row.type),
-            el('span', { 'aria-hidden': 'true', text: ' · ' }),
-            el('span', { text: row.required ? 'required' : 'optional' }),
-            row.notes ? el('span', { 'aria-hidden': 'true', text: ' · ' }) : null,
-            row.notes ? el('span', { text: row.notes }) : null,
-            row.deprecated ? el('span', { text: ' · deprecated' }) : null,
-          ]),
-        ]),
-      ));
-    }
-
-    return el('table', { class: 'params' }, [
-      el('caption', { class: 'visually-hidden', text: caption }),
-      el('colgroup', {}, [
-        el('col', { class: 'c-field' }),
-        el('col', { class: 'c-type' }),
-        el('col', { class: 'c-req' }),
-        el('col', { class: 'c-notes' }),
-      ]),
-      el('thead', {}, [
-        el('tr', {}, [
-          el('th', { scope: 'col', text: 'Field' }),
-          el('th', { scope: 'col', text: 'Type' }),
-          el('th', { scope: 'col', text: 'Req' }),
-          el('th', { scope: 'col', text: 'Notes' }),
-        ]),
-      ]),
-      el('tbody', {}, rows.map((row) =>
-        el('tr', {}, [
-          el('th', { scope: 'row', text: row.name }),
-          el('td', { class: 'col-type' }, [this.#typeCell(row.type)]),
-          // A word, never a colour and never an asterisk.
-          el('td', {}, [
-            el('span', { class: row.required ? 'req-yes' : 'req-no', text: row.required ? 'yes' : 'no' }),
-          ]),
-          el('td', { class: 'col-notes' }, [
-            el('span', { text: row.notes || '' }),
-            row.deprecated ? el('span', { text: row.notes ? ' — deprecated' : 'deprecated' }) : null,
-          ]),
-        ]),
-      )),
-    ]);
-  }
-
-  /** A type that names a component schema is a link to it. */
-  #typeCell(type) {
-    if (!type.ref) return el('span', { text: type.label });
-    return el('a', {
-      href: this.actions.hashFor({ view: 'schema', id: type.ref }),
-      text: type.label,
+  /** The shared field table, told which layout it is in. */
+  #fieldTable(caption, rows) {
+    return paramTable({
+      caption,
+      rows,
+      narrow: this.#narrow,
+      hashFor: (target) => this.actions.hashFor(target),
     });
   }
 
@@ -441,7 +394,7 @@ class AwDetail extends AwElement {
 
     const summaryLine = el('summary', { class: 'response-summary' }, [
       el('span', { class: `response-chip pill--${klass}`, text: response.code }),
-      el('span', { class: 'response-summary__text', text: response.description || '—' }),
+      el('span', { class: 'response-summary__text', text: markdownToText(response.description) || '—' }),
       el('span', { class: 'response-summary__shape', text: shape }),
     ]);
 
@@ -450,7 +403,7 @@ class AwDetail extends AwElement {
       // nothing when you press it.
       return el('div', { class: 'response-row' }, [
         el('span', { class: `response-chip pill--${klass}`, text: response.code }),
-        el('span', { class: 'response-summary__text', text: response.description || '—' }),
+        el('span', { class: 'response-summary__text', text: markdownToText(response.description) || '—' }),
         el('span', { class: 'response-summary__shape', text: shape }),
       ]);
     }
@@ -509,64 +462,6 @@ class AwDetail extends AwElement {
 
   /* --- component schema view -------------------------------------------- */
 
-  #renderSchema(state) {
-    const name = state.selectedSchemaName;
-    const entry = state.schema.schemas.find((candidate) => candidate.name === name);
-    if (!entry) {
-      return [el('div', { class: 'detail__body' }, [
-        el('h2', { class: 'empty__title', text: 'Schema not found' }),
-        el('p', { class: 'empty__body', text: `This document declares no component schema called “${name}”.` }),
-      ])];
-    }
-
-    const resolved = deref(state.schema.doc, entry.node).value;
-    const rows = fieldRows(state.schema.doc, entry.node);
-    const users = state.schema.operations.filter((op) =>
-      op.requestBody?.schemaName === name || op.responses.some((r) => r.schemaName === name),
-    );
-
-    return [
-      el('div', {}, [
-        el('div', { class: 'detail__header' }, [
-          el('div', { class: 'detail__title-row' }, [
-            el('span', { class: 'chip chip--static', text: 'schema' }),
-            el('h2', { class: 'detail__path', text: name }),
-          ]),
-          resolved.description ? el('p', { class: 'detail__lede', text: resolved.description }) : null,
-          el('div', { class: 'detail__chips' }, [
-            el('span', { class: 'chip chip--static', text: describeType(state.schema.doc, entry.node).label }),
-            ...describeConstraints(resolved).map((note) => el('span', { class: 'chip chip--static', text: note })),
-          ]),
-        ]),
-        el('div', { class: 'detail__body' }, [
-          el('section', { class: 'detail__section' }, [
-            el('h3', { class: 'label', text: 'Fields' }),
-            rows.length
-              ? this.#paramTable(`${name} fields`, rows.map((row) => ({
-                  ...row,
-                  notes: [row.notes, row.description].filter(Boolean).join(' — '),
-                })))
-              : el('p', { class: 'empty__body', text: 'This schema declares no named properties.' }),
-          ]),
-          users.length
-            ? el('section', { class: 'detail__section' }, [
-                el('h3', { class: 'label', text: `Used by ${users.length} ${users.length === 1 ? 'operation' : 'operations'}` }),
-                el('ul', { class: 'response-list' }, users.map((op) =>
-                  el('li', {}, [
-                    el('span', { class: `response-chip pill--${verbClass(op.method)}`, text: verbLabel(op.method) }),
-                    el('a', {
-                      href: this.actions.hashFor({ view: 'operation', id: op.id }),
-                      text: op.path,
-                    }),
-                    el('span', { text: op.summary }),
-                  ]),
-                )),
-              ])
-            : null,
-        ]),
-      ]),
-    ];
-  }
 }
 
 /**

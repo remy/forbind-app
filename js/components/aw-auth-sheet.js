@@ -363,11 +363,15 @@ class AwAuthSheet extends AwElement {
     const built = buildRequest({
       model: state.schema,
       operation: probe,
+      serverUrl: state.baseUrl,
       auth: this.state.auth,
       revealCredential: true,
     });
     if (!built.url || built.url.startsWith('/')) {
-      this.actions.setAuth({ verifyState: 'idle', message: 'This schema declares no server URL, so there is nowhere to send a probe.' });
+      this.actions.setAuth({
+        verifyState: 'idle',
+        message: 'There is no host in front of these paths, so there is nowhere to send a probe. Set a base URL on the parse report or in Try it, and this can run.',
+      });
       this.#renderSheet();
       return;
     }

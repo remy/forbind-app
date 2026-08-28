@@ -11,6 +11,8 @@
  * from a screen that promises nothing leaves the browser.
  */
 
+import { inspectServers, describeServerGap } from './servers.js';
+
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'];
 
 /** Verb column order in the filter bar. */
@@ -144,7 +146,13 @@ export function describeType(doc, node, depth = 0) {
 
   for (const key of ['oneOf', 'anyOf', 'allOf']) {
     if (Array.isArray(node[key]) && node[key].length) {
-      const parts = node[key].map((child) => describeType(doc, child, depth + 1));
+      let parts = node[key].map((child) => describeType(doc, child, depth + 1));
+      // `allOf: [{$ref}, {description}]` is how a document adds prose to a
+      // named type. The prose half describes no type, so it contributes
+      // nothing to the label — "FieldName & any" names one thing, badly.
+      if (key === 'allOf' && parts.some((part) => part.label !== 'any')) {
+        parts = parts.filter((part) => part.label !== 'any');
+      }
       const nonNull = parts.filter((part) => part.label !== 'null');
       if (key === 'allOf' && nonNull.length === 1) return nonNull[0];
       if (nonNull.length === 1 && parts.length === 2) {
@@ -797,10 +805,23 @@ export function normalise(doc, sourceName = 'schema') {
     });
   }
 
-  if (!servers.length) {
+  /*
+   * A document with nowhere to send a request is not broken, but it is
+   * incomplete in a way the reader has to be told about before they copy a
+   * snippet out of it. The note says which of the three ways it is missing,
+   * and `report.baseUrl` carries the same finding in a form the import screen
+   * and Try it can offer a field for.
+   */
+  const baseUrlCheck = inspectServers(servers);
+  const needsBaseUrl = operations.length
+    ? operations.some((op) => !inspectServers(op.servers).usable)
+    : !baseUrlCheck.usable;
+  if (needsBaseUrl) {
     notes.push({
       level: 'WARN',
-      parts: ['No server URL is declared — snippets and requests will need a base URL you supply.'],
+      parts: [
+        `${describeServerGap(baseUrlCheck.reason, servers[0]?.url ?? '')} Set a base URL, or browse without one and read the paths on their own.`,
+      ],
     });
   }
   if (externalRefs > 0) {
@@ -842,6 +863,12 @@ export function normalise(doc, sourceName = 'schema') {
         deprecated: deprecatedCount,
       },
       notes,
+      /** What Try it and the import screen need to offer a base URL field. */
+      baseUrl: {
+        needed: needsBaseUrl,
+        reason: needsBaseUrl ? baseUrlCheck.reason : null,
+        declared: baseUrlCheck.url ?? servers[0]?.url ?? null,
+      },
       ok: !notes.some((n) => n.level === 'FAIL'),
     },
   };

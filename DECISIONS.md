@@ -72,7 +72,7 @@ carries `$TOKEN`. There is a test that fails if that ever stops being true.
 | Which IA ships? | `1a` default, `1b` as a density toggle |
 | Try-it in scope? | Yes, but no proxy — say so plainly in the errors when CORS blocks it |
 | How far should theming go? | Follow the system, with Light/Dark in an options panel; use `rem` so zoom works |
-| Build tooling? | None — plain ESM, vendored dependency, deployed as-is |
+| Build tooling? | None — plain ESM, vendored dependencies, deployed as-is |
 
 ---
 
@@ -189,6 +189,50 @@ first value, which is what the curl block already shows, so the two agree from
 the start. The enum is dropped from the hint line, since the control is now
 saying it.
 
+**A schema with no server URL says so, and can be given one.** `servers` is
+optional in OpenAPI, and a document without it describes paths with no host in
+front of them — which used to surface only as a failure when Try it was
+pressed. It is now detected at ingest and carried on the parse report as a
+`WARN` with a base URL field beside the *Browse* button, never in front of it:
+reading an API you cannot call is an ordinary thing to want, so supplying one
+is an offer and not a toll. Three shapes count as the same gap and are named
+apart in the warning — no `servers` at all, a relative URL, and one still
+holding a `{variable}` with no default. A link that opens an operation directly
+never sees the report, so the same field is in the Try it panel and the gap is
+announced on arrival. What is typed is completed when it is only missing a
+scheme and refused with a sentence when it is not a base URL at all. It is kept
+in `localStorage` against the schema it was typed for, on the same rule as the
+credential: a host nobody chose for a document is a request sent somewhere
+nobody chose. Setting one patches the URL under the Send button in place, because
+the field that sets it is inside the panel and holds focus while it changes.
+
+**Enum dropdowns follow the `$ref`.** Documents rarely write an enum where the
+field is; they name it once as a schema and point at it, often through an
+`allOf: [{$ref}, {description}]` wrapper so prose can sit beside it. The
+dropdown used to need the values written in place, so those fields landed as
+free text — the one shape of field that cannot be typed wrong, typed by hand.
+`js/lib/enums.js` follows the hops. An array of enums is left alone: it wants a
+multi-select and a different validation story. So are two branches offering
+different sets, which is not a choice to make on the reader's behalf.
+
+**Descriptions are rendered as markdown.** `description` is CommonMark
+everywhere in OpenAPI and documents use it, so rendering it as plain text put
+asterisks, backticks and pipes on screen as litter. markdown-it is vendored
+(UMD wrapped as ESM — its own ESM entry is unbundled and there is no bundler
+here) and configured once in `js/lib/markdown.js`, which is the only place a
+document's string reaches `innerHTML`. Four rules make it safe to point at
+someone else's file: raw HTML never renders (`html: false`, no sanitiser to get
+wrong), headings are pushed to `h3`–`h6` and renumbered in sequence so a description
+can neither outrank the pane it sits in nor skip a level on the way into it, images become links because the CSP allows images from this
+origin only and a broken image box says nothing, and links open in a new tab —
+losing a half-filled try-it form to a documentation link would be its own bug —
+with "(opens in a new tab)" in the accessible name, because that is a surprise
+otherwise. Where the design has one line and no more — a list row, a table of
+contents summary, a hint tied to a field, anything that becomes an accessible
+name — the markdown is *stripped to its words* rather than rendered, since a
+link cannot live inside a `<summary>` and raw syntax is worse than emphasis
+quietly lost.
+
 **Try-it is a real form.** The fields and the send button are in a `<form>`, so
 Enter sends — previously nothing happened, because Enter has no meaning outside
 a form. Validation is deliberately narrow: an empty required field is fine when
@@ -286,6 +330,8 @@ focusable control inside a focusable control.
   pretty-printed body.
 - Request history.
 - Schema diffing.
-- Environment or base-URL switching — explicitly descoped, and left that way.
+- Environment switching — several named servers with one selected, remembered
+  per environment. Still descoped. The base URL field added later is not that:
+  it is one value, offered only where the document leaves a gap.
 - `1c`, the palette-only reading view. Rejected in design; the id stays retired.
   The palette accelerates the visible IA and does not replace it.

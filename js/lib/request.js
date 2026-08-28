@@ -10,6 +10,7 @@
  */
 
 import { deref } from './openapi.js';
+import { baseUrlFor, inspectServers, describeServerGap, isAbsoluteBase } from './servers.js';
 
 /** A placeholder that reads as a placeholder in a shell. */
 function credentialPlaceholder(scheme) {
@@ -124,7 +125,7 @@ export function parameterExample(doc, param, override) {
  * @param {object} options
  * @param {object} options.model      the normalised schema
  * @param {object} options.operation
- * @param {string} [options.serverUrl]
+ * @param {string} [options.serverUrl] a base URL the reader supplied; wins
  * @param {object} [options.auth]     { schemeId, credential }
  * @param {object} [options.values]   { path: {}, query: {}, header: {}, body: string }
  * @param {boolean} [options.revealCredential] false for snippets — always.
@@ -140,8 +141,14 @@ export function buildRequest({
 }) {
   const doc = model?.doc ?? {};
   const warnings = [];
-  const base = (serverUrl ?? operation.servers?.[0]?.url ?? model?.servers?.[0]?.url ?? '').replace(/\/+$/, '');
-  if (!base) warnings.push('No server URL is declared in the schema, so the path is shown on its own.');
+  const base = baseUrlFor({ model, operation, baseUrl: serverUrl });
+  // A relative base is still put in front of the path, because that is what
+  // the document says — but it is not somewhere a request can go, so it is
+  // named as a gap rather than passed off as a host.
+  if (!isAbsoluteBase(base)) {
+    const gap = inspectServers(operation.servers?.length ? operation.servers : model?.servers);
+    warnings.push(`${describeServerGap(gap.reason, base)} Set a base URL to complete this, or read the path on its own.`);
+  }
 
   const pathValues = values.path ?? {};
   let path = operation.path;

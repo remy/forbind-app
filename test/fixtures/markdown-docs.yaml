@@ -1,0 +1,37 @@
+# Descriptions written the way OpenAPI says they may be: CommonMark, including
+# the bits that have to be handled rather than printed — raw HTML, a link, and
+# a heading that must not outrank the pane it lands in.
+openapi: 3.1.0
+info:
+  title: Documented
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Notes
+paths:
+  /notes:
+    get:
+      summary: List notes
+      operationId: listNotes
+      tags: [Notes]
+      description: |
+        # Listing notes
+
+        Returns **every** note, newest first. Pass `limit` to cut it short.
+
+        - Ordered by `createdAt`
+        - Deleted notes are *not* included
+
+        See [the guide](https://example.com/docs) for the long version.
+
+        Raw <script>alert(1)</script> stays text.
+      parameters:
+        - name: limit
+          in: query
+          description: How many to return. See `maxLimit` in **settings**.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The notes, **newest first**.

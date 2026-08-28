@@ -21,6 +21,7 @@ import { AwElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { payloadChildren, hasChildren, refOf, payloadRef, refName } from '../lib/openapi.js';
+import { markdownToText } from '../lib/markdown.js';
 
 /** How deep to open automatically. One level shows the shape without a wall. */
 const OPEN_TO_DEPTH = 1;
@@ -196,7 +197,10 @@ class AwSchemaTree extends AwElement {
     }
 
     if (row.description) {
-      parts.push(el('span', { class: 'field-node__desc', text: row.description }));
+      // One line inside a disclosure summary, so the description is stripped
+      // back to its words: a link cannot live inside a summary, and asterisks
+      // shown raw are worse than emphasis quietly lost.
+      parts.push(el('span', { class: 'field-node__desc', text: markdownToText(row.description) }));
     }
     if (row.deprecated) {
       parts.push(el('span', { class: 'field-node__note', text: 'deprecated' }));

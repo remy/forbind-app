@@ -10,8 +10,8 @@ that look odd on purpose. This file is the structure.
 ## The shape of it
 
 No build step. `index.html` links six stylesheets and loads `js/main.js` as a
-module; the browser loads the ES modules as written. There is one vendored
-runtime dependency (`js-yaml`) and one server-side function
+module; the browser loads the ES modules as written. There are two vendored
+runtime dependencies (`js-yaml` and `markdown-it`) and one server-side function
 (`netlify/functions/fetch-schema.mjs`), used only when a direct fetch of a
 schema is blocked by CORS.
 
@@ -21,7 +21,7 @@ js/theme-boot.js         sets the theme before first paint, to avoid a flash
 js/main.js               entry point: store, router, actions, shortcuts, boot
 js/lib/                  pure modules — no DOM assumptions beyond dom.js
 js/components/           the custom elements, one file per area of the screen
-js/vendor/js-yaml.mjs    the one runtime dependency (MIT)
+js/vendor/*.mjs          the two runtime dependencies: js-yaml, markdown-it
 css/                     tokens → base → app → list → detail → overlays
 assets/fonts/            IBM Plex Sans + Mono, self-hosted, latin subsets
 samples/                 the bundled example schema
@@ -52,6 +52,7 @@ dependencies. `initialState()` is the authoritative shape:
 | `filters` | `query`, `tags`, `verbs`, `scopes`, `statusCodes`, `hideDeprecated`, `onlyDeprecated` |
 | `selectedOperationId`, `selectedSchemaName` | what the detail pane shows |
 | `activeRowId` | the roving cursor — deliberately not the selection |
+| `baseUrl` | a base URL the reader supplied for a schema that declares none |
 | `palette`, `authOpen`, `optionsOpen` | the overlays |
 | `mobileView` | `list` \| `detail`, below the phone breakpoint |
 | `theme`, `density`, `showHints` | display preferences |
@@ -101,6 +102,11 @@ re-render, everything else patches attributes in place.
 | `aw-auth-sheet` | the credential, where it is stored, and verification |
 | `aw-options` | theme, density, hint bar |
 | `aw-import` | the load screen and the parse report |
+| `aw-base-url` | the base URL field, on the parse report and inside Try it |
+
+`aw-detail` hands its field tables and the whole component-schema view to
+`detail-fields.js` — one set of rows drawn one way, for parameters, request
+bodies and schemas alike.
 
 ---
 
@@ -112,6 +118,9 @@ browser. `npm test` covers these.
 | Module | What it is |
 |---|---|
 | `openapi.js` | the parser. Swagger 2.0 → OpenAPI 3.1 into one model: operations, schemas, tags, servers, security schemes, and a parse report. Also `$ref` resolution, type description, field rows and payload children |
+| `servers.js` | what counts as a usable server URL, and which base URL a request is built against |
+| `enums.js` | the values a field allows, followed through `$ref` and `allOf` |
+| `markdown.js` | descriptions rendered as CommonMark, or stripped to text where only text fits |
 | `search.js` | filtering, scoring, grouping by tag, type-ahead indexing |
 | `request.js` | builds a request from an operation and renders it as curl, fetch or python. `revealCredential` defaults to `false`, and the snippet path never sets it |
 | `router.js` | hash routing: `#/op/<id>`, `#/schema/<name>`, `#/import`, with filters and `src` in the query; `foldQuerySchema` rewrites a `?url=` in the search into that `src` |
@@ -206,10 +215,13 @@ The browser suites share `test/a11y/lib/harness.mjs`, which starts the dev
 server and a browser and exports `open()` and `violations()`. One file per
 subject: `axe` (the static sweep over every screen), `structure`, `keyboard`,
 `columns`, `layout`, `presentation`, `announcements`, `credential`, `tryit`,
-`payload`.
+`payload`, `baseurl`, `markdown`.
 
 `test/fixtures/local-echo.yaml` points at the dev server so a request can
-actually be sent and read in a test.
+actually be sent and read in a test. The other fixtures are the documents that
+are awkward on purpose: `no-server.yaml` declares no `servers`, `ref-enum.yaml`
+names its enum somewhere else, and `markdown-docs.yaml` writes descriptions in
+markdown, raw HTML and all.
 
 ---
 
@@ -226,5 +238,11 @@ actually be sent and read in a test.
 - **The memoised filter.** `visibleOperations()` caches on the schema name and
   the filters. A new filter key must be inside the `filters` object or the
   cache will not see it.
+- **Descriptions are someone else's file.** `markdown.js` runs with
+  `html: false` and there is no sanitiser; never turn that on, and never put a
+  document's string into `innerHTML` anywhere else.
+- **`aw-try-it` observes `baseUrl`.** It patches the preview line in `update()`
+  rather than re-rendering, because the field that sets the base URL is inside
+  the panel and holds focus while it changes.
 - **Storage that throws.** Private modes make `localStorage` throw on access,
   not just on write. Everything in `persist.js` is wrapped; keep it that way.

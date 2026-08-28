@@ -6,6 +6,12 @@
  * the dragover state is announced in text, because "the box went blue" is not
  * information everyone receives.
  *
+ * A schema with no `servers` block gets one more thing on the report: a field
+ * for the base URL, beside — never in front of — the button that browses
+ * without one. The document is missing half an address; that is worth saying
+ * at the moment it is read, and worth being able to fix there, but it is not a
+ * reason to hold the schema hostage.
+ *
  * Parse problems are not a modal alert. They join the same "things worth
  * knowing" list, led by a word rather than an icon, with the line and column
  * and a way to see the offending line. A schema with loose docs is still
@@ -206,6 +212,8 @@ class AwImport extends AwElement {
               )),
             ])
           : null,
+
+        el('aw-base-url'),
 
         el('div', { class: 'sheet__actions' }, [
           el('button', {

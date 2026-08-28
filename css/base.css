@@ -295,5 +295,103 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
 .word--info { color: var(--post-fg); }
 .word--fail { color: var(--delete-fg); }
 
+/* The base URL field ------------------------------------------------------
+   One component, two homes: the parse report and the Try it panel. It is
+   marked out with the dashed border the drop zone uses, because both are the
+   same kind of thing — somewhere the reader has to supply what the document
+   did not. */
+aw-base-url { display: block; }
+
+.baseurl {
+  padding: var(--s-14);
+  border: var(--rule-w-strong) dashed var(--ink);
+  background: var(--paper-alt);
+}
+.baseurl--report { margin-top: var(--s-22); }
+.baseurl--inline { margin-bottom: var(--s-14); }
+
+.baseurl__title {
+  font: 600 var(--t-12) / 1.3 var(--font-sans);
+  letter-spacing: var(--ls-label-sm);
+}
+.baseurl__lede {
+  margin-top: var(--s-8);
+  font: 400 var(--t-12) / 1.55 var(--font-sans);
+  color: var(--ink-70);
+}
+/* Specific enough to settle the margin against `.urlrow`, which is declared
+   in overlays.css and therefore later in the cascade. */
+.baseurl .urlrow { margin-top: var(--s-10); background: var(--paper); }
+
+.baseurl__error {
+  display: flex;
+  gap: var(--s-10);
+  margin-top: var(--s-10);
+  font: 400 var(--t-12) / 1.5 var(--font-sans);
+}
+/* The word carries the failure as well as the border, so a dashed edge in
+   forced colours is a repeat of what is already written, not the only cue. */
+.baseurl__input[aria-invalid='true'] { border: var(--rule-w-strong) solid var(--delete-fg); }
+@media (forced-colors: active) {
+  .baseurl__input[aria-invalid='true'] { border-style: dashed; }
+}
+
+.baseurl__clear {
+  margin-top: var(--s-10);
+  font: 400 var(--t-11-5) / 1.5 var(--font-sans);
+}
+
+/* Rendered descriptions ---------------------------------------------------
+   `.md` wraps whatever a document's `description` turned out to be. The rules
+   are deliberately few: prose spacing, lists that keep their markers, and code
+   that reuses the block styling above. Headings inside a description are
+   pushed down to h4–h6 by js/lib/markdown.js, so they are styled as the small
+   labels they are rather than competing with the pane's own headings. */
+.md > :first-child { margin-top: 0; }
+.md > * + * { margin-top: var(--s-8); }
+.md--inline { display: inline; }
+
+.md ul, .md ol { margin-inline-start: var(--s-18); }
+.md ul { list-style: disc; }
+.md ol { list-style: decimal; }
+.md li + li { margin-top: var(--s-4); }
+.md li::marker { color: var(--ink-55); }
+
+.md code {
+  padding: 0 var(--s-3);
+  border: var(--rule-w) solid var(--divider-quiet);
+  font: 400 0.95em / 1.4 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.md pre {
+  padding: var(--s-10) var(--s-12);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: var(--rule-w) solid var(--code-border);
+  font: 400 var(--t-11-5) / var(--lh-code) var(--font-mono);
+  overflow-x: auto;
+}
+/* The border belongs to the block, not to every span inside it. */
+.md pre code { padding: 0; border: 0; font-size: inherit; }
+
+.md__h {
+  font: 600 var(--t-12) / 1.3 var(--font-sans);
+  letter-spacing: var(--ls-label-sm);
+  color: var(--ink);
+}
+.md blockquote {
+  padding-inline-start: var(--s-10);
+  border-inline-start: var(--rule-w-strong) solid var(--rule);
+  color: var(--ink-55);
+}
+.md table { border-collapse: collapse; display: block; overflow-x: auto; }
+.md th, .md td {
+  padding: var(--s-4) var(--s-8);
+  border: var(--rule-w) solid var(--rule);
+  text-align: start;
+}
+.md hr { border: 0; border-top: var(--rule-w) solid var(--rule); }
+.md img { max-width: 100%; height: auto; }
+
 /* Dividers --------------------------------------------------------------- */
 .hr { border: 0; border-top: var(--rule-w) solid var(--rule); margin: 0; }

@@ -8,6 +8,8 @@ import assert from 'node:assert/strict';
 
 import { open, showTab, LOCAL } from './lib/harness.mjs';
 
+const REF_ENUM = '/test/fixtures/ref-enum.yaml';
+
 test('an enum parameter is a dropdown, and Enter in the form sends', async () => {
   const page = await open();
   try {
@@ -109,6 +111,43 @@ test('a request the browser cannot read explains CORS rather than shrugging', as
     assert.match(text, /Access-Control-Allow-Origin/);
     assert.match(text, /unreachable/);
     assert.match(await page.locator('#aw-live-assertive').textContent(), /Request failed/);
+  } finally {
+    await page.close();
+  }
+});
+
+test('an enum named elsewhere in the document is still a dropdown, not a text box', async () => {
+  const page = await open(`#/?src=${REF_ENUM}`);
+  try {
+    await page.evaluate(() => {
+      window.__aw.actions.selectOperation(window.__aw.store.state.schema.operations[0].id);
+    });
+    await page.waitForTimeout(600);
+    await showTab(page, 'tryit');
+
+    // Behind a $ref, and behind an allOf wrapper: both are the same promise.
+    const sort = page.getByLabel(/^sort/);
+    const group = page.getByLabel(/^group/);
+    assert.equal(await sort.evaluate((node) => node.tagName), 'SELECT');
+    assert.equal(await group.evaluate((node) => node.tagName), 'SELECT');
+
+    const options = await sort.locator('option').allTextContents();
+    assert.equal(options.length, 11, `expected the 11 declared values, got ${options.join(', ')}`);
+    assert.deepEqual(options.slice(0, 3), ['title', 'artist', 'albumartist']);
+    // Required, so it opens on a value the document allows rather than blank.
+    assert.equal(await sort.inputValue(), 'title');
+    // Optional, so not sending it stays possible and is named.
+    assert.match((await group.locator('option').allTextContents())[0], /not sent/);
+    assert.equal(await group.inputValue(), '');
+
+    // The values are in the control now, so the hint does not repeat them.
+    const hint = await page.locator('.field-row', { has: page.getByLabel(/^sort/) }).locator('.hint').first().textContent();
+    assert.ok(!/one of/.test(hint), `the hint still lists the values: ${hint}`);
+
+    await sort.selectOption('composer');
+    await page.waitForTimeout(200);
+    assert.match(await page.locator('.tryit__status').textContent(), /sort=composer/);
+    assert.deepEqual(page.problems, []);
   } finally {
     await page.close();
   }
