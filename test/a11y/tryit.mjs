@@ -287,3 +287,52 @@ test('a request that only reads is not confirmed', async () => {
     await page.close();
   }
 });
+
+test('what has been typed survives leaving the tab and coming back', async () => {
+  // The panel is rebuilt on every render of the detail pane. Rebuilding it
+  // with an empty form throws away work nobody asked to lose; Reset is the
+  // control for that, and it is a button.
+  const page = await open();
+  try {
+    await showTab(page, 'tryit');
+    const body = page.locator('aw-try-it textarea').first();
+    await body.fill('{"typed": "by hand"}');
+    await page.waitForTimeout(200);
+
+    await showTab(page, 'overview');
+    await showTab(page, 'tryit');
+    assert.equal(await body.inputValue(), '{"typed": "by hand"}', 'the tab round trip emptied the form');
+
+    // Reset is how you ask for an empty form, and it says so out loud.
+    await page.getByRole('button', { name: 'Reset' }).click();
+    await page.waitForTimeout(200);
+    assert.notEqual(await body.inputValue(), '{"typed": "by hand"}');
+    assert.match(await page.locator('#aw-live-polite').textContent(), /reset/i);
+  } finally {
+    await page.close();
+  }
+});
+
+test('the phone\'s sticky action opens the Try it tab', async () => {
+  const page = await open(`#/?src=${LOCAL}`, { viewport: { width: 390, height: 780 } });
+  try {
+    await page.locator('a.row').first().click();
+    await page.waitForTimeout(500);
+
+    const action = page.locator('.sticky-action button');
+    assert.equal(await action.count(), 1, 'no sticky action on a phone viewport');
+    await action.click();
+    await page.waitForTimeout(500);
+
+    assert.equal(await page.locator('aw-try-it form').count(), 1, 'the sticky action did not open Try it');
+    assert.equal(
+      await page.locator('[role="tab"][aria-selected="true"]').textContent(),
+      'Try it',
+    );
+    // And it lands the keyboard in the panel it opened.
+    assert.equal(await page.evaluate(() => Boolean(document.activeElement.closest('aw-try-it'))), true);
+    assert.deepEqual(await violations(page), []);
+  } finally {
+    await page.close();
+  }
+});

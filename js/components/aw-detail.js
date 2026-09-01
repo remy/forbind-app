@@ -40,6 +40,10 @@ class AwDetail extends AwElement {
   #tab = 'overview';
   #media = null;
   #onMediaChange = null;
+  /** The try-it panel, kept across renders — see #sectionTryIt. */
+  #tryIt = null;
+  /** The schema that panel was built for; a new document gets a new panel. */
+  #tryItFor = null;
 
   connectedCallback() {
     this.#media = globalThis.matchMedia?.(NARROW);
@@ -454,10 +458,23 @@ class AwDetail extends AwElement {
     return el('section', { class: 'detail__section', 'aria-label': 'Request snippet' }, [block]);
   }
 
+  /**
+   * The panel is kept, not rebuilt.
+   *
+   * What has been typed into it lives on the element, so a fresh one is an
+   * emptied form — and this runs again on every re-render: switching tabs and
+   * back, pressing "Try this request" a second time, a credential arriving.
+   * None of those is a request to throw the reader's values away. The panel
+   * clears itself when the operation changes, which is the one time it should.
+   */
   #sectionTryIt(state, op) {
-    const panel = el('aw-try-it', { id: 'try-it' });
-    panel.operation = op;
-    return el('section', { class: 'detail__section', 'aria-label': 'Try it' }, [panel]);
+    if (this.#tryItFor !== state.schema) {
+      this.#tryIt = null;
+      this.#tryItFor = state.schema;
+    }
+    this.#tryIt ??= el('aw-try-it', { id: 'try-it' });
+    this.#tryIt.operation = op;
+    return el('section', { class: 'detail__section', 'aria-label': 'Try it' }, [this.#tryIt]);
   }
 
   /* --- component schema view -------------------------------------------- */
