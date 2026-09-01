@@ -666,20 +666,25 @@ const actions = {
     return Promise.resolve(done).finally(() => temporary.remove());
   },
 
+  /**
+   * Take the reader to the form, from wherever they asked.
+   *
+   * Try it is a tab, so the panel only exists while that tab is the open one
+   * — and the phone's sticky "Try this request" is pressed from the tabs that
+   * are not it. Asking the detail pane for the tab first is what makes the
+   * button do something; testing for the panel first made it do nothing at
+   * all on every tab but the one it was already on.
+   */
   openTryIt(id) {
-    const panel = document.querySelector('aw-try-it');
-    if (panel) {
-      const detail = document.querySelector('aw-detail');
-      // In the tabbed layouts, Try it is a tab rather than a section below.
-      if (detail?.showTab) detail.showTab('tryit');
-      requestAnimationFrame(() => {
-        const target = document.querySelector('aw-try-it input, aw-try-it textarea, aw-try-it button');
-        target?.focus();
-        target?.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-      });
-      return;
-    }
-    actions.selectOperation(id);
+    if (id && store.state.selectedOperationId !== id) actions.selectOperation(id);
+    const detail = document.querySelector('aw-detail');
+    if (!detail?.showTab) return;
+    detail.showTab('tryit');
+    requestAnimationFrame(() => {
+      const target = document.querySelector('aw-try-it input, aw-try-it textarea, aw-try-it select, aw-try-it button');
+      target?.focus();
+      target?.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    });
   },
 
   /** The palette's command list. */
