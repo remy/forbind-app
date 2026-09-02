@@ -19,18 +19,18 @@
  * are visible at once without either being conveyed by colour alone.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { verbLabel, verbClass } from '../lib/openapi.js';
 import { groupByTag, typeAheadIndex } from '../lib/search.js';
 import { markdownToText } from '../lib/markdown.js';
-// Registers <aw-deprecated-bar> and <aw-tag-chips>, which render() places.
+// Registers <fb-deprecated-bar> and <fb-tag-chips>, which render() places.
 import './list-strips.js';
 
 const TYPEAHEAD_TIMEOUT = 800;
 
-class AwEndpointList extends AwElement {
+class FbEndpointList extends FbElement {
   static observes = ['schema', 'filters', 'selectedOperationId', 'activeRowId', 'density', 'showHints'];
 
   #typeBuffer = '';
@@ -105,8 +105,8 @@ class AwEndpointList extends AwElement {
     );
 
     replace(this, [
-      roomy ? null : el('aw-deprecated-bar', {}),
-      roomy ? null : el('aw-tag-chips', {}),
+      roomy ? null : el('fb-deprecated-bar', {}),
+      roomy ? null : el('fb-tag-chips', {}),
       this.#scroll,
       state.showHints ? this.#renderHints() : null,
       this.#renderStatusBar(state, visible),
@@ -424,4 +424,4 @@ class AwEndpointList extends AwElement {
   }
 }
 
-define('aw-endpoint-list', AwEndpointList);
+define('fb-endpoint-list', FbEndpointList);

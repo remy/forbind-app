@@ -50,7 +50,7 @@ test('preferences round-trip, and nothing else is taken from that key', () => {
       credential: SECRET, schema: {},
     });
     const kept = { theme: 'dark', density: 'roomy', showHints: false, railCollapsed: true, listCollapsed: false };
-    assert.deepEqual(JSON.parse(local.dump()['allyway:prefs']), kept);
+    assert.deepEqual(JSON.parse(local.dump()['forbind:prefs']), kept);
     assert.deepEqual(readPrefs(), kept);
     assert.ok(!JSON.stringify(local.dump()).includes(SECRET));
   });
@@ -76,7 +76,7 @@ test('a schema loaded from a URL keeps the URL, not a copy of the document', () 
     const stored = readSchema();
     assert.equal(stored.url, 'https://api.example.com/openapi.yaml');
     assert.equal(stored.text, null, 'a fetchable URL should not also spend the quota on the body');
-    assert.ok(local.dump()['allyway:schema'].length < 500);
+    assert.ok(local.dump()['forbind:schema'].length < 500);
   });
 });
 
@@ -107,7 +107,7 @@ test('clearing the schema clears it', () => {
 
 test('a half-written record is treated as no record', () => {
   const local = fakeStorage();
-  local.setItem('allyway:schema', JSON.stringify({ name: 'a.json' }));
+  local.setItem('forbind:schema', JSON.stringify({ name: 'a.json' }));
   withStorage(local, fakeStorage(), () => {
     assert.equal(readSchema(), null);
   });

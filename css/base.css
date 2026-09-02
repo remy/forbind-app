@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   allyway — reset, primitives and the focus system
+   forbind — reset, primitives and the focus system
 --------------------------------------------------------------------------- */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -311,7 +311,7 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
    marked out with the dashed border the drop zone uses, because both are the
    same kind of thing — somewhere the reader has to supply what the document
    did not. */
-aw-base-url { display: block; }
+fb-base-url { display: block; }
 
 .baseurl {
   padding: var(--s-14);

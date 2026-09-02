@@ -14,7 +14,7 @@ test('the panes scroll inside the window rather than the page scrolling', async 
   for (const density of ['dense', 'roomy']) {
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`, { viewport: { width: 1280, height: 700 } });
     try {
-      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.evaluate((d) => window.__fb.actions.setDensity(d), density);
       await page.waitForTimeout(600);
 
       const bannerTop = () => page.evaluate(() => document.querySelector('.topbar').getBoundingClientRect().top);
@@ -59,7 +59,7 @@ test('the document itself does not scroll behind the fixed frame', async () => {
   for (const density of ['dense', 'roomy']) {
     const page = await open(`#/?src=${SRC}`, { viewport: { width: 1280, height: 700 } });
     try {
-      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.evaluate((d) => window.__fb.actions.setDensity(d), density);
       await page.waitForTimeout(600);
 
       const overflow = await page.evaluate(() => {

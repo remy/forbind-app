@@ -1,5 +1,5 @@
 /**
- * allyway — entry point.
+ * forbind — entry point.
  *
  * Wires the store to the router, defines the actions the components call, and
  * installs the global keyboard model. Everything below this file is either a
@@ -26,19 +26,19 @@ import {
 } from './lib/persist.js';
 import { normaliseBaseUrl, originFrom } from './lib/servers.js';
 
-import './components/aw-app.js';
-import './components/aw-topbar.js';
-import './components/aw-tag-rail.js';
-import './components/aw-endpoint-list.js';
-import './components/aw-detail.js';
-import './components/aw-code-block.js';
-import './components/aw-schema-tree.js';
-import './components/aw-try-it.js';
-import './components/aw-palette.js';
-import './components/aw-auth-sheet.js';
-import './components/aw-options.js';
-import './components/aw-import.js';
-import './components/aw-base-url.js';
+import './components/fb-app.js';
+import './components/fb-topbar.js';
+import './components/fb-tag-rail.js';
+import './components/fb-endpoint-list.js';
+import './components/fb-detail.js';
+import './components/fb-code-block.js';
+import './components/fb-schema-tree.js';
+import './components/fb-try-it.js';
+import './components/fb-palette.js';
+import './components/fb-auth-sheet.js';
+import './components/fb-options.js';
+import './components/fb-import.js';
+import './components/fb-base-url.js';
 
 const store = new Store();
 
@@ -434,7 +434,7 @@ const actions = {
   },
 
   focusSearch() {
-    const block = document.querySelector('aw-search-block') ?? document.querySelector('aw-topbar');
+    const block = document.querySelector('fb-search-block') ?? document.querySelector('fb-topbar');
     if (block?.focusSearch) block.focusSearch();
     else document.querySelector('#search')?.focus();
   },
@@ -628,7 +628,7 @@ const actions = {
     return ingest(loadFromUrl(url), { url });
   },
   loadSample(path) {
-    return ingest(loadSample(path), { note: 'This is the example schema bundled with allyway. It describes an imaginary service.' });
+    return ingest(loadSample(path), { note: 'This is the example schema bundled with forbind. It describes an imaginary service.' });
   },
   replaceSchema() {
     clearSchema();
@@ -656,10 +656,10 @@ const actions = {
 
   /* --- snippets -------------------------------------------------------- */
   copyCurl(operation, button) {
-    const block = document.querySelector('aw-code-block');
+    const block = document.querySelector('fb-code-block');
     if (block && block.operation?.id === operation?.id) return block.copy(button);
     // No block on screen (a narrow layout on another tab, say): make one.
-    const temporary = document.createElement('aw-code-block');
+    const temporary = document.createElement('fb-code-block');
     temporary.operation = operation ?? currentOperation();
     document.body.appendChild(temporary);
     const done = temporary.copy(button);
@@ -677,11 +677,11 @@ const actions = {
    */
   openTryIt(id) {
     if (id && store.state.selectedOperationId !== id) actions.selectOperation(id);
-    const detail = document.querySelector('aw-detail');
+    const detail = document.querySelector('fb-detail');
     if (!detail?.showTab) return;
     detail.showTab('tryit');
     requestAnimationFrame(() => {
-      const target = document.querySelector('aw-try-it input, aw-try-it textarea, aw-try-it select, aw-try-it button');
+      const target = document.querySelector('fb-try-it input, fb-try-it textarea, fb-try-it select, fb-try-it button');
       target?.focus();
       target?.scrollIntoView({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
     });
@@ -786,7 +786,7 @@ function prefersReducedMotion() {
 
 /**
  * The width below which the list and the detail stop sharing the frame and
- * become separate pages. The same query as aw-app's SMALL_SCREEN: what the
+ * become separate pages. The same query as fb-app's SMALL_SCREEN: what the
  * layout does and what focus has to do about it are one decision.
  */
 function isPhoneLayout() {
@@ -915,6 +915,6 @@ restoreSchema();
 router.start();
 /* A handle for tests and for poking at state in a console. Reading it is
    harmless; the app itself never uses it. */
-globalThis.__aw = { store, actions };
+globalThis.__fb = { store, actions };
 
 export { store, actions };

@@ -1,4 +1,4 @@
-# How allyway is put together
+# How forbind is put together
 
 A map of the codebase for anyone — human or agent — picking it up cold.
 `README.md` is the product: what it does and what it promises. `CLAUDE.md` is
@@ -17,7 +17,7 @@ runtime dependencies (`js-yaml` and `markdown-it`) and one server-side function
 schema is blocked by CORS.
 
 ```
-index.html               the whole page: stylesheets, theme boot, <aw-app>
+index.html               the whole page: stylesheets, theme boot, <fb-app>
 js/theme-boot.js         sets the theme before first paint, to avoid a flash
 js/main.js               entry point: store, router, actions, shortcuts, boot
 js/lib/                  pure modules — no DOM assumptions beyond dom.js
@@ -72,17 +72,17 @@ deliberately from `main.js`, never as a side effect of a state change.
 
 ## Components
 
-Every element extends `AwElement` (`js/lib/element.js`), renders into the
+Every element extends `FbElement` (`js/lib/element.js`), renders into the
 **light DOM**, declares the state keys it cares about in `static observes`, and
 is registered through `define()` + `defineAll()` so nothing upgrades before the
 store exists.
 
 ```js
-class AwThing extends AwElement {
+class FbThing extends FbElement {
   static observes = ['schema', 'filters'];
   render(state) { replace(this, [ /* built with el() */ ]); }
 }
-define('aw-thing', AwThing);
+define('fb-thing', FbThing);
 ```
 
 Override `update(state, prev)` when a full re-render would be wrong — which is
@@ -91,37 +91,37 @@ re-render, everything else patches attributes in place.
 
 | Element | Owns |
 |---|---|
-| `aw-app` | landmarks, skip links, live regions, the shell layout, the column flags |
-| `aw-topbar` | wordmark, search, column toggles, Settings/Authorise; also `aw-search-block` (roomy) and `aw-meta-strip` |
-| `aw-tag-rail` | the tag rail; also `aw-facets`, the filter row that replaces it |
-| `aw-endpoint-list` | the rows, the roving tabindex, type-ahead |
-| `aw-detail` | an operation, a component schema, or the empty state — an operation's sections are a tab set in every layout |
-| `aw-schema-tree` | a response body as nested `<details>` in nested `<ul>`s |
-| `aw-code-block` | the curl/fetch/python snippet and its copy button |
-| `aw-try-it` | the real request form and its result; the rows themselves are `tryit-fields.js` |
-| `aw-palette` | ⌘K — a real combobox over operations, schemas and commands |
-| `aw-auth-sheet` | the credential, where it is stored, and verification |
-| `aw-options` | theme, density, hint bar, and the base URL once one is needed |
-| `aw-import` | the load screen and the parse report |
-| `aw-base-url` | the base URL field — on the parse report, in Settings, and in Try it until it is answered |
+| `fb-app` | landmarks, skip links, live regions, the shell layout, the column flags |
+| `fb-topbar` | wordmark, search, column toggles, Settings/Authorise; also `fb-search-block` (roomy) and `fb-meta-strip` |
+| `fb-tag-rail` | the tag rail; also `fb-facets`, the filter row that replaces it |
+| `fb-endpoint-list` | the rows, the roving tabindex, type-ahead |
+| `fb-detail` | an operation, a component schema, or the empty state — an operation's sections are a tab set in every layout |
+| `fb-schema-tree` | a response body as nested `<details>` in nested `<ul>`s |
+| `fb-code-block` | the curl/fetch/python snippet and its copy button |
+| `fb-try-it` | the real request form and its result; the rows themselves are `tryit-fields.js` |
+| `fb-palette` | ⌘K — a real combobox over operations, schemas and commands |
+| `fb-auth-sheet` | the credential, where it is stored, and verification |
+| `fb-options` | theme, density, hint bar, and the base URL once one is needed |
+| `fb-import` | the load screen and the parse report |
+| `fb-base-url` | the base URL field — on the parse report, in Settings, and in Try it until it is answered |
 
-`aw-detail` hands its field tables and the whole component-schema view to
+`fb-detail` hands its field tables and the whole component-schema view to
 `detail-fields.js` — one set of rows drawn one way, for parameters, request
 bodies and schemas alike — and the Responses section to `detail-responses.js`,
 which is given the set of unfolded status codes rather than keeping it.
-`aw-endpoint-list` hands the two strips above it to `list-strips.js`:
-`aw-deprecated-bar` and then `aw-tag-chips`. Neither is part of the keyboard
-model the list runs, and the list file had enough subjects in it already. `aw-try-it` keeps the panel — what has been typed, what is being
+`fb-endpoint-list` hands the two strips above it to `list-strips.js`:
+`fb-deprecated-bar` and then `fb-tag-chips`. Neither is part of the keyboard
+model the list runs, and the list file had enough subjects in it already. `fb-try-it` keeps the panel — what has been typed, what is being
 sent, what came back — and hands one row of the form at a time to
 `tryit-fields.js`, which is given the panel's own `values` and `errors` objects
 by reference so a keystroke lands where the sender will look for it.
 
-`aw-detail` builds a new element for each section on every render, with two
-exceptions: `aw-try-it` and `aw-code-block` hold something the reader made — a
+`fb-detail` builds a new element for each section on every render, with two
+exceptions: `fb-try-it` and `fb-code-block` hold something the reader made — a
 form part-filled, a snippet language chosen — so they are kept and re-attached
 rather than rebuilt. They are dropped when the document changes, which is the
 one time an emptied form is the right answer. Responses are rebuilt, but the
-answer they carry is not: `aw-detail` holds the set of unfolded codes for the
+answer they carry is not: `fb-detail` holds the set of unfolded codes for the
 operation on screen and hands it to the section each time.
 
 ---
@@ -144,7 +144,7 @@ browser. `npm test` covers these.
 | `loader.js` | file, URL and sample loading, plus the CORS fallback |
 | `auth.js` | credential normalising, masking, JWT claims, probe interpretation |
 | `store.js` | the store |
-| `element.js` | `AwElement`, `define`, `defineAll` |
+| `element.js` | `FbElement`, `define`, `defineAll` |
 | `dom.js` | `el`, `replace`, `uid`, `focusable`, `preserveFocus` |
 | `clipboard.js` | the clipboard write, and the select-the-text fallback when it is refused |
 | `announce.js` | the two live regions and `announce()` |
@@ -175,7 +175,7 @@ them: **75rem** the rail folds into a chip row, **62rem** the panes narrow,
 **48rem** the list and the detail become separate pages.
 
 Folded columns are `data-rail` / `data-list` on the same element, written by
-`aw-app` and ignored below 48rem. Both are disclosures driven from the top bar;
+`fb-app` and ignored below 48rem. Both are disclosures driven from the top bar;
 the folded column is removed from the grid rather than shrunk to a strip. A
 folded rail hands the tags to the same chip row the 75rem breakpoint uses, so
 there is one stand-in whichever reason the rail is not there.
@@ -261,7 +261,7 @@ markdown, raw HTML and all.
   `observes`.
 - **Duplicated controls across layouts.** A control rendered always and hidden
   with CSS is a second tab stop for one job. The layouts that swap controls
-  (`aw-tag-chips`, the column toggles) use a media query in JS instead.
+  (`fb-tag-chips`, the column toggles) use a media query in JS instead.
 - **`display: contents` in the endpoint list.** It quietly costs the list its
   list semantics; a browser test asserts it is nowhere in there.
 - **The memoised filter.** `visibleOperations()` caches on the schema name and
@@ -273,7 +273,7 @@ markdown, raw HTML and all.
 - **A mutating verb is confirmed before it is sent.** `send()` awaits
   `confirmMutation()` for `POST`/`PUT`/`PATCH`/`DELETE`, so any test that sends
   one has to answer the dialog — `confirmSend(page)` in the harness.
-- **`aw-try-it` observes `baseUrl`.** It patches the preview line in `update()`
+- **`fb-try-it` observes `baseUrl`.** It patches the preview line in `update()`
   rather than re-rendering, because the field that sets the base URL is inside
   the panel and holds focus while it changes.
 - **Storage that throws.** Private modes make `localStorage` throw on access,

@@ -3,7 +3,7 @@
    is no flash of the wrong palette for someone who chose dark or light. */
 (function () {
   try {
-    var raw = localStorage.getItem('allyway:prefs');
+    var raw = localStorage.getItem('forbind:prefs');
     if (!raw) return;
     var prefs = JSON.parse(raw);
     if (prefs.theme === 'light' || prefs.theme === 'dark') {

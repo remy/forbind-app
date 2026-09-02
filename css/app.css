@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   allyway — application shell
+   forbind — application shell
    ---------------------------------------------------------------------------
    Two densities live here, because both navigation models from the handoff
    ship:
@@ -23,23 +23,23 @@
  * child below it, which is how the endpoint list ended up taller than the
  * window instead of scrolling inside it.
  */
-aw-app,
-aw-topbar,
-aw-search-block,
-aw-meta-strip,
-aw-tag-rail,
-aw-facets,
-aw-endpoint-list,
-aw-deprecated-bar,
-aw-tag-chips,
-aw-detail,
-aw-code-block,
-aw-try-it,
-aw-import { display: block; }
+fb-app,
+fb-topbar,
+fb-search-block,
+fb-meta-strip,
+fb-tag-rail,
+fb-facets,
+fb-endpoint-list,
+fb-deprecated-bar,
+fb-tag-chips,
+fb-detail,
+fb-code-block,
+fb-try-it,
+fb-import { display: block; }
 
 /* The list component *is* the pane's contents, so it takes the pane's shape:
    a column whose middle section scrolls. */
-.pane--list > aw-endpoint-list {
+.pane--list > fb-endpoint-list {
   display: flex;
   flex-direction: column;
   flex: 1;

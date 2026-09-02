@@ -1,5 +1,5 @@
 /**
- * Everything allyway remembers, and where.
+ * Everything forbind remembers, and where.
  *
  * One module so the rules are in one place and can be read at a glance:
  *
@@ -20,10 +20,10 @@
  * is the same promise the import screen makes about the schema itself.
  */
 
-const PREFS_KEY = 'allyway:prefs';
-const SCHEMA_KEY = 'allyway:schema';
-const AUTH_KEY = 'allyway:auth';
-const BASE_URL_KEY = 'allyway:base-url';
+const PREFS_KEY = 'forbind:prefs';
+const SCHEMA_KEY = 'forbind:schema';
+const AUTH_KEY = 'forbind:auth';
+const BASE_URL_KEY = 'forbind:base-url';
 
 const PERSISTED_PREFS = ['theme', 'density', 'showHints', 'railCollapsed', 'listCollapsed'];
 

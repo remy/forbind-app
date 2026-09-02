@@ -1,7 +1,7 @@
 /**
  * DOM helpers.
  *
- * allyway's custom elements render into the *light* DOM on purpose. Shadow
+ * forbind's custom elements render into the *light* DOM on purpose. Shadow
  * roots would put boundaries between the things that have to reference each
  * other by id — `aria-describedby`, `aria-controls`, `aria-activedescendant`,
  * `<label for>` — and those relationships are the whole accessibility story
@@ -69,7 +69,7 @@ export function frag(children) {
 
 let idSeq = 0;
 /** Stable-enough unique id for aria-* wiring. */
-export function uid(prefix = 'aw') {
+export function uid(prefix = 'fb') {
   idSeq += 1;
   return `${prefix}-${idSeq}`;
 }

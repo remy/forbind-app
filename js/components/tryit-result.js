@@ -51,7 +51,7 @@ export function explainFailure(error, built, elapsed) {
       'The request may well have arrived and succeeded; the browser is refusing to show you the answer, not the server refusing to act. ' +
       'Your browser’s network panel will show the real status. ' +
       'To make this work from here, the API has to send CORS headers for this origin. ' +
-      'allyway does not proxy real requests, so the credential never leaves your machine.',
+      'forbind does not proxy real requests, so the credential never leaves your machine.',
     elapsed,
   };
 }

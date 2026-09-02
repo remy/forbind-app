@@ -1,5 +1,5 @@
 /**
- * The allyway mark.
+ * The forbind mark.
  *
  * The same three paths as `assets/favicon.svg`, drawn in `currentColor` so the
  * mark follows the ink of whatever it sits in — light, dark and forced-colours

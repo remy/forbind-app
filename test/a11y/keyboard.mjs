@@ -53,7 +53,7 @@ test('the cursor follows the rows as rendered, not some other ordering', async (
   for (const density of ['dense', 'roomy']) {
     const page = await open();
     try {
-      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.evaluate((d) => window.__fb.actions.setDensity(d), density);
       await page.waitForTimeout(500);
 
       const domOrder = () => page.evaluate(() => [...document.querySelectorAll('a.row')].map((a) => a.dataset.opId));
@@ -69,7 +69,7 @@ test('the cursor follows the rows as rendered, not some other ordering', async (
       assert.deepEqual(walked, expected.slice(0, 8), `${density}: the cursor did not follow the rendered order`);
 
       // And again with a query, where the filter sorts by score.
-      await page.evaluate(() => window.__aw.actions.setQuery('booking'));
+      await page.evaluate(() => window.__fb.actions.setQuery('booking'));
       await page.waitForTimeout(600);
       const queried = await domOrder();
       await page.locator('a.row').first().focus();
@@ -165,10 +165,10 @@ test('the detail sections are one tab stop, moved between with the arrows', asyn
   for (const density of ['dense', 'roomy']) {
     const page = await open();
     try {
-      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.evaluate((d) => window.__fb.actions.setDensity(d), density);
       await page.waitForTimeout(500);
 
-      const tabs = page.locator('aw-detail [role="tab"]');
+      const tabs = page.locator('fb-detail [role="tab"]');
       assert.deepEqual(
         await tabs.allTextContents(),
         ['Overview', 'Body', 'Responses', 'Code', 'Try it'],
@@ -176,8 +176,8 @@ test('the detail sections are one tab stop, moved between with the arrows', asyn
       );
 
       // One tab stop for the whole set: the selected tab, and nothing else.
-      assert.equal(await page.locator('aw-detail [role="tab"][tabindex="0"]').count(), 1, `${density}: not one tab stop`);
-      assert.equal(await page.locator('aw-detail [role="tab"][aria-selected="true"]').count(), 1);
+      assert.equal(await page.locator('fb-detail [role="tab"][tabindex="0"]').count(), 1, `${density}: not one tab stop`);
+      assert.equal(await page.locator('fb-detail [role="tab"][aria-selected="true"]').count(), 1);
 
       await tabs.first().focus();
       await page.keyboard.press('ArrowRight');
@@ -195,10 +195,10 @@ test('the detail sections are one tab stop, moved between with the arrows', asyn
 
       // The panel on screen is the one the selected tab names.
       const shape = await page.evaluate(() => {
-        const tab = document.querySelector('aw-detail [role="tab"][aria-selected="true"]');
-        const panel = document.querySelector('aw-detail [role="tabpanel"]');
+        const tab = document.querySelector('fb-detail [role="tab"][aria-selected="true"]');
+        const panel = document.querySelector('fb-detail [role="tabpanel"]');
         return {
-          panels: document.querySelectorAll('aw-detail [role="tabpanel"]').length,
+          panels: document.querySelectorAll('fb-detail [role="tabpanel"]').length,
           controls: tab.getAttribute('aria-controls'),
           panelId: panel.id,
           labelledBy: panel.getAttribute('aria-labelledby'),

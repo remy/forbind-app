@@ -11,7 +11,7 @@
  * which endpoint you are on.
  */
 
-const SITE = 'allyway';
+const SITE = 'forbind';
 
 /**
  * @param {object} state the store's state

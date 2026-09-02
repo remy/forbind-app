@@ -22,7 +22,7 @@
  * browsing an API you cannot call is a perfectly ordinary thing to want.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, preserveFocus, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { describeServerGap, inspectServers } from '../lib/servers.js';
@@ -35,7 +35,7 @@ import { describeServerGap, inspectServers } from '../lib/servers.js';
  */
 const HEADING = { report: 'h2', settings: 'h3', inline: 'p' };
 
-class AwBaseUrl extends AwElement {
+class FbBaseUrl extends FbElement {
   static observes = ['schema', 'baseUrl', 'baseUrlHint'];
 
   /**
@@ -204,4 +204,4 @@ class AwBaseUrl extends AwElement {
   }
 }
 
-define('aw-base-url', AwBaseUrl);
+define('fb-base-url', FbBaseUrl);

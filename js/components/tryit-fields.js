@@ -1,7 +1,7 @@
 /**
  * The fields inside the try-it form.
  *
- * Split out of `aw-try-it.js`, which owns the panel — what has been typed,
+ * Split out of `fb-try-it.js`, which owns the panel — what has been typed,
  * what is being sent, and what came back. This file owns one row of that form
  * at a time: the control a parameter deserves, the hint and prose and error
  * wired to it by id, and the two places a value is drafted from the schema so

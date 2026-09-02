@@ -61,7 +61,7 @@ test('the field starts at the origin the schema came from, and says it is a gues
     // still offers to accept it, and nothing is resolved against it yet.
     assert.equal(await page.getByRole('heading', { name: /needs a base URL/i }).count(), 1);
     assert.equal(await page.getByRole('button', { name: 'Use this' }).count(), 1);
-    assert.equal(await page.evaluate(() => window.__aw.store.state.baseUrl), '');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.baseUrl), '');
 
     // And where the value came from is said in words, not left to be inferred
     // from a field that mysteriously filled itself in.
@@ -83,7 +83,7 @@ test('a guess the reader throws away does not come straight back', async () => {
     await field.fill('https://api.example.com');
     await page.getByRole('button', { name: 'Use this' }).click();
     await page.waitForTimeout(300);
-    assert.equal(await page.evaluate(() => window.__aw.store.state.baseUrl), 'https://api.example.com');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.baseUrl), 'https://api.example.com');
 
     await page.getByRole('button', { name: 'Clear the base URL' }).click();
     await page.waitForTimeout(300);
@@ -102,7 +102,7 @@ test('a base URL that is not one is refused out loud, with focus left on the fie
     await page.waitForTimeout(400);
 
     assert.equal(await field.getAttribute('aria-invalid'), 'true');
-    assert.match(await page.locator('#aw-live-assertive').textContent(), /http or https/);
+    assert.match(await page.locator('#fb-live-assertive').textContent(), /http or https/);
     // The reason is tied to the field, not just floating beside it.
     const describedBy = await field.getAttribute('aria-describedby');
     const errorId = describedBy.split(' ')[0];
@@ -123,12 +123,12 @@ test('a base URL that is accepted is announced, and can be changed or cleared', 
     await page.getByRole('button', { name: 'Use this' }).click();
     await page.waitForTimeout(400);
 
-    assert.match(await page.locator('#aw-live-polite').textContent(), /Base URL set to https:\/\/api\.example\.com/);
+    assert.match(await page.locator('#fb-live-polite').textContent(), /Base URL set to https:\/\/api\.example\.com/);
     assert.equal(await field.getAttribute('aria-invalid'), null);
     // The keyboard is left on the control that was pressed, not on the body.
     assert.equal(await page.evaluate(() => document.activeElement?.dataset?.focusKey), 'baseurl-apply');
     assert.equal(await page.getByRole('button', { name: /Clear the base URL/ }).count(), 1);
-    assert.equal(await page.evaluate(() => window.__aw.store.state.baseUrl), 'https://api.example.com');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.baseUrl), 'https://api.example.com');
 
     assert.deepEqual(await violations(page), []);
   } finally {
@@ -161,16 +161,16 @@ test('try-it asks for the base URL itself, and keeps focus when one arrives', as
   try {
     // Straight to an operation: the report, and its warning, were never seen.
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.method === 'POST');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.method === 'POST');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
     await showTab(page, 'tryit');
 
     // It was said on arrival rather than saved for the send button.
-    assert.match(await page.locator('#aw-live-polite').textContent(), /No server URL is declared/);
+    assert.match(await page.locator('#fb-live-polite').textContent(), /No server URL is declared/);
 
-    const field = page.locator('aw-try-it').getByRole('textbox', { name: 'Base URL' });
+    const field = page.locator('fb-try-it').getByRole('textbox', { name: 'Base URL' });
     assert.equal(await field.count(), 1);
     assert.match(await page.locator('[data-live-warning]').textContent(), /the declared server/);
 
@@ -180,7 +180,7 @@ test('try-it asks for the base URL itself, and keeps focus when one arrives', as
 
     // The form around the field is patched, never rebuilt under the keyboard,
     // and the field itself stays for the operation it was answered on.
-    assert.equal(await page.evaluate(() => document.activeElement?.closest('aw-base-url') !== null), true);
+    assert.equal(await page.evaluate(() => document.activeElement?.closest('fb-base-url') !== null), true);
     assert.equal(await field.count(), 1);
     assert.match(await page.locator('.tryit__status').textContent(), /https:\/\/api\.example\.com\/notes/);
     assert.match(await page.locator('[data-live-warning]').textContent(), /a real POST to api\.example\.com/);
@@ -196,13 +196,13 @@ test('a host typed but not yet applied survives a trip to another tab', async ()
   const page = await open(`#/?src=${NO_SERVER}`);
   try {
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.method === 'POST');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.method === 'POST');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
     await showTab(page, 'tryit');
 
-    const field = page.locator('aw-try-it').getByRole('textbox', { name: 'Base URL' });
+    const field = page.locator('fb-try-it').getByRole('textbox', { name: 'Base URL' });
     await field.fill('https://api.example.com');
     await page.waitForTimeout(200);
 
@@ -226,12 +226,12 @@ test('the question is asked once, not on every operation opened after it', async
   const page = await open(`#/?src=${NO_SERVER}`);
   try {
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.method === 'POST');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.method === 'POST');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
     await showTab(page, 'tryit');
-    await page.locator('aw-try-it').getByRole('textbox', { name: 'Base URL' }).fill('https://api.example.com');
+    await page.locator('fb-try-it').getByRole('textbox', { name: 'Base URL' }).fill('https://api.example.com');
     await page.getByRole('button', { name: 'Use this' }).click();
     await page.waitForTimeout(300);
 
@@ -239,23 +239,23 @@ test('the question is asked once, not on every operation opened after it', async
     // screen it is clutter, and read aloud before every set of parameters it
     // is worse than clutter.
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.method === 'GET');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.method === 'GET');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
     await showTab(page, 'tryit');
-    assert.equal(await page.locator('aw-try-it .baseurl').count(), 0);
+    assert.equal(await page.locator('fb-try-it .baseurl').count(), 0);
     // It still reaches the request that operation would send.
     assert.match(await page.locator('.tryit__status').textContent(), /https:\/\/api\.example\.com\/notes/);
 
     // And it is still changeable, in the one place it lives afterwards.
-    await page.evaluate(() => window.__aw.actions.openOptions('base-url'));
+    await page.evaluate(() => window.__fb.actions.openOptions('base-url'));
     await page.waitForTimeout(400);
     const inSettings = page.locator('dialog[open]').getByRole('textbox', { name: 'Base URL' });
     assert.equal(await inSettings.count(), 1);
     assert.equal(await inSettings.inputValue(), 'https://api.example.com');
     // The command named the field, so the sheet opens on it.
-    assert.equal(await page.evaluate(() => document.activeElement?.closest('aw-base-url') !== null), true);
+    assert.equal(await page.evaluate(() => document.activeElement?.closest('fb-base-url') !== null), true);
 
     assert.deepEqual(await violations(page), []);
     assert.deepEqual(page.problems, []);
@@ -268,7 +268,7 @@ test('a schema that declares a server is never asked for a base URL', async () =
   const page = await open();
   try {
     await showTab(page, 'tryit');
-    assert.equal(await page.locator('aw-base-url .baseurl').count(), 0);
+    assert.equal(await page.locator('fb-base-url .baseurl').count(), 0);
   } finally {
     await page.close();
   }

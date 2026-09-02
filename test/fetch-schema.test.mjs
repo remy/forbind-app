@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import handler, { isPrivateHost, assertFetchable } from '../netlify/functions/fetch-schema.mjs';
 
-const call = (url) => handler(new Request(`https://allyway.example/api/fetch-schema?url=${encodeURIComponent(url)}`));
+const call = (url) => handler(new Request(`https://forbind.example/api/fetch-schema?url=${encodeURIComponent(url)}`));
 const body = async (response) => JSON.parse(await response.text());
 
 test('a private or link-local address is refused before any request is made', async () => {
@@ -67,15 +67,15 @@ test('non-http schemes and embedded credentials are refused', async () => {
 });
 
 test('a missing url parameter is a 400 with a sentence', async () => {
-  const response = await handler(new Request('https://allyway.example/api/fetch-schema'));
+  const response = await handler(new Request('https://forbind.example/api/fetch-schema'));
   assert.equal(response.status, 400);
   assert.match((await body(response)).error, /url. query parameter/);
 });
 
 test('only GET and OPTIONS are answered', async () => {
-  const response = await handler(new Request('https://allyway.example/api/fetch-schema?url=https://x.dev/a', { method: 'POST' }));
+  const response = await handler(new Request('https://forbind.example/api/fetch-schema?url=https://x.dev/a', { method: 'POST' }));
   assert.equal(response.status, 405);
-  const preflight = await handler(new Request('https://allyway.example/api/fetch-schema', { method: 'OPTIONS' }));
+  const preflight = await handler(new Request('https://forbind.example/api/fetch-schema', { method: 'OPTIONS' }));
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers.get('access-control-allow-methods'), 'GET, OPTIONS');
 });
@@ -83,6 +83,6 @@ test('only GET and OPTIONS are answered', async () => {
 test('every response is JSON and carries the CORS headers the page needs', async () => {
   const response = await call('http://127.0.0.1/x');
   assert.match(response.headers.get('content-type'), /application\/json/);
-  assert.equal(response.headers.get('access-control-allow-origin'), 'https://allyway.example');
+  assert.equal(response.headers.get('access-control-allow-origin'), 'https://forbind.example');
   assert.equal(response.headers.get('cache-control'), 'no-store');
 });

@@ -68,8 +68,8 @@ test('the store itself writes only the display preferences', () => {
     store.set({ schema: { sourceName: 'private-api.yaml', operations: [] } });
     store.patch('filters', { query: 'internal-only' });
 
-    assert.deepEqual(Object.keys(storage.dump()), ['allyway:prefs']);
-    assert.deepEqual(JSON.parse(storage.dump()['allyway:prefs']), {
+    assert.deepEqual(Object.keys(storage.dump()), ['forbind:prefs']);
+    assert.deepEqual(JSON.parse(storage.dump()['forbind:prefs']), {
       theme: 'dark', density: 'roomy', showHints: true, railCollapsed: false, listCollapsed: false,
     });
     const everything = JSON.stringify(storage.dump());
@@ -83,14 +83,14 @@ test('the store itself writes only the display preferences', () => {
 
 test('a folded column is remembered, and comes back folded', () => {
   const storage = fakeStorage();
-  storage.setItem('allyway:prefs', JSON.stringify({ railCollapsed: true, listCollapsed: true }));
+  storage.setItem('forbind:prefs', JSON.stringify({ railCollapsed: true, listCollapsed: true }));
   globalThis.localStorage = storage;
   try {
     const store = new Store();
     assert.equal(store.state.railCollapsed, true);
     assert.equal(store.state.listCollapsed, true);
     store.set({ listCollapsed: false });
-    assert.deepEqual(JSON.parse(storage.dump()['allyway:prefs']), {
+    assert.deepEqual(JSON.parse(storage.dump()['forbind:prefs']), {
       theme: 'auto', density: 'dense', showHints: true, railCollapsed: true, listCollapsed: false,
     });
   } finally {
@@ -100,7 +100,7 @@ test('a folded column is remembered, and comes back folded', () => {
 
 test('a stored preference is read back, and anything else in there is ignored', () => {
   const storage = fakeStorage();
-  storage.setItem('allyway:prefs', JSON.stringify({ theme: 'dark', density: 'roomy', credential: 'injected', schema: {} }));
+  storage.setItem('forbind:prefs', JSON.stringify({ theme: 'dark', density: 'roomy', credential: 'injected', schema: {} }));
   globalThis.localStorage = storage;
   try {
     const store = new Store();
@@ -131,7 +131,7 @@ test('storage that throws does not take the app down with it', () => {
 
 test('corrupt stored preferences fall back to the defaults', () => {
   const storage = fakeStorage();
-  storage.setItem('allyway:prefs', 'not json at all');
+  storage.setItem('forbind:prefs', 'not json at all');
   globalThis.localStorage = storage;
   try {
     assert.equal(new Store().state.theme, 'auto');

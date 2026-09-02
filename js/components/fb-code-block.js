@@ -10,7 +10,7 @@
  * and how long it is.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { buildRequest, SNIPPET_LANGUAGES, lineCount } from '../lib/request.js';
@@ -18,7 +18,7 @@ import { writeClipboard, selectContents } from '../lib/clipboard.js';
 
 const COPIED_MS = 2000;
 
-class AwCodeBlock extends AwElement {
+class FbCodeBlock extends FbElement {
   static observes = ['schema', 'auth', 'baseUrl'];
 
   /** @type {object|null} set by the parent before insertion */
@@ -146,4 +146,4 @@ class AwCodeBlock extends AwElement {
   }
 }
 
-define('aw-code-block', AwCodeBlock);
+define('fb-code-block', FbCodeBlock);

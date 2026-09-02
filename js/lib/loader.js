@@ -6,7 +6,7 @@
  *  1. A local file — read with FileReader, nothing leaves the machine.
  *  2. A URL fetched straight from the browser — works when the host sends
  *     CORS headers, which most published schemas do.
- *  3. The same URL via allyway's one server-side endpoint, used only when (2)
+ *  3. The same URL via forbind's one server-side endpoint, used only when (2)
  *     is blocked. This is the whole reason there is a server at all, and the
  *     UI says which route it used so nobody has to guess.
  */
@@ -64,7 +64,7 @@ export async function loadFromUrl(rawUrl, options = {}) {
         name: fileNameFromUrl(url),
         via: 'relay',
         url,
-        note: `Your browser could not fetch that URL directly (${directError}) so allyway fetched it server-side instead.`,
+        note: `Your browser could not fetch that URL directly (${directError}) so forbind fetched it server-side instead.`,
       };
     }
     if (payload?.error) {

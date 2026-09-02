@@ -2,7 +2,7 @@
  * The two strips above the dense endpoint list.
  *
  * Neither is a row and neither is part of the keyboard model the list runs, so
- * they live here rather than in `aw-endpoint-list.js`: that file is the rows,
+ * they live here rather than in `fb-endpoint-list.js`: that file is the rows,
  * the roving cursor and the type-ahead, and it has enough in it already.
  *
  * Both are custom elements rather than markup the list draws, so that a change
@@ -10,7 +10,7 @@
  * keyboard may be standing on.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 
 /**
@@ -27,7 +27,7 @@ import { el, replace } from '../lib/dom.js';
  * What is left is about deprecation, not method, so the bar renders nothing at
  * all for a schema that deprecates nothing.
  */
-class AwDeprecatedBar extends AwElement {
+class FbDeprecatedBar extends FbElement {
   static observes = ['schema', 'filters'];
 
   render(state) {
@@ -63,7 +63,7 @@ class AwDeprecatedBar extends AwElement {
  * mean two tab stops for the same control, so it is a media query in JS
  * instead.
  */
-class AwTagChips extends AwElement {
+class FbTagChips extends FbElement {
   static observes = ['schema', 'filters', 'railCollapsed'];
 
   #media = null;
@@ -111,5 +111,5 @@ class AwTagChips extends AwElement {
   }
 }
 
-define('aw-deprecated-bar', AwDeprecatedBar);
-define('aw-tag-chips', AwTagChips);
+define('fb-deprecated-bar', FbDeprecatedBar);
+define('fb-tag-chips', FbTagChips);

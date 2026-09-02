@@ -1,5 +1,5 @@
 /**
- * The only server-side code in allyway.
+ * The only server-side code in forbind.
  *
  * A browser cannot read a cross-origin response unless the other server opts
  * in with CORS headers, and plenty of published OpenAPI documents do not. This
@@ -48,7 +48,7 @@ export default async function handler(request) {
         signal: controller.signal,
         headers: {
           Accept: 'application/json, application/yaml, text/yaml, text/plain;q=0.9, */*;q=0.5',
-          'User-Agent': 'allyway-schema-fetch/1.0',
+          'User-Agent': 'forbind-schema-fetch/1.0',
         },
       });
       if (response.status < 300 || response.status >= 400) break;

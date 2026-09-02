@@ -18,7 +18,7 @@
  * keystroke away.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 import { wireDialog } from '../lib/dialog.js';
 import { announce } from '../lib/announce.js';
@@ -34,7 +34,7 @@ const DENSITIES = [
   ['roomy', 'Roomy', 'Two panes, no rail. Search owns the header and rows carry a summary and metadata.'],
 ];
 
-class AwOptions extends AwElement {
+class FbOptions extends FbElement {
   static observes = ['optionsOpen', 'theme', 'density', 'showHints'];
 
   #dialog = null;
@@ -49,7 +49,7 @@ class AwOptions extends AwElement {
       // asks for that control instead, and gets it if it is on screen at all.
       initialFocus: () => {
         const asked = this.actions.takeOptionsFocus?.();
-        const named = asked === 'base-url' ? this.querySelector('aw-base-url input') : null;
+        const named = asked === 'base-url' ? this.querySelector('fb-base-url input') : null;
         // The sheet is focused with `preventScroll`, which is right for a
         // control at the top and wrong for one near the bottom: bring it into
         // view first, so the field the command named is also the field on
@@ -137,7 +137,7 @@ class AwOptions extends AwElement {
         ]),
 
         // Renders nothing at all unless the loaded schema left the gap.
-        el('aw-base-url', { variant: 'settings' }),
+        el('fb-base-url', { variant: 'settings' }),
 
         el('p', { class: 'help' }, [
           el('span', { text: 'Reduced motion and increased contrast are taken from your system settings and are not overridden here.' }),
@@ -156,4 +156,4 @@ class AwOptions extends AwElement {
   }
 }
 
-define('aw-options', AwOptions);
+define('fb-options', FbOptions);

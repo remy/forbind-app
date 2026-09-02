@@ -21,7 +21,7 @@ async function failedFetch(page, url = MISSING) {
   await page.locator('#schema-url').fill(url);
   await page.getByRole('button', { name: 'Fetch' }).click();
   await page.waitForFunction(
-    () => window.__aw?.store.state.schemaState === 'error',
+    () => window.__fb?.store.state.schemaState === 'error',
     null,
     { timeout: 15000 },
   );
@@ -32,7 +32,7 @@ test('the landing page is the mark and the name, and says what it is in the foot
   const page = await open('');
   try {
     const heading = await page.getByRole('heading', { level: 1 }).first();
-    assert.match((await heading.textContent()).trim(), /^Allyway$/);
+    assert.match((await heading.textContent()).trim(), /^Forbind$/);
     // The mark is decoration beside the word, so it says nothing of its own.
     assert.equal(await heading.locator('svg[aria-hidden="true"]').count(), 1);
 
@@ -100,12 +100,12 @@ test('a schema that parses clears the address it was fetched from', async () => 
     await page.locator('#schema-url').fill('/samples/bookings-api.v2.yaml');
     await page.getByRole('button', { name: 'Fetch' }).click();
     await page.waitForFunction(
-      () => window.__aw?.store.state.schemaState === 'ready',
+      () => window.__fb?.store.state.schemaState === 'ready',
       null,
       { timeout: 15000 },
     );
 
-    assert.equal(await page.evaluate(() => window.__aw.store.state.importUrl), '');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.importUrl), '');
   } finally {
     await page.close();
   }

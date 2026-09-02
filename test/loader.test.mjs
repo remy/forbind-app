@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { normaliseUrl, loadFromUrl, describeFetchFailure } from '../js/lib/loader.js';
 
-const BASE = 'https://allyway.example/index.html';
+const BASE = 'https://forbind.example/index.html';
 
 test('URLs are accepted in the shapes people paste them in', () => {
   assert.equal(normaliseUrl('https://api.example.com/openapi.yaml', BASE), 'https://api.example.com/openapi.yaml');
@@ -10,7 +10,7 @@ test('URLs are accepted in the shapes people paste them in', () => {
   // A bare host gets https, not a guess at a scheme.
   assert.equal(normaliseUrl('api.example.com/o.yaml', BASE), 'https://api.example.com/o.yaml');
   // A same-origin path stays same-origin.
-  assert.equal(normaliseUrl('/samples/x.yaml', BASE), 'https://allyway.example/samples/x.yaml');
+  assert.equal(normaliseUrl('/samples/x.yaml', BASE), 'https://forbind.example/samples/x.yaml');
   assert.equal(normaliseUrl('  https://x.dev/a  ', BASE), 'https://x.dev/a');
 });
 

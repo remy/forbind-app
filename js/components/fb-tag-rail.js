@@ -15,10 +15,10 @@
  * shut a drawer the reader opened.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 
-class AwTagRail extends AwElement {
+class FbTagRail extends FbElement {
   static observes = ['schema', 'filters', 'selectedSchemaName'];
 
   /** Whether the reader has opened the schema drawer. Shut on arrival. */
@@ -138,7 +138,7 @@ class AwTagRail extends AwElement {
  * checkboxes in the flow of the page rather than in a popup — a menu that has
  * to be positioned is a menu that breaks at 400% zoom.
  */
-class AwFacets extends AwElement {
+class FbFacets extends FbElement {
   static observes = ['schema', 'filters'];
 
   /** @type {string|null} which facet panel is open */
@@ -223,5 +223,5 @@ class AwFacets extends AwElement {
   }
 }
 
-define('aw-tag-rail', AwTagRail);
-define('aw-facets', AwFacets);
+define('fb-tag-rail', FbTagRail);
+define('fb-facets', FbFacets);

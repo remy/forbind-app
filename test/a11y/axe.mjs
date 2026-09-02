@@ -23,7 +23,7 @@ const SCREENS = [
   ['the dense browser', async () => open()],
   ['the roomy browser', async () => {
     const page = await open();
-    await page.evaluate(() => window.__aw.actions.setDensity('roomy'));
+    await page.evaluate(() => window.__fb.actions.setDensity('roomy'));
     await page.waitForTimeout(400);
     return page;
   }],
@@ -51,13 +51,13 @@ const SCREENS = [
   ['the detail on a phone', async () => open(`#/op/post-v2-bookings?src=${SRC}`, { viewport: { width: 390, height: 720 } })],
   ['the responses tab, opened up', async () => {
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
-    await page.evaluate(() => document.querySelector('aw-detail')?.showTab('responses'));
+    await page.evaluate(() => document.querySelector('fb-detail')?.showTab('responses'));
     await page.waitForTimeout(500);
     return page;
   }],
   ['the try-it panel', async () => {
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
-    await page.evaluate(() => document.querySelector('aw-detail')?.showTab('tryit'));
+    await page.evaluate(() => document.querySelector('fb-detail')?.showTab('tryit'));
     await page.waitForTimeout(500);
     return page;
   }],

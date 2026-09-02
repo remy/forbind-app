@@ -8,13 +8,13 @@
  * own updates.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 import { registerRegions } from '../lib/announce.js';
 
 const SMALL_SCREEN = '(max-width: 48rem)';
 
-class AwApp extends AwElement {
+class FbApp extends FbElement {
   static observes = ['schemaState', 'browsing', 'density', 'mobileView', 'railCollapsed', 'listCollapsed'];
 
   #media = null;
@@ -125,14 +125,14 @@ class AwApp extends AwElement {
       class: 'live-region',
       'aria-live': 'polite',
       'aria-atomic': 'true',
-      id: 'aw-live-polite',
+      id: 'fb-live-polite',
     });
     const assertive = el('div', {
       class: 'live-region',
       role: 'alert',
       'aria-live': 'assertive',
       'aria-atomic': 'true',
-      id: 'aw-live-assertive',
+      id: 'fb-live-assertive',
     });
 
     replace(this, [
@@ -140,9 +140,9 @@ class AwApp extends AwElement {
       this.#body,
       polite,
       assertive,
-      el('aw-palette', {}),
-      el('aw-auth-sheet', {}),
-      el('aw-options', {}),
+      el('fb-palette', {}),
+      el('fb-auth-sheet', {}),
+      el('fb-options', {}),
     ]);
 
     registerRegions(polite, assertive);
@@ -158,7 +158,7 @@ class AwApp extends AwElement {
    */
   #renderImport() {
     return el('div', { class: 'app app--import', 'data-density': 'dense' }, [
-      el('main', { id: 'main', tabindex: '-1', 'aria-label': 'Load a schema' }, [el('aw-import', {})]),
+      el('main', { id: 'main', tabindex: '-1', 'aria-label': 'Load a schema' }, [el('fb-import', {})]),
       el('footer', { class: 'site-foot' }, [
         el('p', {}, [
           'Accessibility centred API browser developed using LLMs guided and checked by ',
@@ -174,18 +174,18 @@ class AwApp extends AwElement {
     const banner = el('header', { class: 'banner', role: 'banner' }, [
       // One h1 per page, naming the tool and the document it is showing.
       el('h1', { class: 'visually-hidden' }, [
-        `allyway — ${state.schema.title}${state.schema.version ? ` ${state.schema.version}` : ''}`,
+        `forbind — ${state.schema.title}${state.schema.version ? ` ${state.schema.version}` : ''}`,
       ]),
-      el('aw-topbar', {}),
+      el('fb-topbar', {}),
       // The roomy IA folds the schema meta into the header row rather than
       // giving it a strip of its own, as drawn in 1b.
-      roomy ? null : el('aw-meta-strip', {}),
+      roomy ? null : el('fb-meta-strip', {}),
     ]);
 
     const rail = el(
       'nav',
       { class: 'rail', id: 'tag-nav', tabindex: '-1', 'aria-label': 'Tags and schemas' },
-      [el('aw-tag-rail', {})],
+      [el('fb-tag-rail', {})],
     );
 
     const listPane = el(
@@ -196,7 +196,7 @@ class AwApp extends AwElement {
         tabindex: '-1',
         'aria-label': 'Endpoints',
       },
-      [el('aw-endpoint-list', {})],
+      [el('fb-endpoint-list', {})],
     );
 
     const detailPane = el(
@@ -207,7 +207,7 @@ class AwApp extends AwElement {
         tabindex: '-1',
         'aria-label': 'Operation detail',
       },
-      [el('aw-detail', {})],
+      [el('fb-detail', {})],
     );
 
     const main = el('main', {
@@ -278,4 +278,4 @@ function focusSkipTarget(selector, reveal) {
   if (typeof target.select === 'function') target.select();
 }
 
-define('aw-app', AwApp);
+define('fb-app', FbApp);

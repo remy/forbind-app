@@ -3,7 +3,7 @@
  *
  * The request goes straight from the browser to whatever host the schema
  * declares. There is no proxy, by design — a proxy would mean the credential
- * passing through allyway's server, which is exactly what the auth sheet
+ * passing through forbind's server, which is exactly what the auth sheet
  * promises does not happen. The cost of that decision is CORS: a browser
  * cannot read a cross-origin response unless the API says it may. So when a
  * request fails that way, the panel says so in those words instead of showing
@@ -19,7 +19,7 @@
  * panel around them — what has been typed, what is being sent, what came back.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { buildRequest, parameterExample } from '../lib/request.js';
@@ -33,7 +33,7 @@ function liveSentence(op, host) {
     + 'It is not a sandbox — whatever it changes, stays changed.';
 }
 
-class AwTryIt extends AwElement {
+class FbTryIt extends FbElement {
   static observes = ['schema', 'auth', 'baseUrl'];
 
   /** @type {object|null} */
@@ -72,7 +72,7 @@ class AwTryIt extends AwElement {
     if (this.#operationId !== this.operation.id) {
       this.#operationId = this.operation.id;
       this.#clear();
-      // The next operation gets a fresh field — that is aw-base-url's own
+      // The next operation gets a fresh field — that is fb-base-url's own
       // rule, and by then the question has usually been answered. Reset does
       // not do this: a base URL is not one of the fields it empties.
       this.#baseUrlField = null;
@@ -107,7 +107,7 @@ class AwTryIt extends AwElement {
     // with its own `servers` needs nothing here even when the document does.
     // Kept, like this panel is, so a host typed but not yet applied is still
     // there after a trip to another tab.
-    this.#baseUrlField ??= el('aw-base-url', { variant: 'inline' });
+    this.#baseUrlField ??= el('fb-base-url', { variant: 'inline' });
     this.#baseUrlField.operation = op;
 
     replace(this, [
@@ -289,7 +289,7 @@ class AwTryIt extends AwElement {
       };
       this.render(this.state);
       announce('Cannot send: no base URL. Set one in the field above the form.', { assertive: true });
-      this.querySelector('aw-base-url input')?.focus();
+      this.querySelector('fb-base-url input')?.focus();
       return;
     }
 
@@ -374,4 +374,4 @@ class AwTryIt extends AwElement {
 
 }
 
-define('aw-try-it', AwTryIt);
+define('fb-try-it', FbTryIt);

@@ -36,7 +36,7 @@ hidden by a relay. So the failure case is the designed case: when a response
 cannot be read, the panel names the two things it can be (unreachable host, or
 no `Access-Control-Allow-Origin` for this origin), says the request may well
 have succeeded regardless, points at the browser's network panel, and explains
-why allyway will not proxy it.
+why forbind will not proxy it.
 
 Mutating verbs get a `LIVE` warning above the form. An operation with a declared
 scheme and no credential set gets a `NO TOKEN` warning and a link to the sheet.
@@ -162,13 +162,13 @@ if it is drawn again. Two sections are not that: Try it holds a part-filled
 form, and Code holds the language the reader picked. Rebuilding those on a tab
 switch is a silent undo of work nobody asked to lose, and the round trip that
 did it — Code, Try it, away, back — is the ordinary way round the tab set, not
-an edge case. So `aw-detail` keeps those two elements and re-attaches them,
+an edge case. So `fb-detail` keeps those two elements and re-attaches them,
 and drops them only when the document changes.
 
 Responses take the same rule by another route. The section is cheap to draw
 again and there is nothing typed into it, so it is still rebuilt — but which
 disclosures are unfolded is an answer the reader gave, so the set of open
-status codes is held by `aw-detail` and handed to the section on every render.
+status codes is held by `fb-detail` and handed to the section on every render.
 Folding one shut is remembered as firmly as opening one; a different operation
 starts from its own default, which is the single success response where there
 is exactly one.
@@ -231,7 +231,7 @@ Each is either a state the design implies or a route out of a dead end.
   so the shape survives and the turn is what carries the state.
 - **The landing page is the mark and the name.** The `h1` was the instruction,
   `Load an OpenAPI schema`; the instruction moved into the lede under it and
-  the heading became the logo beside the word `Allyway`, with what the tool is
+  the heading became the logo beside the word `Forbind`, with what the tool is
   said once in a real `contentinfo` footer. The mark is `currentColor` and
   sized in `em`, so it follows the ink into dark mode and forced colours and
   grows with a text-size preference rather than leaving the word to outgrow it;
