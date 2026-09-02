@@ -50,6 +50,8 @@ export function initialState() {
       credential: '',
       /** 'idle' | 'checking' | 'valid' | 'invalid' */
       verifyState: 'idle',
+      /** The word the last probe earned — REJECTED and FORBIDDEN differ. */
+      verifyWord: '',
       message: '',
       scopes: [],
       expiresAt: null,

@@ -248,7 +248,7 @@ class FbAuthSheet extends FbElement {
           dataset: { focusKey: `auth-scheme-${scheme.id}` },
           '.checked': scheme.id === active.id,
           onchange: () => {
-            this.actions.setAuth({ schemeId: scheme.id, verifyState: 'idle', message: '' });
+            this.actions.setAuth({ schemeId: scheme.id, verifyState: 'idle', verifyWord: '', message: '' });
             this.#renderSheet();
           },
         }),
@@ -271,7 +271,7 @@ class FbAuthSheet extends FbElement {
    * leading word carries which one this is, so the tint is never the message.
    */
   #renderVerdict(state) {
-    const { verifyState, message, scopes, expiresAt } = state.auth;
+    const { verifyState, verifyWord, message, scopes, expiresAt } = state.auth;
     const claims = [
       scopes.length ? `${scopes.length} ${scopes.length === 1 ? 'scope' : 'scopes'}` : null,
       describeExpiry(expiresAt),
@@ -285,7 +285,11 @@ class FbAuthSheet extends FbElement {
 
     if (verifyState === 'checking') return wrap('checking', 'CHECKING', message || 'Sending a probe request…');
     if (verifyState === 'valid') return wrap('valid', 'VERIFIED', [message, ...claims].filter(Boolean).join(' · '));
-    if (verifyState === 'invalid') return wrap('invalid', 'REJECTED', message);
+    /* `interpretProbe` already chose the word, and the two it chooses between
+       here do not mean the same thing: REJECTED is the token turned away,
+       FORBIDDEN is the token understood and the call not allowed. Hard-coding
+       REJECTED put a heading on screen that its own sentence contradicted. */
+    if (verifyState === 'invalid') return wrap('invalid', verifyWord || 'REJECTED', message);
     if (claims.length) {
       return wrap(
         'unknown',
@@ -333,6 +337,7 @@ class FbAuthSheet extends FbElement {
       scopes: jwt?.scopes ?? [],
       expiresAt: jwt?.expiresAt ?? null,
       verifyState: 'idle',
+      verifyWord: '',
       message: jwt && jwt.issuer ? `Issued by ${jwt.issuer}` : '',
     });
     this.#draft = credential;
@@ -366,10 +371,13 @@ class FbAuthSheet extends FbElement {
       return;
     }
 
-    const probe = pickProbeOperation(state.schema.operations, scheme.id);
+    // The token's own scopes steer which endpoint is probed, so a good
+    // credential is not judged by an admin call it was never meant to make.
+    const probe = pickProbeOperation(state.schema.operations, scheme.id, this.state.auth.scopes);
     if (!probe) {
       this.actions.setAuth({
         verifyState: 'idle',
+        verifyWord: '',
         message: 'No GET operation in this schema can be called without inventing a path parameter, so there is nothing safe to probe with. The local read above still stands.',
       });
       this.#renderSheet();
@@ -386,6 +394,7 @@ class FbAuthSheet extends FbElement {
     if (!built.url || built.url.startsWith('/')) {
       this.actions.setAuth({
         verifyState: 'idle',
+        verifyWord: '',
         message: 'There is no host in front of these paths, so there is nowhere to send a probe. Set a base URL on the parse report or in Try it, and this can run.',
       });
       this.#renderSheet();
@@ -410,6 +419,7 @@ class FbAuthSheet extends FbElement {
       const detail = `${verdict.text} Probed with GET ${probe.path}.`;
       this.actions.setAuth({
         verifyState: verdict.state,
+        verifyWord: verdict.word,
         message: detail,
         scopes: jwt?.scopes ?? this.state.auth.scopes,
         expiresAt: jwt?.expiresAt ?? this.state.auth.expiresAt,
@@ -419,6 +429,7 @@ class FbAuthSheet extends FbElement {
       const aborted = error?.name === 'AbortError';
       this.actions.setAuth({
         verifyState: 'idle',
+        verifyWord: '',
         message: aborted
           ? 'The probe timed out after 15 seconds, which says nothing about the token.'
           : 'The browser could not read the probe response — either the host is unreachable, or it did not send CORS headers allowing this origin. Neither tells you whether the token is good. The local read above still stands.',

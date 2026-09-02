@@ -88,8 +88,19 @@ export function describeExpiry(expiresAt, now = Date.now()) {
  * no required path parameters to invent, and preferably no required query
  * parameters either. If nothing qualifies we do not guess — the sheet says so
  * and offers the local read instead.
+ *
+ * The scopes matter as much as the shape. Probing whatever came first in the
+ * document lands on an admin endpoint as readily as anything else, and a token
+ * that is perfectly good everywhere else comes back forbidden — a verdict about
+ * that one endpoint's scopes read as a verdict about the credential. So the
+ * scopes the token declares narrow the field first, and the least privileged
+ * call that is left wins.
+ *
+ * @param {object[]} operations
+ * @param {string} schemeId
+ * @param {string[]} [tokenScopes] what the token says it holds, if it says
  */
-export function pickProbeOperation(operations, schemeId) {
+export function pickProbeOperation(operations, schemeId, tokenScopes = []) {
   const candidates = operations.filter(
     (op) =>
       op.method === 'GET' &&
@@ -98,8 +109,22 @@ export function pickProbeOperation(operations, schemeId) {
       op.parameters.every((p) => p.in !== 'path') ,
   );
   if (!candidates.length) return null;
-  const noRequiredQuery = candidates.find((op) => op.parameters.every((p) => !p.required));
-  return noRequiredQuery ?? candidates[0];
+
+  /** What this operation asks for under the scheme being tested. */
+  const needs = (op) => op.security.find((s) => s.schemeId === schemeId)?.scopes ?? [];
+
+  // A token that declares nothing leaves this set empty, which is the same
+  // answer by a different route: an endpoint asking for no scope at all is the
+  // one most likely to say something about the credential rather than about
+  // permissions.
+  const held = new Set(tokenScopes);
+  const reachable = candidates.filter((op) => needs(op).every((scope) => held.has(scope)));
+  const pool = reachable.length ? reachable : candidates;
+
+  // Nothing to invent first, fewest scopes second. Sorting is stable, so ties
+  // keep document order and the pick stays the same between presses of Test.
+  const invents = (op) => (op.parameters.every((p) => !p.required) ? 0 : 1);
+  return [...pool].sort((a, b) => invents(a) - invents(b) || needs(a).length - needs(b).length)[0];
 }
 
 /**

@@ -220,6 +220,7 @@ async function ingest(promise, { note = null, restoring = false, url = '' } = {}
         credential: restoredAuth?.credential ?? '',
         remember: restoredAuth?.remember ?? false,
         verifyState: 'idle',
+        verifyWord: '',
         message: '',
         scopes: [],
         expiresAt: null,
@@ -525,7 +526,7 @@ const actions = {
   forgetAuth() {
     clearAuth();
     store.patch('auth', {
-      credential: '', remember: false, verifyState: 'idle', message: '', scopes: [], expiresAt: null,
+      credential: '', remember: false, verifyState: 'idle', verifyWord: '', message: '', scopes: [], expiresAt: null,
     });
     announce('Credential forgotten, and removed from this browser\u2019s storage.');
   },

@@ -175,14 +175,30 @@ export function buildRequest({
   const headers = [];
   const headerValues = values.header ?? {};
 
-  const requirement = operation.security?.[0] ?? null;
+  /* The reader holds one credential, for one scheme, and an operation can name
+     more than one \u2014 alternatives (`[{a: []}, {b: []}]`) or a combination
+     (`[{a: [], b: []}]`), which the parser flattens into the same list. Taking
+     the first entry sent the placeholder instead of the credential whenever the
+     scheme the reader picked was not the one that happened to be listed first,
+     which is a request that goes out unauthenticated while the panel says a
+     credential is set. Find the requirement that names the chosen scheme; fall
+     back to the first, which is the case the warnings below are for. */
+  const requirements = operation.security ?? [];
+  const requirement = requirements.find((s) => s.schemeId === auth?.schemeId) ?? requirements[0] ?? null;
   const scheme = requirement?.scheme ?? null;
   if (scheme) {
     const placeholder = credentialPlaceholder(scheme);
     const real = auth?.schemeId === requirement.schemeId ? (auth.credential ?? '').trim() : '';
     const secret = revealCredential && real ? real : placeholder;
     if (revealCredential && !real) {
-      warnings.push('No credential is set for this operation\u2019s security scheme, so the request will be sent unauthenticated.');
+      /* Two different gaps, and telling them apart is the whole point: nothing
+         set at all, or something set against a scheme this operation does not
+         ask for. The second one looks like working auth from the outside. */
+      warnings.push(
+        auth?.credential && auth.schemeId
+          ? `The credential you set is for \`${auth.schemeId}\`, and this operation asks for ${requirements.map((s) => `\`${s.schemeId}\``).join(' or ')}, so the request will be sent unauthenticated.`
+          : 'No credential is set for this operation\u2019s security scheme, so the request will be sent unauthenticated.',
+      );
     }
     if (scheme.type === 'http' && scheme.scheme === 'bearer') {
       headers.push(['Authorization', `Bearer ${secret}`]);
