@@ -298,6 +298,11 @@ table.params .col-notes {
   color: var(--ink-55);
 }
 .result__body { padding: var(--s-12); }
+/* A section is a stack — heading, the thing, the note under it — so the space
+   between its parts is a gap on the column rather than a margin on each part
+   that has to be undone at the ends. The step between sections is bigger than
+   the step inside one, which is what says where a section stops. */
+.result__section { display: flex; flex-direction: column; gap: var(--s-8); }
 .result__section + .result__section { margin-top: var(--s-14); }
 .result__note {
   font: 400 var(--t-11-5) / 1.6 var(--font-sans);
@@ -309,7 +314,6 @@ table.params .col-notes {
   gap: var(--s-10);
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: var(--s-9);
 }
 .result__section-head .label { margin: 0; }
 .result__copy { margin-left: auto; }

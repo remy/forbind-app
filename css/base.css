@@ -299,6 +299,9 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
    on its own. */
 .word {
   flex: none;
+  /* Nudged off the top: the word is set in small caps-height mono next to
+     sentence-case text, so its optical centre sits high without this. */
+  margin-top: 2px;
   font: 600 var(--t-10) / 1.6 var(--font-mono);
   letter-spacing: var(--ls-label-sm);
 }
