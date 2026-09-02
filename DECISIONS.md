@@ -232,10 +232,18 @@ Each is either a state the design implies or a route out of a dead end.
 - **The landing page is the mark and the name.** The `h1` was the instruction,
   `Load an OpenAPI schema`; the instruction moved into the lede under it and
   the heading became the logo beside the word `Forbind`, with what the tool is
-  said once in a real `contentinfo` footer. The mark is `currentColor` and
-  sized in `em`, so it follows the ink into dark mode and forced colours and
+  said once in a real `contentinfo` footer. The mark is a ring split down its
+  vertical axis, pink leading and grey trailing, and it is sized in `em` so it
   grows with a text-size preference rather than leaving the word to outgrow it;
-  it is `aria-hidden`, because the word beside it already is the name.
+  it is `aria-hidden`, because the word beside it already is the name. Its two
+  halves are the brand's colours in both themes and it opts out of forced
+  colours with `forced-color-adjust: none` — everything else in the app hands
+  its colours to the system there, but forcing a two-tone mark paints both
+  halves the same value and there is no mark left. That is the logo exemption
+  WCAG names, and it costs nothing, because the mark is decoration. The
+  hairline tracing the ring is black in both themes rather than the ink: it is
+  an edge on two light fills, and inverted in dark mode it read as a halo
+  around the ring rather than an edge on it.
 - **A component schema view** (`#/schema/Booking`) — the mock's rail lists
   schemas and its params table links to one, so both needed a destination. It
   shows the fields and which operations use it.

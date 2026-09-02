@@ -230,6 +230,19 @@
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Colour — the mark. Brand constants, the same in either theme, because a logo
+   that changes hue is a different logo. The hairline stays black rather than
+   following the ink: it traces the edge of two light fills, and inverted to a
+   pale line in dark mode it read as a halo around the ring instead of an edge
+   on it.
+--------------------------------------------------------------------------- */
+:root {
+  --mark-accent: #ee2a5d;
+  --mark-mute: #dad5d4;
+  --mark-rule: #000000;
+}
+
 /* People who ask their OS for more contrast get the hairlines darkened and the
    quiet greys pulled toward the ink. Nothing moves; only contrast changes.
 

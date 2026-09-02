@@ -1,11 +1,13 @@
 /**
  * The forbind mark.
  *
- * The same three paths as `assets/favicon.svg`, drawn in `currentColor` so the
- * mark follows the ink of whatever it sits in — light, dark and forced-colours
- * alike — rather than shipping a second copy per theme. It is decoration: the
- * word beside it is the name, so the SVG is hidden from assistive technology
- * and carries no title of its own.
+ * The same four shapes as `assets/favicon.svg`: a ring split down its vertical
+ * axis, the leading half in the brand pink and the trailing half in the brand
+ * grey, hairlines tracing the ring's two edges. Shape is set here as
+ * presentation attributes; colour comes from `--mark-*` in `css/tokens.css`, so
+ * the two halves stay the brand's colours in either theme and only the hairline
+ * follows the ink. It is decoration: the word beside it is the name, so the SVG
+ * is hidden from assistive technology and carries no title of its own.
  *
  * Built with `createElementNS`, because `el()` in dom.js uses
  * `createElement` and an SVG in the HTML namespace does not render.
@@ -13,11 +15,14 @@
 
 const NS = 'http://www.w3.org/2000/svg';
 
-const PATHS = [
-  'M344 217.1c-1.4.6-4 2.4-5.8 4.2-3.3 3.2-3.2 2.9-24.8 58.2-14.5 37.2-31.5 80.2-33 83.4-.8 1.8-1.3 3.6-1 3.8.3.3 4.9-2.2 10.3-5.5 12.9-7.9 20.3-11.6 34.7-17.3l12-4.7 6.8-17.8c3.8-9.9 10.3-27 14.5-38.2 4.2-11.1 8.1-20.2 8.7-20.2.7 0 4.1 7.5 7.5 16.7 9.4 24.8 15 39.4 16.5 42.8l1.4 3.1 11.8-1.7c6.6-1 16.2-2.1 21.4-2.5 5.2-.3 9.8-.8 10.1-1 .4-.2-1.1-4.8-3.4-10.1-2.2-5.4-10.6-26.8-18.8-47.7-15.3-39.4-16.9-42.3-23.6-45.2-3.9-1.7-41.3-1.9-45.3-.3',
-  'M470.6 309.6c-1.9 1.9-2 4.9-.1 13.4 2.6 11.6 4 10.6-15.2 11.4-56.6 2.4-105.1 12.7-140.8 30-22.6 11-38.7 23.6-47.5 37.1-4 6.1-25.4 58.4-28.2 68.8-1.5 5.8.1 10.1 4.4 11.6 1.7.6 9.6 1.1 17.5 1.1 20.8 0 21.1-.2 29.9-22.8 16.3-42 18.7-47.8 20.2-49.6 3.1-3.4 13.3-9.8 23.6-14.7 29.1-13.9 69.8-22 127.5-25.4l10.4-.6-.6 3.8c-.3 2.1-1.1 7.1-1.8 11.1-1.3 7-1.2 7.3.9 9.4s2.3 2.1 5.4.5c1.8-.9 8-5.1 13.8-9.2 5.8-4.2 17.5-12.4 26-18.4 8.6-6 16.1-11.6 16.9-12.4 3.1-3.8 1.2-5.7-21.4-21.5-39.9-27.8-37.9-26.6-40.9-23.6',
-  'M445 386.5c-.8.2-7.5.9-14.8 1.5-7.3.7-13.5 1.6-13.8 2.1-.7 1.2 2.2 9 22.3 61.4 6.8 17.7 10.7 25.7 13.7 28.5 2.7 2.5 3 2.5 20.3 2.5h17.5l2.4-2.8c1.3-1.5 2.4-4 2.4-5.4 0-2.2-5.2-16.4-19.8-53.8-2.2-5.4-4.3-10-4.8-10.1s-2.1-.5-3.6-.8c-3.7-.8-9.8-6.3-11.4-10.3-.8-1.8-1.4-5.5-1.4-8.3v-5l-3.7.1c-2.1.1-4.5.3-5.3.4',
+/** The two halves of the ring: same arc, swept the two ways round. */
+const HALVES = [
+  ['M 50 12.5 A 37.5 37.5 0 0 0 50 87.5', 'brand__mark-half--accent'],
+  ['M 50 12.5 A 37.5 37.5 0 0 1 50 87.5', 'brand__mark-half--mute'],
 ];
+
+/** Outer and inner edge of the band, as radii. */
+const EDGES = [49.25, 25];
 
 /**
  * @param {string} [className]
@@ -26,14 +31,29 @@ const PATHS = [
 export function logoMark(className = 'brand__mark') {
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('class', className);
-  svg.setAttribute('viewBox', '222.25 200.005 327.805 298.995');
-  svg.setAttribute('fill', 'currentColor');
+  svg.setAttribute('viewBox', '0 0 100 100');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('focusable', 'false');
-  for (const d of PATHS) {
+
+  for (const [d, half] of HALVES) {
     const path = document.createElementNS(NS, 'path');
+    path.setAttribute('class', `brand__mark-half ${half}`);
     path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-width', '25');
     svg.appendChild(path);
   }
+
+  for (const r of EDGES) {
+    const circle = document.createElementNS(NS, 'circle');
+    circle.setAttribute('class', 'brand__mark-rule');
+    circle.setAttribute('cx', '50');
+    circle.setAttribute('cy', '50');
+    circle.setAttribute('r', String(r));
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke-width', '1.5');
+    svg.appendChild(circle);
+  }
+
   return svg;
 }

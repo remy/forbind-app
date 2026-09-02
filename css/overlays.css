@@ -218,10 +218,20 @@ dialog.palette {
 
 /* The mark sits on the text baseline-ish and is sized in `em`, so a text-size
    preference scales the lockup rather than leaving the word to grow past a
-   fixed logo. It is `currentColor`, so it follows the ink into dark mode and
-   into forced colours without a second asset. */
+   fixed logo. Shape is in the SVG, colour is here: the two halves are the
+   brand's own pink and grey, and the hairline tracing them is black, in both
+   themes alike — one asset rather than one per mode.
+
+   `forced-color-adjust: none` keeps those colours in Windows High Contrast.
+   Everything else in the app hands its colours to the system there; a logo is
+   the exception WCAG names, and forcing this one repaints both halves the same
+   value, which is to say it erases the mark. It is `aria-hidden` decoration
+   beside the word, so nothing is carried by the colour alone. */
 .brand { display: flex; align-items: center; gap: var(--s-10); }
-.brand__mark { width: 1.15em; height: 1.15em; flex: none; }
+.brand__mark { width: 1.15em; height: 1.15em; flex: none; forced-color-adjust: none; }
+.brand__mark-half--accent { stroke: var(--mark-accent); }
+.brand__mark-half--mute { stroke: var(--mark-mute); }
+.brand__mark-rule { stroke: var(--mark-rule); }
 .brand__name { display: block; }
 
 .dropzone {
