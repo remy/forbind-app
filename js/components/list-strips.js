@@ -30,11 +30,26 @@ import { el, replace } from '../lib/dom.js';
 class FbDeprecatedBar extends FbElement {
   static observes = ['schema', 'filters'];
 
+  /** The bar as drawn, and the count it was drawn for. */
+  #bar = null;
+  #drawnFor = null;
+
   render(state) {
     const { schema, filters } = state;
     const deprecated = schema?.report.counts.deprecated ?? 0;
     if (!deprecated) {
       replace(this, []);
+      this.#bar = null;
+      this.#drawnFor = null;
+      return;
+    }
+
+    /* Pressing one of these chips is what changes the filters, so the button
+       this render would destroy is the one the keyboard is standing on. Only
+       which chip reads as pressed changes, and an attribute can be patched
+       where it is. */
+    if (this.#bar?.isConnected && this.#drawnFor === deprecated) {
+      this.#patch(filters);
       return;
     }
 
@@ -47,12 +62,19 @@ class FbDeprecatedBar extends FbElement {
         text: label,
       });
 
-    replace(this, [
-      el('div', { class: 'filterbar', id: 'deprecated-filters', role: 'group', 'aria-label': 'Deprecated endpoints' }, [
-        chip(`DEPRECATED ${deprecated}`, Boolean(filters.onlyDeprecated), () => this.actions.toggleOnlyDeprecated(), ' chip--dashed'),
-        chip('Hide deprecated', filters.hideDeprecated, () => this.actions.toggleHideDeprecated(), ' chip--dashed filterbar__spacer'),
-      ]),
+    this.#bar = el('div', { class: 'filterbar', id: 'deprecated-filters', role: 'group', 'aria-label': 'Deprecated endpoints' }, [
+      chip(`DEPRECATED ${deprecated}`, Boolean(filters.onlyDeprecated), () => this.actions.toggleOnlyDeprecated(), ' chip--dashed'),
+      chip('Hide deprecated', filters.hideDeprecated, () => this.actions.toggleHideDeprecated(), ' chip--dashed filterbar__spacer'),
     ]);
+    this.#drawnFor = deprecated;
+    replace(this, [this.#bar]);
+  }
+
+  /** @param {object} filters */
+  #patch(filters) {
+    const [only, hide] = this.#bar.querySelectorAll('button');
+    only?.setAttribute('aria-pressed', String(Boolean(filters.onlyDeprecated)));
+    hide?.setAttribute('aria-pressed', String(Boolean(filters.hideDeprecated)));
   }
 }
 
@@ -68,6 +90,9 @@ class FbTagChips extends FbElement {
 
   #media = null;
   #onChange = null;
+  /** The bar as drawn, and the tags it was drawn for. */
+  #bar = null;
+  #drawnFor = null;
 
   connectedCallback() {
     this.#media = globalThis.matchMedia?.('(max-width: 75rem)');
@@ -86,28 +111,52 @@ class FbTagChips extends FbElement {
     const railOffScreen = (this.#media?.matches ?? false) || state.railCollapsed;
     if (!schema || !railOffScreen) {
       replace(this, []);
+      this.#bar = null;
+      this.#drawnFor = null;
       return;
     }
-    replace(this, [
-      el('div', { class: 'tagbar', id: 'tag-chips', tabindex: '-1', role: 'group', 'aria-label': 'Filter by tag' }, [
+
+    // Same bargain as the bar above: pressing a tag chip changes the filters,
+    // and rebuilding the row would take the pressed chip out from under the
+    // keyboard. The chips themselves only change when the schema does.
+    const signature = schema.tags.map((tag) => `${tag.name} ${tag.count}`).join('\u0000');
+    if (this.#bar?.isConnected && this.#drawnFor === signature) {
+      this.#patch(filters);
+      return;
+    }
+
+    this.#bar = el('div', { class: 'tagbar', id: 'tag-chips', tabindex: '-1', role: 'group', 'aria-label': 'Filter by tag' }, [
+      el('button', {
+        type: 'button',
+        class: 'chip',
+        'aria-pressed': String(filters.tags.length === 0),
+        text: `All ${schema.operations.length}`,
+        onclick: () => this.actions.setTags([]),
+      }),
+      ...schema.tags.map((tag) =>
         el('button', {
           type: 'button',
           class: 'chip',
-          'aria-pressed': String(filters.tags.length === 0),
-          text: `All ${schema.operations.length}`,
-          onclick: () => this.actions.setTags([]),
+          'aria-pressed': String(filters.tags.includes(tag.name)),
+          text: `${tag.name} ${tag.count}`,
+          dataset: { tag: tag.name },
+          onclick: (event) => this.actions.toggleTag(tag.name, { additive: event.shiftKey }),
         }),
-        ...schema.tags.map((tag) =>
-          el('button', {
-            type: 'button',
-            class: 'chip',
-            'aria-pressed': String(filters.tags.includes(tag.name)),
-            text: `${tag.name} ${tag.count}`,
-            onclick: (event) => this.actions.toggleTag(tag.name, { additive: event.shiftKey }),
-          }),
-        ),
-      ]),
+      ),
     ]);
+    this.#drawnFor = signature;
+    replace(this, [this.#bar]);
+  }
+
+  /** @param {object} filters */
+  #patch(filters) {
+    for (const button of this.#bar.querySelectorAll('button')) {
+      // "All" is the one with no tag of its own, and it is pressed when no tag
+      // filter is applied at all.
+      const tag = button.dataset.tag;
+      const pressed = tag === undefined ? filters.tags.length === 0 : filters.tags.includes(tag);
+      button.setAttribute('aria-pressed', String(pressed));
+    }
   }
 }
 

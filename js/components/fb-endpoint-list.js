@@ -30,12 +30,19 @@ import './list-strips.js';
 
 const TYPEAHEAD_TIMEOUT = 800;
 
+/** "Booking, Rooms · 12 of 47 shown" — the line under the rows. */
+function statusText(state, visible) {
+  const scope = state.filters.tags.length ? state.filters.tags.join(', ') : 'All';
+  return `${scope} · ${visible.length} of ${state.schema.operations.length} shown`;
+}
+
 class FbEndpointList extends FbElement {
   static observes = ['schema', 'filters', 'selectedOperationId', 'activeRowId', 'density', 'showHints'];
 
   #typeBuffer = '';
   #typeTimer = null;
   #scroll = null;
+  #statusBar = null;
 
   /**
    * The operations in the order they were actually rendered.
@@ -60,12 +67,35 @@ class FbEndpointList extends FbElement {
    * what the list *contains* re-renders it.
    */
   update(state, prev) {
-    const structural = ['schema', 'filters', 'density', 'showHints'];
+    const structural = ['schema', 'density', 'showHints'];
     if (structural.some((key) => !Object.is(state[key], prev[key]))) {
       this.render(state);
       return;
     }
+    /* A filter change used to count as structural, which rebuilt everything
+       including the two strips above the rows — and the chip that was pressed
+       to cause the change is *in* one of those strips. Destroying it dropped
+       focus back to the list, so the next Tab walked backwards into the chip
+       just pressed. Filtering only changes which rows are on screen and the
+       count under them, so that is all that is redrawn. */
+    if (!Object.is(state.filters, prev.filters)) {
+      if (this.#scroll?.isConnected) this.#renderBody(state);
+      else this.render(state);
+      return;
+    }
     this.#patchRows(state);
+  }
+
+  /**
+   * The rows and the count, inside the shell that is already on screen.
+   *
+   * @param {object} state
+   */
+  #renderBody(state) {
+    const visible = this.actions.visibleOperations();
+    replace(this.#scroll, this.#listBody(state, visible));
+    if (this.#statusBar) this.#statusBar.textContent = statusText(state, visible);
+    this.#syncRoving(state);
   }
 
   #patchRows(state) {
@@ -87,29 +117,22 @@ class FbEndpointList extends FbElement {
     const visible = this.actions.visibleOperations();
     const roomy = state.density === 'roomy';
 
-    // #ordered is filled as the rows are built, so it cannot drift from them.
-    this.#ordered = [];
-    const listBody = visible.length
-      ? roomy
-        ? this.#renderGrouped(state, visible)
-        : this.#renderFlat(state, visible)
-      : this.#renderEmpty(state);
-
     this.#scroll = el(
       'div',
       {
         class: 'list-scroll',
         onkeydown: (event) => this.#onKeyDown(event),
       },
-      listBody,
+      this.#listBody(state, visible),
     );
+    this.#statusBar = this.#renderStatusBar(state, visible);
 
     replace(this, [
       roomy ? null : el('fb-deprecated-bar', {}),
       roomy ? null : el('fb-tag-chips', {}),
       this.#scroll,
       state.showHints ? this.#renderHints() : null,
-      this.#renderStatusBar(state, visible),
+      this.#statusBar,
     ]);
 
     this.#syncRoving(state);
@@ -286,11 +309,24 @@ class FbEndpointList extends FbElement {
   }
 
   #renderStatusBar(state, visible) {
-    const scope = state.filters.tags.length ? state.filters.tags.join(', ') : 'All';
-    return el('p', {
-      class: 'statusbar',
-      text: `${scope} · ${visible.length} of ${state.schema.operations.length} shown`,
-    });
+    return el('p', { class: 'statusbar', text: statusText(state, visible) });
+  }
+
+  /**
+   * The rows themselves, which is the only part of the list a filter changes.
+   *
+   * `#ordered` is filled as the rows are built, so it cannot drift from them —
+   * which is why building them lives in one place and not two.
+   *
+   * @param {object} state
+   * @param {object[]} visible
+   */
+  #listBody(state, visible) {
+    this.#ordered = [];
+    if (!visible.length) return this.#renderEmpty(state);
+    return state.density === 'roomy'
+      ? this.#renderGrouped(state, visible)
+      : this.#renderFlat(state, visible);
   }
 
   /* --- roving tabindex -------------------------------------------------- */
