@@ -449,6 +449,27 @@ contain itself. A branch that reopens a type already open above it says
 the summary, because a `<summary>` is a button and a link inside one is a
 focusable control inside a focusable control.
 
+- **A response body is coloured from its `Content-Type`, and from nothing
+  else.** highlight.js is vendored beside js-yaml and markdown-it — the third
+  dependency in a repository that has no build step, so it is the published ES
+  module build committed as-is, core plus one grammar for each of JSON, XML and
+  YAML. Not a guess at the language from the text: what the server said it sent
+  is the only claim about a body that this app did not invent, so a type not on
+  that list is left as plain text rather than coloured as the thing it most
+  resembles.
+
+  The palette is ours rather than one of the library's themes, because a
+  vendored stylesheet is a set of colours nobody here has checked. Every value
+  clears 7:1 against the code surface. There is one palette and not one per
+  theme, which is the honest answer rather than a shortcut: code sits on
+  `--code-bg` in both themes and that token is near-black in both, so a second
+  set would be the same values written twice. The block that gains a light twin
+  is named in `css/tokens.css` if the light theme's code surface ever changes.
+
+  It carries no meaning. The body reads identically with the stylesheet off,
+  and forced colours hands the whole block to the system palette, which is the
+  right outcome and needs no help from us.
+
 ---
 
 ## Changes made after an accessibility audit

@@ -295,6 +295,34 @@ code, kbd, samp, pre { font-family: var(--font-mono); }
   overflow-x: auto;
 }
 
+/* Syntax highlighting, applied to a response body whose `Content-Type` names a
+   language this app can colour. The class names are highlight.js's own; the
+   colours are ours, so the palette is a set of tokens checked against the code
+   surface rather than a vendored theme stylesheet nobody here has read.
+
+   Deliberately a short list. A grammar emits far more scopes than this, and
+   everything unnamed falls through to `--code-fg` — which is the same legible
+   block the reader had before any of this. Colour is never the message: the
+   body reads identically with the stylesheet off, and forced colours hands the
+   whole block to the system palette, which is correct and needs no help here.
+
+   No bold, no italics, no background tints. This is a monospace block in a
+   pane, not a code editor, and weight changes at 11.5px cost more in legibility
+   than they return. */
+.code-block .hljs-attr,
+.code-block .hljs-attribute { color: var(--syntax-key); }
+.code-block .hljs-string { color: var(--syntax-string); }
+.code-block .hljs-number { color: var(--syntax-number); }
+.code-block .hljs-literal,
+.code-block .hljs-type,
+.code-block .hljs-symbol { color: var(--syntax-literal); }
+.code-block .hljs-tag,
+.code-block .hljs-name { color: var(--syntax-tag); }
+.code-block .hljs-comment,
+.code-block .hljs-meta,
+.code-block .hljs-bullet,
+.code-block .hljs-punctuation { color: var(--syntax-muted); }
+
 /* Word-led status rows (WARN / INFO / FAIL) — never an icon, never a colour
    on its own. */
 .word {

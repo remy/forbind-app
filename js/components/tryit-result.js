@@ -17,6 +17,7 @@ import { statusClass } from '../lib/openapi.js';
 import { lineCount } from '../lib/request.js';
 import { writeClipboard, selectContents } from '../lib/clipboard.js';
 import { announce } from '../lib/announce.js';
+import { languageFor, highlightInto } from '../lib/highlight.js';
 
 /** How long the button wears its "Copied" label. */
 const COPIED_MS = 2000;
@@ -76,7 +77,14 @@ export function renderResult(result) {
   // Exactly what is on screen, so what lands on the clipboard is what was
   // read — pretty-printed if it was JSON, verbatim if it was not.
   const body = prettify(result.body, result.contentType);
-  const pre = el('pre', { class: 'code-block', tabindex: '0', text: body || '(empty)' });
+
+  /* Coloured from what the response said it is, not from what the text looks
+     like. A type this cannot colour is left plain, and so is a body that is
+     empty — `(empty)` is this app talking, not the API, and colouring our own
+     word as if it came back would be a small lie. */
+  const pre = el('pre', { class: 'code-block', tabindex: '0' });
+  if (body) highlightInto(body, languageFor(result.contentType), pre);
+  else pre.textContent = '(empty)';
 
   return el('div', { class: 'result', tabindex: '-1', role: 'group', 'aria-label': 'Request result' }, [
     el('div', { class: 'result__head' }, [

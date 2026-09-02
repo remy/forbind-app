@@ -243,6 +243,29 @@
   --mark-rule: #000000;
 }
 
+/* ---------------------------------------------------------------------------
+   Colour — syntax highlighting in a response body.
+   ---------------------------------------------------------------------------
+   One palette, not one per theme, and that is the honest answer rather than a
+   shortcut: code sits on `--code-bg` in both themes and `--code-bg` is near
+   black in both (#0f0f0e light, #080807 dark), so a second set would be the
+   same values written twice. If the light theme's code surface ever goes
+   light, this is the block that gains a `:root[data-theme='light']` twin.
+
+   Every value clears 7:1 against both of those surfaces — the lowest,
+   `--syntax-muted`, is 7.94:1 — which is why there is no `prefers-contrast`
+   override below for these. The colour is decoration over text that is already
+   legible: nothing here is said by hue.
+--------------------------------------------------------------------------- */
+:root {
+  --syntax-key: #9ec5ff;      /* property names, YAML keys, XML attributes */
+  --syntax-string: #9adcb3;
+  --syntax-number: #f0c987;
+  --syntax-literal: #d7b4f5;  /* true, false, null */
+  --syntax-tag: #f3aba7;      /* XML and HTML element names */
+  --syntax-muted: #a8a79f;    /* punctuation, comments, document markers */
+}
+
 /* People who ask their OS for more contrast get the hairlines darkened and the
    quiet greys pulled toward the ink. Nothing moves; only contrast changes.
 

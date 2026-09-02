@@ -11,8 +11,9 @@ audit found, what changed, and what was withdrawn. This file is the structure.
 ## The shape of it
 
 No build step. `index.html` links six stylesheets and loads `js/main.js` as a
-module; the browser loads the ES modules as written. There are two vendored
-runtime dependencies (`js-yaml` and `markdown-it`) and one server-side function
+module; the browser loads the ES modules as written. There are three vendored
+runtime dependencies (`js-yaml`, `markdown-it` and `highlight.js`) and one
+server-side function
 (`netlify/functions/fetch-schema.mjs`), used only when a direct fetch of a
 schema is blocked by CORS.
 
@@ -22,7 +23,8 @@ js/theme-boot.js         sets the theme before first paint, to avoid a flash
 js/main.js               entry point: store, router, actions, shortcuts, boot
 js/lib/                  pure modules — no DOM assumptions beyond dom.js
 js/components/           the custom elements, one file per area of the screen
-js/vendor/*.mjs          the two runtime dependencies: js-yaml, markdown-it
+js/vendor/*.mjs          the runtime dependencies: js-yaml, markdown-it
+js/vendor/highlight/     highlight.js: the core and one grammar per language
 css/                     tokens → base → app → list → detail → overlays
 assets/fonts/            IBM Plex Sans + Mono, self-hosted, latin subsets
 samples/                 the bundled example schema
@@ -143,6 +145,7 @@ browser. `npm test` covers these.
 | `persist.js` | every rule about what is remembered and where, in one file |
 | `loader.js` | file, URL and sample loading, plus the CORS fallback |
 | `auth.js` | credential normalising, masking, JWT claims, probe interpretation |
+| `highlight.js` | which language a `Content-Type` names, and colouring a response body as it — the only importer of the vendored highlighter |
 | `store.js` | the store |
 | `element.js` | `FbElement`, `define`, `defineAll` |
 | `dom.js` | `el`, `replace`, `uid`, `focusable`, `preserveFocus` |

@@ -15,8 +15,9 @@ npm run test:a11y   # 50 checks in a real browser (needs Playwright + axe-core)
 ```
 
 There is no build step. What is in this repository is what the browser loads.
-The only runtime dependency is a vendored YAML parser; Playwright and axe-core
-are development-only and nothing in `js/` imports them.
+The runtime dependencies are three vendored libraries — a YAML parser, a
+Markdown parser and a syntax highlighter; Playwright and axe-core are
+development-only and nothing in `js/` imports them.
 
 ---
 
@@ -27,7 +28,7 @@ index.html               the whole page
 js/main.js               entry point: store, router, actions, shortcuts
 js/lib/                  pure modules — parser, request builder, search, routing
 js/components/           the custom elements
-js/vendor/js-yaml.mjs    the one dependency, vendored (MIT)
+js/vendor/               the three dependencies, vendored (MIT, MIT, BSD-3)
 css/                     tokens, base, app, list, detail, overlays
 assets/fonts/            IBM Plex Sans + Mono, self-hosted, latin subsets (OFL)
 samples/                 a worked example schema
