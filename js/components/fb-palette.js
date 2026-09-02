@@ -13,7 +13,7 @@
  * is the half of that decision the code has to keep honouring.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 import { wireDialog } from '../lib/dialog.js';
 import { verbLabel, verbClass } from '../lib/openapi.js';
@@ -21,7 +21,7 @@ import { score } from '../lib/search.js';
 
 const MAX_PER_GROUP = 8;
 
-class AwPalette extends AwElement {
+class FbPalette extends FbElement {
   static observes = ['palette', 'schema'];
 
   #dialog = null;
@@ -266,4 +266,4 @@ class AwPalette extends AwElement {
   }
 }
 
-define('aw-palette', AwPalette);
+define('fb-palette', FbPalette);

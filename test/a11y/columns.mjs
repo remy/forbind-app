@@ -184,7 +184,7 @@ test('a phone keeps its list whatever the preference says', async () => {
 
     // The detail is a pushed page here, so the list is a page of its own and
     // folding it away would leave nothing to navigate from.
-    await page.evaluate(() => window.__aw.actions.backToList());
+    await page.evaluate(() => window.__fb.actions.backToList());
     await page.waitForTimeout(300);
     assert.equal(await page.locator('#endpoint-list').isVisible(), true);
     assert.equal(await page.locator('#toggle-list').count(), 0, 'a toggle for a column that cannot fold');

@@ -77,7 +77,7 @@ test('a request for more contrast reaches the tokens in every theme', async () =
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`, { contrast: 'more', ...options });
     try {
       if (theme) {
-        await page.evaluate((t) => window.__aw.actions.setTheme(t), theme);
+        await page.evaluate((t) => window.__fb.actions.setTheme(t), theme);
         await page.waitForTimeout(200);
       }
       const tokens = await page.evaluate(() => {
@@ -188,7 +188,7 @@ test('a chip border carries 3:1 against the surface behind it', async () => {
   for (const theme of ['light', 'dark']) {
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
     try {
-      await page.evaluate((t) => window.__aw.actions.setTheme(t), theme);
+      await page.evaluate((t) => window.__fb.actions.setTheme(t), theme);
       await page.waitForTimeout(200);
       const chip = page.locator('.chip[aria-pressed="false"]').first();
       assert.ok(await chip.count(), `${theme}: no unpressed chip to measure`);
@@ -207,7 +207,7 @@ test('the palette clears AAA, including the pairs that only just did not', async
   for (const theme of ['light', 'dark']) {
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
     try {
-      await page.evaluate((t) => window.__aw.actions.setTheme(t), theme);
+      await page.evaluate((t) => window.__fb.actions.setTheme(t), theme);
       await page.waitForTimeout(200);
 
       const pairs = [
@@ -259,7 +259,7 @@ test('a deprecated row is stood down without taking any verb pill under AA', asy
   for (const theme of ['light', 'dark']) {
     const page = await open(`#/?src=${SRC}`);
     try {
-      await page.evaluate((t) => window.__aw.actions.setTheme(t), theme);
+      await page.evaluate((t) => window.__fb.actions.setTheme(t), theme);
       await page.waitForTimeout(200);
       assert.ok(await page.locator('a.row--deprecated').count(), `${theme}: no deprecated row`);
 
@@ -313,11 +313,11 @@ test('a button that is busy can still be read', async () => {
   for (const theme of ['light', 'dark']) {
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
     try {
-      await page.evaluate((t) => window.__aw.actions.setTheme(t), theme);
+      await page.evaluate((t) => window.__fb.actions.setTheme(t), theme);
       await page.evaluate(() => {
-        window.__aw.actions.openAuth();
-        const { auth } = window.__aw.store.state;
-        window.__aw.store.set({ auth: { ...auth, verifyState: 'checking' } });
+        window.__fb.actions.openAuth();
+        const { auth } = window.__fb.store.state;
+        window.__fb.store.set({ auth: { ...auth, verifyState: 'checking' } });
       });
       await page.waitForTimeout(400);
 

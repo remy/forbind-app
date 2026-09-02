@@ -1,4 +1,4 @@
-# allyway
+# forbind
 
 An accessibility first OpenAPI browser.
 
@@ -53,11 +53,11 @@ failed, only for the schema, and the UI says when it was used. Real API requests
 from the try-it panel always go straight from your browser — no proxy — so a
 credential never passes through anything of ours.
 
-**A schema can be named in the address.** Point allyway at a document and it
+**A schema can be named in the address.** Point forbind at a document and it
 loads it on arrival, with nothing to click:
 
 ```
-https://allyway.dev/?url=https://api.example.com/openapi.yaml
+https://forbind.net/?url=https://api.example.com/openapi.yaml
 ```
 
 `?url=` is taken from the query string, where a link written by hand or
@@ -67,7 +67,7 @@ rest of the address already lives, and the query is cleared so there is one
 place holding the answer. Anything else in the query, a `utm_source` say, is
 left alone.
 
-The fragment form is what allyway itself writes, and it carries more: which
+The fragment form is what forbind itself writes, and it carries more: which
 operation is open and which filters are on, so a link to
 `#/op/post-v2-bookings?src=…&tag=Bookings` opens exactly that for someone who
 has never seen the document. A `src` already in the fragment wins over a `url`
@@ -234,7 +234,7 @@ rather than a bare `:root`, because a media query adds no specificity —
 
 **The title says which screen you are on.** Import, parse report, an operation
 and a component schema each name themselves in `document.title`, most specific
-part first (`GET /v2/bookings — Bookings API — allyway`), so the tab, the
+part first (`GET /v2/bookings — Bookings API — forbind`), so the tab, the
 history entry and anything re-reading the title after a route change all say
 something useful.
 
@@ -380,7 +380,7 @@ body at all does not get a button that would do nothing.
 
 `servers` is optional in OpenAPI, and a document without it describes paths with
 nothing in front of them — no host to send to, and a snippet that is half a
-command. allyway detects that on ingest and says so: the parse report carries a
+command. forbind detects that on ingest and says so: the parse report carries a
 `WARN`, and beside it a **base URL** field, next to the *Browse* button rather
 than in front of it. Supplying one is an offer, not a toll; browsing an API you
 cannot call is an ordinary thing to want.

@@ -1,6 +1,6 @@
 # Working in this repository
 
-Allyway (A11y Way) is an accessibility first OpenAPI browser. Everything
+Forbind is an accessibility first OpenAPI browser. Everything
 below is a constraint on how it is built, not a style preference. `README.md`
 says what the app does; `KNOWLEDGE.md` says how it is put together;
 `DECISIONS.md` records why the awkward parts are the way they are.
@@ -24,7 +24,7 @@ Styling is hand-written CSS in `css/`, driven by the custom properties in
 `css/tokens.css`. A new colour, size or spacing value goes in as a token first.
 
 **Web components, in the light DOM.** New UI is a custom element extending
-`AwElement` and registered with `define()`. No shadow roots: `aria-controls`,
+`FbElement` and registered with `define()`. No shadow roots: `aria-controls`,
 `aria-describedby`, `aria-activedescendant` and `<label for>` all have to reach
 across what would otherwise be a shadow boundary, and cross-root ARIA is still
 not something to rely on. One document, one id space.

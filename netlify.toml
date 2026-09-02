@@ -1,4 +1,4 @@
-# allyway deploys as static files. There is no build step: what is in the repo
+# forbind deploys as static files. There is no build step: what is in the repo
 # is what the browser loads.
 [build]
   publish = "."

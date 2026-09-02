@@ -36,7 +36,7 @@ the part with real exposure attached.
 
 **The title names the screen.** Four screens shared one `document.title` while
 the address bar changed under each. Now: `GET /v2/bookings — Bookings API —
-allyway`, most specific part first, so a truncated tab still says something.
+forbind`, most specific part first, so a truncated tab still says something.
 The logic is a pure function in `js/lib/title.js` and is unit-tested; keying it
 off `schemaState` rather than the presence of a schema is what stops *Replace
 schema* from leaving the old API's name over the import screen.

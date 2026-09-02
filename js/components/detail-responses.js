@@ -8,11 +8,11 @@
  * read; the rest wait to be asked for.
  *
  * Which of them are open is not this file's to remember. The set is owned by
- * `aw-detail` and passed in, because the section is rebuilt every time the
+ * `fb-detail` and passed in, because the section is rebuilt every time the
  * pane renders — a trip to the Code tab and back included — and a disclosure
  * you opened is an answer you gave, not a default to be restored over.
  *
- * It lives beside `aw-detail.js` rather than inside it because that file has
+ * It lives beside `fb-detail.js` rather than inside it because that file has
  * enough subjects in it already.
  */
 
@@ -82,7 +82,7 @@ function renderResponse(state, response, ctx) {
     ]);
   }
 
-  const tree = el('aw-schema-tree', {});
+  const tree = el('fb-schema-tree', {});
   const label = `The ${response.code} response body`;
   const example = exampleFor(state.schema.doc, response);
   const open = ctx.opened.has(response.code);

@@ -10,7 +10,7 @@
 <helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"><style>body{margin:0;background:#efeee9;font-family:'IBM Plex Sans',system-ui,sans-serif}a{color:#1a3fb8}a:hover{color:#0f2775}.dv-turn{padding:40px 44px 32px;border-bottom:1.5px solid #0f0f0e;scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px 'IBM Plex Mono',ui-monospace,monospace;padding:3px 7px;background:#0f0f0e;color:#fbfbf9;text-decoration:none}.dv-tname{font:600 13px/1.2 'IBM Plex Sans',sans-serif;color:#0f0f0e}.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px 'IBM Plex Mono',ui-monospace,monospace;padding:3px 7px;background:#0f0f0e;color:#fbfbf9;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:9px;font:500 12px/1.4 'IBM Plex Sans',sans-serif;color:#0f0f0e}.dv-card{max-width:100%;background:#fbfbf9;border:1.5px solid #0f0f0e;overflow:hidden}.dv-note{margin:0;max-width:640px;font:400 11.5px/1.55 'IBM Plex Sans',sans-serif;color:#56564f}.dv-opt:target .dv-oid{background:#1a3fb8}.dv-next{margin:24px 0 0;font:12px/1.6 'IBM Plex Sans',sans-serif;color:#56564f}</style></helmet>
 
 <section class="dv-turn" style="background:#fbfbf9">
-<div class="dv-thd"><span class="dv-tid">BRIEF</span><span class="dv-tname">allyway API browser — assumptions before you read the options</span></div>
+<div class="dv-thd"><span class="dv-tid">BRIEF</span><span class="dv-tname">forbind API browser — assumptions before you read the options</span></div>
 <div style="display:flex;flex-wrap:wrap;gap:0;border:1.5px solid #0f0f0e;max-width:1240px">
 <div style="flex:1 1 300px;min-width:280px;padding:18px 20px;border-right:1.5px solid #0f0f0e">
 <h3 style="margin:0 0 10px;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase;color:#56564f">What I assumed</h3>
@@ -33,7 +33,7 @@
 <div style="flex:1 1 260px;min-width:250px;padding:18px 20px">
 <h3 style="margin:0 0 10px;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.09em;text-transform:uppercase;color:#56564f">Open with you</h3>
 <ul style="margin:0;padding-left:16px;font:400 12.5px/1.65 'IBM Plex Sans',sans-serif;color:#0f0f0e">
-<li>I couldn't read the <code style="font-family:'IBM Plex Mono',monospace">allyway</code> folder from here — this sets a direction rather than matching your existing shell.</li>
+<li>I couldn't read the <code style="font-family:'IBM Plex Mono',monospace">forbind</code> folder from here — this sets a direction rather than matching your existing shell.</li>
 <li>Try-it-out and live responses aren't drawn yet; the detail pane leaves room for them.</li>
 </ul>
 </div>
@@ -48,7 +48,7 @@
 <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Three-pane, dense table — the by-the-book one</div>
 <div class="dv-card" style="width:1280px;height:800px;display:grid;grid-template-rows:auto auto 1fr;color:#0f0f0e">
   <div style="display:flex;align-items:center;gap:14px;height:52px;padding:0 16px;border-bottom:1.5px solid #0f0f0e">
-    <span style="font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">ALLYWAY</span>
+    <span style="font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">FORBIND</span>
     <span style="width:1px;height:20px;background:#c9c8c2"></span>
     <div style="display:flex;align-items:center;gap:10px;flex:1;max-width:380px;height:32px;padding:0 10px;border:1px solid #0f0f0e;background:#fff">
       <span style="font:400 12.5px/1 'IBM Plex Sans',sans-serif;color:#56564f">Search endpoints, params, schemas</span>
@@ -186,7 +186,7 @@
 <div class="dv-card" style="width:1280px;height:800px;display:grid;grid-template-rows:auto 1fr;color:#0f0f0e">
   <div style="padding:18px 22px 16px;border-bottom:1.5px solid #0f0f0e">
     <div style="display:flex;align-items:center;gap:14px">
-      <span style="font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">ALLYWAY</span>
+      <span style="font:600 13px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">FORBIND</span>
       <span style="font:400 11.5px/1 'IBM Plex Mono',monospace;color:#56564f">bookings-api.v2.yaml · 47 endpoints</span>
       <span style="margin-left:auto;display:flex;align-items:center;height:30px;padding:0 13px;border:1px solid #0f0f0e;font:600 11.5px/1 'IBM Plex Sans',sans-serif">Authorise</span>
     </div>
@@ -352,7 +352,7 @@
 <div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Small screen — list collapses to one column, detail is a full page</div>
 <div style="display:flex;gap:20px;flex-wrap:wrap">
 <div class="dv-card" style="width:390px;height:720px;display:grid;grid-template-rows:auto auto 1fr auto;color:#0f0f0e">
-  <div style="display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 14px;border-bottom:1.5px solid #0f0f0e"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">ALLYWAY</span><span style="font:600 11.5px/1 'IBM Plex Sans',sans-serif;padding:8px 10px;border:1px solid #0f0f0e">Auth</span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;height:44px;padding:0 14px;border-bottom:1.5px solid #0f0f0e"><span style="font:600 12px/1 'IBM Plex Mono',monospace;letter-spacing:.14em">FORBIND</span><span style="font:600 11.5px/1 'IBM Plex Sans',sans-serif;padding:8px 10px;border:1px solid #0f0f0e">Auth</span></div>
   <div style="padding:12px 14px;border-bottom:1px solid #d8d7d1">
     <div style="display:flex;align-items:center;height:44px;padding:0 12px;border:1.5px solid #0f0f0e;font:400 13px/1 'IBM Plex Sans',sans-serif;color:#56564f">Search 47 endpoints</div>
     <div style="display:flex;gap:6px;margin-top:10px;overflow:hidden"><span style="padding:8px 11px;background:#0f0f0e;color:#fbfbf9;font:600 11px/1 'IBM Plex Mono',monospace">Bookings</span><span style="padding:8px 11px;border:1px solid #a9a8a2;font:600 11px/1 'IBM Plex Mono',monospace">Venues</span><span style="padding:8px 11px;border:1px solid #a9a8a2;font:600 11px/1 'IBM Plex Mono',monospace">Payments</span></div>

@@ -21,7 +21,7 @@ test('a saved credential reaches the clipboard from nowhere, and disk only if as
 
     // Saving is the end of the errand, so the sheet goes and the keyboard
     // comes back to the button that opened it.
-    assert.equal(await page.evaluate(() => window.__aw.store.state.authOpen), false);
+    assert.equal(await page.evaluate(() => window.__fb.store.state.authOpen), false);
     assert.equal(await page.locator('dialog[open]').count(), 0);
     assert.equal(
       await page.evaluate(() => document.activeElement?.textContent?.trim()),
@@ -29,7 +29,7 @@ test('a saved credential reaches the clipboard from nowhere, and disk only if as
     );
 
     // It is held, and the prefix was stripped as the help text promises.
-    assert.equal(await page.evaluate(() => window.__aw.store.state.auth.credential), SECRET);
+    assert.equal(await page.evaluate(() => window.__fb.store.state.auth.credential), SECRET);
 
     // The default is this tab only: sessionStorage, never disk, never a cookie.
     const stored = () => page.evaluate(() => ({
@@ -99,13 +99,13 @@ test('saving from the parse report hands the keyboard to the bar it lands in', a
 test('a reload comes back to the schema that was loaded', async () => {
   const page = await open();
   try {
-    assert.equal(await page.evaluate(() => window.__aw.store.state.schema.sourceName), 'bookings-api.v2.yaml');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.schema.sourceName), 'bookings-api.v2.yaml');
     // Straight to the bare URL: no `src`, so only what was remembered can help.
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
-    await page.waitForFunction(() => window.__aw?.store.state.schemaState === 'ready', null, { timeout: 15000 });
+    await page.waitForFunction(() => window.__fb?.store.state.schemaState === 'ready', null, { timeout: 15000 });
     await page.waitForTimeout(600);
-    assert.equal(await page.evaluate(() => window.__aw.store.state.schema.sourceName), 'bookings-api.v2.yaml');
-    assert.equal(await page.evaluate(() => window.__aw.store.state.browsing), true);
+    assert.equal(await page.evaluate(() => window.__fb.store.state.schema.sourceName), 'bookings-api.v2.yaml');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.browsing), true);
     assert.ok(await page.locator('a.row').count() > 0);
 
     // Replacing it forgets it, so the next visit starts at the import screen.
@@ -113,8 +113,8 @@ test('a reload comes back to the schema that was loaded', async () => {
     await page.waitForTimeout(500);
     await page.goto(`${BASE}/`, { waitUntil: 'load' });
     await page.waitForTimeout(900);
-    assert.equal(await page.evaluate(() => window.__aw.store.state.schemaState), 'idle');
-    assert.match(await page.locator('h1').first().textContent(), /Allyway/);
+    assert.equal(await page.evaluate(() => window.__fb.store.state.schemaState), 'idle');
+    assert.match(await page.locator('h1').first().textContent(), /Forbind/);
   } finally {
     await page.close();
   }

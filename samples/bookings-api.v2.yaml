@@ -1,11 +1,11 @@
-# A worked example schema, shipped with allyway so there is something to browse
+# A worked example schema, shipped with forbind so there is something to browse
 # on first run. It describes an imaginary restaurant bookings API.
 openapi: 3.1.0
 info:
   title: Bookings API
   version: 2.1.0
   description: >-
-    A worked example schema shipped with allyway so the browser has something to browse. It is not a
+    A worked example schema shipped with forbind so the browser has something to browse. It is not a
     real service.
 servers:
   - url: https://api.bookings.dev

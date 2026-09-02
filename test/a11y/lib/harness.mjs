@@ -89,7 +89,7 @@ export async function open(hash = `#/op/post-v2-bookings?src=${SRC}`, options = 
  * @param {'overview'|'body'|'responses'|'code'|'tryit'} key
  */
 export async function showTab(page, key) {
-  await page.evaluate((k) => document.querySelector('aw-detail')?.showTab(k), key);
+  await page.evaluate((k) => document.querySelector('fb-detail')?.showTab(k), key);
   await page.waitForTimeout(400);
 }
 

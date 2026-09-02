@@ -19,19 +19,19 @@ const state = (patch) => ({
 test('each screen gets its own title, most specific part first', () => {
   assert.equal(
     documentTitle(state({ schemaState: 'idle', schema: null })),
-    'Load a schema — allyway',
+    'Load a schema — forbind',
   );
-  assert.equal(documentTitle(state({ schemaState: 'loading' })), 'Loading a schema — allyway');
-  assert.equal(documentTitle(state({ schemaState: 'error' })), 'Could not load the schema — allyway');
-  assert.equal(documentTitle(state({ browsing: false })), 'Parse report — Bookings API — allyway');
-  assert.equal(documentTitle(state({})), 'Bookings API — allyway');
+  assert.equal(documentTitle(state({ schemaState: 'loading' })), 'Loading a schema — forbind');
+  assert.equal(documentTitle(state({ schemaState: 'error' })), 'Could not load the schema — forbind');
+  assert.equal(documentTitle(state({ browsing: false })), 'Parse report — Bookings API — forbind');
+  assert.equal(documentTitle(state({})), 'Bookings API — forbind');
   assert.equal(
     documentTitle(state({ selectedOperationId: 'get-v2-bookings' })),
-    'GET /v2/bookings — Bookings API — allyway',
+    'GET /v2/bookings — Bookings API — forbind',
   );
   assert.equal(
     documentTitle(state({ selectedSchemaName: 'Booking' })),
-    'Booking — Bookings API — allyway',
+    'Booking — Bookings API — forbind',
   );
 });
 
@@ -41,10 +41,10 @@ test('replacing a schema is named by the state, not by what is still in memory',
   // API" while the import screen is on show.
   assert.equal(
     documentTitle(state({ schemaState: 'idle', browsing: false })),
-    'Load a schema — allyway',
+    'Load a schema — forbind',
   );
 });
 
 test('an operation the URL names but the document does not falls back to the API', () => {
-  assert.equal(documentTitle(state({ selectedOperationId: 'delete-nothing' })), 'Bookings API — allyway');
+  assert.equal(documentTitle(state({ selectedOperationId: 'delete-nothing' })), 'Bookings API — forbind');
 });

@@ -15,14 +15,14 @@ test('an enum parameter is a dropdown, and Enter in the form sends', async () =>
   try {
     // Give the operation an enum parameter to render.
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'GET');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'GET');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
     await showTab(page, 'tryit');
 
-    const status = page.locator('aw-try-it select').filter({ hasText: 'confirmed' }).first();
-    assert.ok(await page.locator('aw-try-it select').count() > 0, 'no enum parameter rendered as a select');
+    const status = page.locator('fb-try-it select').filter({ hasText: 'confirmed' }).first();
+    assert.ok(await page.locator('fb-try-it select').count() > 0, 'no enum parameter rendered as a select');
     assert.ok(await status.count() > 0);
     // Optional, so "not sent" has to be reachable and is where it starts.
     const options = await status.locator('option').allTextContents();
@@ -31,8 +31,8 @@ test('an enum parameter is a dropdown, and Enter in the form sends', async () =>
     assert.deepEqual(options.slice(1), ['held', 'pending', 'confirmed', 'cancelled']);
 
     // The form submits on Enter, from a field rather than the button.
-    assert.equal(await page.locator('aw-try-it form').count(), 1);
-    assert.equal(await page.locator('aw-try-it button[type="submit"]').count(), 1);
+    assert.equal(await page.locator('fb-try-it form').count(), 1);
+    assert.equal(await page.locator('fb-try-it button[type="submit"]').count(), 1);
     await status.selectOption('confirmed');
     await page.waitForTimeout(200);
     assert.match(await page.locator('.tryit__status').textContent(), /status=confirmed/);
@@ -41,7 +41,7 @@ test('an enum parameter is a dropdown, and Enter in the form sends', async () =>
     await page.waitForTimeout(4000);
     // It will fail on CORS against a host that does not exist, which still
     // proves Enter reached the sender.
-    assert.equal(await page.locator('aw-try-it .result').count(), 1);
+    assert.equal(await page.locator('fb-try-it .result').count(), 1);
   } finally {
     await page.close();
   }
@@ -51,19 +51,19 @@ test('a required parameter left empty stops the send and says which one', async 
   const page = await open();
   try {
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings/{bookingId}' && o.method === 'GET');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.path === '/v2/bookings/{bookingId}' && o.method === 'GET');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(600);
     await showTab(page, 'tryit');
 
-    const field = page.locator('aw-try-it input').first();
+    const field = page.locator('fb-try-it input').first();
     await field.focus();
     await page.keyboard.press('Enter');
     await page.waitForTimeout(400);
 
-    assert.equal(await page.locator('aw-try-it .result').count(), 0, 'an incomplete request was sent anyway');
-    const invalid = page.locator('aw-try-it [aria-invalid="true"]');
+    assert.equal(await page.locator('fb-try-it .result').count(), 0, 'an incomplete request was sent anyway');
+    const invalid = page.locator('fb-try-it [aria-invalid="true"]');
     assert.equal(await invalid.count(), 1);
     // The message is tied to the field and led by a word, not a colour.
     const describedBy = await invalid.getAttribute('aria-describedby');
@@ -71,15 +71,15 @@ test('a required parameter left empty stops the send and says which one', async 
     const message = await page.locator(`#${(await invalid.getAttribute('id'))}-error`).textContent();
     assert.match(message, /^NEEDED/);
     assert.match(message, /bookingId needs a value/);
-    assert.match(await page.locator('#aw-live-assertive').textContent(), /Cannot send: bookingId is required/);
+    assert.match(await page.locator('#fb-live-assertive').textContent(), /Cannot send: bookingId is required/);
     // Focus is on the field being complained about.
     assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-invalid')), 'true');
 
     // Typing clears it rather than leaving a stale complaint on screen.
     await page.keyboard.type('01J8QW');
     await page.waitForTimeout(300);
-    assert.equal(await page.locator('aw-try-it [aria-invalid="true"]').count(), 0);
-    assert.equal(await page.locator('aw-try-it .hint--error').count(), 0);
+    assert.equal(await page.locator('fb-try-it [aria-invalid="true"]').count(), 0);
+    assert.equal(await page.locator('fb-try-it .hint--error').count(), 0);
   } finally {
     await page.close();
   }
@@ -94,7 +94,7 @@ test('a request that succeeds reports its status, timing and readable headers', 
     await page.getByRole('button', { name: /^Send GET$/ }).click();
     await page.waitForTimeout(1500);
     assert.match(await page.locator('.result__head').textContent(), /200/);
-    assert.match(await page.locator('#aw-live-polite').textContent(), /200 OK in \d+ milliseconds/);
+    assert.match(await page.locator('#fb-live-polite').textContent(), /200 OK in \d+ milliseconds/);
     assert.ok(await page.locator('.result .kv > div').count() > 0);
   } finally {
     await page.close();
@@ -161,7 +161,7 @@ test('a response that came back can be copied, and says what was copied', async 
     const pasted = await page.evaluate(() => navigator.clipboard.readText());
     const shown = await page.locator('.result .code-block').first().textContent();
     assert.equal(pasted, shown);
-    assert.match(await page.locator('#aw-live-polite').textContent(), /Response body copied, \d+ lines?\./);
+    assert.match(await page.locator('#fb-live-polite').textContent(), /Response body copied, \d+ lines?\./);
     assert.match(await page.getByRole('button', { name: /Copied/ }).textContent(), /Copied/);
 
     // And the label goes back, so the button does not lie about the next press.
@@ -183,7 +183,7 @@ test('a request the browser cannot read explains CORS rather than shrugging', as
     const text = await page.locator('.result--error').textContent();
     assert.match(text, /Access-Control-Allow-Origin/);
     assert.match(text, /unreachable/);
-    assert.match(await page.locator('#aw-live-assertive').textContent(), /Request failed/);
+    assert.match(await page.locator('#fb-live-assertive').textContent(), /Request failed/);
   } finally {
     await page.close();
   }
@@ -193,7 +193,7 @@ test('an enum named elsewhere in the document is still a dropdown, not a text bo
   const page = await open(`#/?src=${REF_ENUM}`);
   try {
     await page.evaluate(() => {
-      window.__aw.actions.selectOperation(window.__aw.store.state.schema.operations[0].id);
+      window.__fb.actions.selectOperation(window.__fb.store.state.schema.operations[0].id);
     });
     await page.waitForTimeout(600);
     await showTab(page, 'tryit');
@@ -254,8 +254,8 @@ test('a request that changes something is confirmed before it is sent', async ()
     await page.keyboard.press('Escape');
     await page.waitForTimeout(400);
     assert.equal(await dialog.count(), 0);
-    assert.equal(await page.locator('aw-try-it .result').count(), 0, 'Escape sent the request anyway');
-    assert.match(await page.locator('#aw-live-polite').textContent(), /Nothing sent/);
+    assert.equal(await page.locator('fb-try-it .result').count(), 0, 'Escape sent the request anyway');
+    assert.match(await page.locator('#fb-live-polite').textContent(), /Nothing sent/);
     // And focus is back on the button that asked.
     assert.equal(await page.evaluate(() => document.activeElement.dataset.focusKey), 'tryit-send');
 
@@ -265,7 +265,7 @@ test('a request that changes something is confirmed before it is sent', async ()
     await page.waitForTimeout(300);
     await confirmSend(page);
     await page.waitForTimeout(4000);
-    assert.equal(await page.locator('aw-try-it .result').count(), 1);
+    assert.equal(await page.locator('fb-try-it .result').count(), 1);
   } finally {
     await page.close();
   }
@@ -295,7 +295,7 @@ test('what has been typed survives leaving the tab and coming back', async () =>
   const page = await open();
   try {
     await showTab(page, 'tryit');
-    const body = page.locator('aw-try-it textarea').first();
+    const body = page.locator('fb-try-it textarea').first();
     await body.fill('{"typed": "by hand"}');
     await page.waitForTimeout(200);
 
@@ -307,7 +307,7 @@ test('what has been typed survives leaving the tab and coming back', async () =>
     await page.getByRole('button', { name: 'Reset' }).click();
     await page.waitForTimeout(200);
     assert.notEqual(await body.inputValue(), '{"typed": "by hand"}');
-    assert.match(await page.locator('#aw-live-polite').textContent(), /reset/i);
+    assert.match(await page.locator('#fb-live-polite').textContent(), /reset/i);
   } finally {
     await page.close();
   }
@@ -321,7 +321,7 @@ test('a body deleted on purpose stays deleted, and Code keeps its language', asy
   const page = await open();
   try {
     await showTab(page, 'tryit');
-    const body = page.locator('aw-try-it textarea').first();
+    const body = page.locator('fb-try-it textarea').first();
     await body.fill('');
     await page.waitForTimeout(200);
 
@@ -357,13 +357,13 @@ test('the phone\'s sticky action opens the Try it tab', async () => {
     await action.click();
     await page.waitForTimeout(500);
 
-    assert.equal(await page.locator('aw-try-it form').count(), 1, 'the sticky action did not open Try it');
+    assert.equal(await page.locator('fb-try-it form').count(), 1, 'the sticky action did not open Try it');
     assert.equal(
       await page.locator('[role="tab"][aria-selected="true"]').textContent(),
       'Try it',
     );
     // And it lands the keyboard in the panel it opened.
-    assert.equal(await page.evaluate(() => Boolean(document.activeElement.closest('aw-try-it'))), true);
+    assert.equal(await page.evaluate(() => Boolean(document.activeElement.closest('fb-try-it'))), true);
     assert.deepEqual(await violations(page), []);
   } finally {
     await page.close();

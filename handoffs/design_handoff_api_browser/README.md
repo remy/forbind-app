@@ -1,8 +1,8 @@
-# Handoff: allyway — accessible API browser
+# Handoff: forbind — accessible API browser
 
 ## Overview
 
-allyway is an API browser and testing tool whose core value is accessibility. A user uploads an
+forbind is an API browser and testing tool whose core value is accessibility. A user uploads an
 OpenAPI schema (JSON or YAML, 2.0–3.1); the tool parses it in the browser and generates a browsable,
 filterable set of endpoints. From there the user can inspect an operation (parameters, request body,
 responses), copy a generated `curl` snippet, and — not yet designed — send a real request.
@@ -15,8 +15,8 @@ It shows up as real semantics, visible focus, non-colour-only meaning, and keybo
 
 `mocks/API Browser.dc.html` is a **design reference written in HTML**. It is a prototype showing
 intended look, structure and behaviour — *not* production code to copy. The job is to **recreate
-these designs in allyway's own environment** using its established framework, component library and
-patterns. The `allyway` folder was empty at the time of handoff, so if no environment exists yet,
+these designs in forbind's own environment** using its established framework, component library and
+patterns. The `forbind` folder was empty at the time of handoff, so if no environment exists yet,
 pick the framework appropriate for the project (a React + TypeScript SPA is the natural fit for a
 client-side schema parser) and implement there.
 
@@ -47,7 +47,7 @@ Vertical stack of three rows: top bar (`52px`), schema meta strip (`34px`), then
 
 **Top bar** — `display:flex; align-items:center; gap:14px; padding:0 16px;`
 `border-bottom:1.5px solid #0F0F0E`.
-- Wordmark `ALLYWAY`: IBM Plex Mono 600 13px, `letter-spacing:.14em`.
+- Wordmark `FORBIND`: IBM Plex Mono 600 13px, `letter-spacing:.14em`.
 - `1px × 20px` divider `#C9C8C2`.
 - Search field: `flex:1; max-width:380px; height:32px; padding:0 10px;` `1px solid #0F0F0E`,
   background `#FFF`. Placeholder “Search endpoints, params, schemas”, Plex Sans 400 12.5px `#56564F`.
@@ -321,7 +321,7 @@ Depth is expressed with hairlines and fills.
 ## Assets
 
 None. No icons, no images, no logos — every affordance is a word or a rule. The `▾`, `✕`, `‹`, `↑↓`,
-`↵`, `⇥`, `⌘`, `✓` marks are text characters. If allyway has a wordmark, swap it for the `ALLYWAY`
+`↵`, `⇥`, `⌘`, `✓` marks are text characters. If forbind has a wordmark, swap it for the `FORBIND`
 text lockup and keep the mono/letter-spaced treatment or replace it wholesale.
 
 Fonts: IBM Plex Sans + IBM Plex Mono (Google Fonts / `@ibm/plex`, OFL). Self-host in production.

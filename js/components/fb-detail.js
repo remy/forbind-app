@@ -16,7 +16,7 @@
  * trade in a tool whose whole point is the semantics.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { verbLabel, verbClass, fieldRows } from '../lib/openapi.js';
 import { markdownBlock } from '../lib/markdown.js';
@@ -34,7 +34,7 @@ const SECTIONS = [
   { key: 'tryit', label: 'Try it' },
 ];
 
-class AwDetail extends AwElement {
+class FbDetail extends FbElement {
   static observes = ['schema', 'selectedOperationId', 'selectedSchemaName', 'density', 'auth', 'mobileView'];
 
   #tab = 'overview';
@@ -380,7 +380,7 @@ class AwDetail extends AwElement {
   }
 
   #sectionCode(state, op) {
-    const block = this.#keptPanel(state, 'aw-code-block');
+    const block = this.#keptPanel(state, 'fb-code-block');
     block.operation = op;
     return el('section', { class: 'detail__section', 'aria-label': 'Request snippet' }, [block]);
   }
@@ -405,10 +405,10 @@ class AwDetail extends AwElement {
   }
 
   #sectionTryIt(state, op) {
-    const panel = this.#keptPanel(state, 'aw-try-it', { id: 'try-it' });
+    const panel = this.#keptPanel(state, 'fb-try-it', { id: 'try-it' });
     panel.operation = op;
     return el('section', { class: 'detail__section', 'aria-label': 'Try it' }, [panel]);
   }
 }
 
-define('aw-detail', AwDetail);
+define('fb-detail', FbDetail);

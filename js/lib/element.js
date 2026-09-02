@@ -1,5 +1,5 @@
 /**
- * The base class for allyway's custom elements.
+ * The base class for forbind's custom elements.
  *
  * Everything renders into the light DOM (see js/lib/dom.js for why) and
  * re-renders when one of the state keys it declares changes identity. The
@@ -9,7 +9,7 @@
 
 import { app } from './context.js';
 
-export class AwElement extends HTMLElement {
+export class FbElement extends HTMLElement {
   /** @type {string[]} state keys that should trigger a re-render */
   static observes = [];
 
@@ -44,7 +44,7 @@ export class AwElement extends HTMLElement {
 
   /** @returns {boolean} */
   shouldRender(state, prev) {
-    const keys = /** @type {typeof AwElement} */ (this.constructor).observes;
+    const keys = /** @type {typeof FbElement} */ (this.constructor).observes;
     return keys.some((key) => !Object.is(state[key], prev[key]));
   }
 

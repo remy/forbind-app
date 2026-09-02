@@ -17,7 +17,7 @@
  * so and links to it instead of unrolling forever.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { payloadChildren, hasChildren, refOf, payloadRef, refName } from '../lib/openapi.js';
@@ -37,7 +37,7 @@ const OPEN_TO_DEPTH = 1;
  */
 const builders = new WeakMap();
 
-class AwSchemaTree extends AwElement {
+class FbSchemaTree extends FbElement {
   static observes = ['schema'];
 
   /** @type {unknown} the schema node to describe — set by the parent */
@@ -265,4 +265,4 @@ class AwSchemaTree extends AwElement {
   }
 }
 
-define('aw-schema-tree', AwSchemaTree);
+define('fb-schema-tree', FbSchemaTree);

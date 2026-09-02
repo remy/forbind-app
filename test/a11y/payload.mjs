@@ -30,7 +30,7 @@ test('a response you opened is still open after a trip to another tab', async ()
     await showTab(page, 'responses');
     assert.deepEqual(await codes(), opened, 'the tab round trip folded the responses back up');
     // And the body of the one that was opened is still described.
-    assert.ok(await page.locator('details.response-detail[open] aw-schema-tree ul').count() > 0);
+    assert.ok(await page.locator('details.response-detail[open] fb-schema-tree ul').count() > 0);
 
     // Closing is remembered the same way round.
     await page.locator('details.response-detail > summary.response-summary').first().click();
@@ -42,8 +42,8 @@ test('a response you opened is still open after a trip to another tab', async ()
     // A different operation is a different question, and starts from its own
     // default rather than from the last one's answer.
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'GET');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'GET');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
     await showTab(page, 'responses');
@@ -58,8 +58,8 @@ test('a response opens up to the shape of its payload', async () => {
   const page = await open();
   try {
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
     await showTab(page, 'responses');
@@ -96,8 +96,8 @@ test('a nested payload is walked with the keyboard alone', async () => {
   const page = await open();
   try {
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
     await showTab(page, 'responses');
@@ -132,12 +132,12 @@ test('the payload is nested lists, not a hand-rolled tree widget', async () => {
   const page = await open();
   try {
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
     await showTab(page, 'responses');
-    const tree = page.locator('details.response-detail[open] aw-schema-tree');
+    const tree = page.locator('details.response-detail[open] fb-schema-tree');
 
     const shape = await tree.evaluate((root) => ({
       treeRoles: root.querySelectorAll('[role="tree"], [role="treeitem"]').length,
@@ -168,22 +168,22 @@ test('expand all opens every level and says what it did', async () => {
   const page = await open();
   try {
     await page.evaluate(() => {
-      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
-      window.__aw.actions.selectOperation(op.id);
+      const op = window.__fb.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'POST');
+      window.__fb.actions.selectOperation(op.id);
     });
     await page.waitForTimeout(700);
     await showTab(page, 'responses');
-    const tree = page.locator('details.response-detail[open] aw-schema-tree');
+    const tree = page.locator('details.response-detail[open] fb-schema-tree');
 
     await tree.getByRole('button', { name: 'Expand all' }).click();
     await page.waitForTimeout(600);
     assert.equal(await tree.locator('details.field-branch:not([open])').count(), 0, 'expand all left a branch closed');
-    assert.match(await page.locator('#aw-live-polite').textContent(), /expanded/);
+    assert.match(await page.locator('#fb-live-polite').textContent(), /expanded/);
 
     await tree.getByRole('button', { name: 'Collapse all' }).click();
     await page.waitForTimeout(400);
     assert.equal(await tree.locator('details.field-branch[open]').count(), 0);
-    assert.match(await page.locator('#aw-live-polite').textContent(), /collapsed/);
+    assert.match(await page.locator('#fb-live-polite').textContent(), /collapsed/);
   } finally {
     await page.close();
   }

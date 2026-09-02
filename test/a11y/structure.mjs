@@ -113,7 +113,7 @@ test('every landmark is present and named', async () => {
     // Exactly one h1, naming the tool and the document.
     const h1s = await page.locator('h1').allTextContents();
     assert.equal(h1s.length, 1);
-    assert.match(h1s[0], /^allyway — /);
+    assert.match(h1s[0], /^forbind — /);
   } finally {
     await page.close();
   }
@@ -150,7 +150,7 @@ test('the list panel offers no method filters, and still filters by method', asy
     await page.waitForTimeout(500);
 
     // And the roomy layout keeps `+ verb` among its facets.
-    await page.evaluate(() => window.__aw.actions.setDensity('roomy'));
+    await page.evaluate(() => window.__fb.actions.setDensity('roomy'));
     await page.waitForTimeout(600);
     await page.getByRole('button', { name: '+ verb' }).click();
     await page.waitForTimeout(400);
@@ -185,7 +185,7 @@ test('a filter named in the address survives the schema load', async () => {
       [...new Set([...document.querySelectorAll('.pane--list .row .pill')].map((n) => n.textContent.trim()))]);
     assert.deepEqual(methods, ['GET'], `the list is showing ${methods.join(', ')}`);
     // The store agrees, so the applied-filter controls can clear it.
-    assert.deepEqual(await page.evaluate(() => window.__aw.store.state.filters.verbs), ['GET']);
+    assert.deepEqual(await page.evaluate(() => window.__fb.store.state.filters.verbs), ['GET']);
     // And it is still in the address, so the link a reader copies onward says
     // the same thing as the one they were given.
     assert.match(await page.evaluate(() => location.hash), /verb=GET/);
@@ -225,7 +225,7 @@ test('the list is a real list, with no display:contents anywhere in it', async (
   for (const density of ['dense', 'roomy']) {
     const page = await open();
     try {
-      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.evaluate((d) => window.__fb.actions.setDensity(d), density);
       await page.waitForTimeout(500);
 
       const shape = await page.evaluate(() => {
@@ -267,13 +267,13 @@ test('a skip link lands focus on its target without disturbing the route', async
   try {
     // Something worth not losing: a filter and an open operation.
     await page.evaluate(() => {
-      window.__aw.actions.setQuery('booking');
-      window.__aw.actions.selectOperation(window.__aw.actions.visibleOperations()[1].id);
+      window.__fb.actions.setQuery('booking');
+      window.__fb.actions.selectOperation(window.__fb.actions.visibleOperations()[1].id);
     });
     await page.waitForTimeout(600);
     const before = await page.evaluate(() => ({
-      op: window.__aw.store.state.selectedOperationId,
-      query: window.__aw.store.state.filters.query,
+      op: window.__fb.store.state.selectedOperationId,
+      query: window.__fb.store.state.filters.query,
       hash: location.hash,
     }));
 
@@ -290,8 +290,8 @@ test('a skip link lands focus on its target without disturbing the route', async
       await page.waitForTimeout(350);
       assert.equal(await page.evaluate(() => document.activeElement.id), id, `${name} did not focus its target`);
       const after = await page.evaluate(() => ({
-        op: window.__aw.store.state.selectedOperationId,
-        query: window.__aw.store.state.filters.query,
+        op: window.__fb.store.state.selectedOperationId,
+        query: window.__fb.store.state.filters.query,
         hash: location.hash,
       }));
       assert.deepEqual(after, before, `${name} changed the route or the filters`);
@@ -303,7 +303,7 @@ test('a skip link lands focus on its target without disturbing the route', async
     await page.waitForTimeout(250);
     await page.keyboard.type('venue');
     await page.waitForTimeout(500);
-    assert.equal(await page.evaluate(() => window.__aw.store.state.filters.query), 'venue');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.filters.query), 'venue');
   } finally {
     await page.close();
   }
@@ -319,7 +319,7 @@ test('the tags skip link follows the tags wherever the layout puts them', async 
   for (const [viewport, density, id] of cases) {
     const page = await open(`#/op/post-v2-bookings?src=${SRC}`, { viewport });
     try {
-      await page.evaluate((d) => window.__aw.actions.setDensity(d), density);
+      await page.evaluate((d) => window.__fb.actions.setDensity(d), density);
       await page.waitForTimeout(500);
       await page.getByRole('link', { name: 'Skip to tags and filters' }).focus();
       await page.keyboard.press('Enter');
@@ -339,7 +339,7 @@ test('a schema named in the query string loads, and the address is tidied up', a
   const page = await open(`?url=${SRC}`);
   try {
     assert.equal(
-      await page.evaluate(() => window.__aw.store.state.schema?.sourceName ?? null),
+      await page.evaluate(() => window.__fb.store.state.schema?.sourceName ?? null),
       'bookings-api.v2.yaml',
       'the query string did not load the schema',
     );
@@ -355,7 +355,7 @@ test('a schema named in the query string loads, and the address is tidied up', a
 test('a query schema lands on the operation the fragment asked for', async () => {
   const page = await open(`?url=${SRC}#/op/post-v2-bookings`);
   try {
-    assert.equal(await page.evaluate(() => window.__aw.store.state.selectedOperationId), 'post-v2-bookings');
+    assert.equal(await page.evaluate(() => window.__fb.store.state.selectedOperationId), 'post-v2-bookings');
     assert.match(await page.locator('.detail__path').textContent(), /\/v2\/bookings/);
   } finally {
     await page.close();
@@ -369,15 +369,15 @@ test('the title names which of the four screens is on show', async () => {
   const page = await open(`#/op/post-v2-bookings?src=${SRC}`);
   try {
     const title = () => page.title();
-    assert.match(await title(), /^POST \/v2\/bookings — .+ — allyway$/);
+    assert.match(await title(), /^POST \/v2\/bookings — .+ — forbind$/);
 
-    await page.evaluate(() => window.__aw.actions.selectSchema('Booking'));
+    await page.evaluate(() => window.__fb.actions.selectSchema('Booking'));
     await page.waitForTimeout(300);
-    assert.match(await title(), /^Booking — .+ — allyway$/);
+    assert.match(await title(), /^Booking — .+ — forbind$/);
 
-    await page.evaluate(() => window.__aw.actions.replaceSchema());
+    await page.evaluate(() => window.__fb.actions.replaceSchema());
     await page.waitForTimeout(400);
-    assert.equal(await title(), 'Load a schema — allyway');
+    assert.equal(await title(), 'Load a schema — forbind');
   } finally {
     await page.close();
   }

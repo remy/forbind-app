@@ -18,14 +18,14 @@
  * perfectly browsable, so warnings never block the way through.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
 import { logoMark } from '../lib/logo.js';
 
 const SAMPLE = '/samples/bookings-api.v2.yaml';
 
-class AwImport extends AwElement {
+class FbImport extends FbElement {
   static observes = ['schema', 'schemaState', 'schemaError', 'importNote', 'importUrl'];
 
   #dragDepth = 0;
@@ -121,7 +121,7 @@ class AwImport extends AwElement {
       el('div', { class: 'import__inner' }, [
         el('h1', { class: 'brand' }, [
           logoMark(),
-          el('span', { class: 'brand__name', text: 'Allyway' }),
+          el('span', { class: 'brand__name', text: 'Forbind' }),
         ]),
         // What the thing is, in one line, before what to do with it. The name
         // above says nothing on its own to anyone arriving from a link.
@@ -147,7 +147,7 @@ class AwImport extends AwElement {
           }),
         ]),
         el('p', { class: 'help', id: 'url-help' }, [
-          el('span', { text: 'Fetched by your browser first. If the host does not allow that, allyway fetches it server-side instead and says so. ' }),
+          el('span', { text: 'Fetched by your browser first. If the host does not allow that, forbind fetches it server-side instead and says so. ' }),
           el('button', {
             type: 'button',
             class: 'link-quiet',
@@ -252,7 +252,7 @@ class AwImport extends AwElement {
           ])
           : null,
 
-        el('aw-base-url'),
+        el('fb-base-url'),
 
         el('div', { class: 'sheet__actions' }, [
           el('button', {
@@ -321,4 +321,4 @@ class AwImport extends AwElement {
   }
 }
 
-define('aw-import', AwImport);
+define('fb-import', FbImport);

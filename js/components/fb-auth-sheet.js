@@ -14,7 +14,7 @@
  *   - whether the API accepts it (a real request, which CORS may hide)
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace, preserveFocus } from '../lib/dom.js';
 import { wireDialog } from '../lib/dialog.js';
 import { announce } from '../lib/announce.js';
@@ -22,7 +22,7 @@ import { describeScheme, describeSchemeDetail } from '../lib/openapi.js';
 import { normaliseCredential, readJwt, describeExpiry, pickProbeOperation, interpretProbe } from '../lib/auth.js';
 import { buildRequest } from '../lib/request.js';
 
-class AwAuthSheet extends AwElement {
+class FbAuthSheet extends FbElement {
   static observes = ['authOpen', 'schema', 'auth'];
 
   #dialog = null;
@@ -440,4 +440,4 @@ function labelForScheme(scheme) {
   return 'Credential';
 }
 
-define('aw-auth-sheet', AwAuthSheet);
+define('fb-auth-sheet', FbAuthSheet);

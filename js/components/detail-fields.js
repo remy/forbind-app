@@ -4,7 +4,7 @@
  * A parameter list, a request body and a component schema are all the same
  * thing on screen — a set of named fields with a type, a required flag and
  * notes — so they are drawn by one function here rather than three in the
- * detail pane. It lives beside `aw-detail.js` rather than inside it because
+ * detail pane. It lives beside `fb-detail.js` rather than inside it because
  * that file has enough subjects in it already.
  *
  * The table is a real `<table>` with `scope`d headers where there is room, and

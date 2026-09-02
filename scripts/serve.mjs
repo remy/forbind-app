@@ -58,5 +58,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`allyway on http://localhost:${port}`);
+  console.log(`forbind on http://localhost:${port}`);
 });

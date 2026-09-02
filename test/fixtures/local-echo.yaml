@@ -1,4 +1,4 @@
-# A one-operation schema pointed at allyway's own dev server, so the try-it
+# A one-operation schema pointed at forbind's own dev server, so the try-it
 # path can be exercised end to end without a cross-origin request in the way.
 openapi: 3.1.0
 info:

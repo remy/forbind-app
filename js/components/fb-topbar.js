@@ -7,7 +7,7 @@
  * flows one way here: input -> store, never back.
  */
 
-import { AwElement, define } from '../lib/element.js';
+import { FbElement, define } from '../lib/element.js';
 import { el, replace } from '../lib/dom.js';
 
 /* The rail only exists in the dense IA and only above this width; below the
@@ -17,7 +17,7 @@ import { el, replace } from '../lib/dom.js';
 const HAS_RAIL = '(min-width: 75.0625rem)';
 const HAS_COLUMNS = '(min-width: 48.0625rem)';
 
-class AwTopbar extends AwElement {
+class FbTopbar extends FbElement {
   static observes = ['schema', 'density', 'railCollapsed', 'listCollapsed'];
 
   #input = null;
@@ -78,7 +78,7 @@ class AwTopbar extends AwElement {
 
     replace(this, [
       el('div', { class: 'topbar' }, [
-        el('a', { class: 'wordmark', href: '#/', text: 'ALLYWAY' }),
+        el('a', { class: 'wordmark', href: '#/', text: 'FORBIND' }),
         !roomy && el('span', { class: 'topbar__divider', 'aria-hidden': 'true' }),
         search,
         roomy && schema
@@ -111,7 +111,7 @@ class AwTopbar extends AwElement {
           }),
         ]),
       ]),
-      roomy ? el('aw-search-block', {}) : null,
+      roomy ? el('fb-search-block', {}) : null,
     ]);
   }
 
@@ -210,7 +210,7 @@ class AwTopbar extends AwElement {
  * The search-first header from 1b. Same store, same handler — only the
  * presentation differs, so there is one search behaviour to get right.
  */
-class AwSearchBlock extends AwElement {
+class FbSearchBlock extends FbElement {
   static observes = ['schema', 'filters'];
 
   #input = null;
@@ -271,7 +271,7 @@ class AwSearchBlock extends AwElement {
           input,
           this.#status,
         ]),
-        el('aw-facets', {}),
+        el('fb-facets', {}),
       ]),
     ]);
   }
@@ -285,7 +285,7 @@ class AwSearchBlock extends AwElement {
 /**
  * The schema meta strip: what was loaded, and the way back out of it.
  */
-class AwMetaStrip extends AwElement {
+class FbMetaStrip extends FbElement {
   static observes = ['schema'];
 
   render(state) {
@@ -320,6 +320,6 @@ class AwMetaStrip extends AwElement {
   }
 }
 
-define('aw-topbar', AwTopbar);
-define('aw-search-block', AwSearchBlock);
-define('aw-meta-strip', AwMetaStrip);
+define('fb-topbar', FbTopbar);
+define('fb-search-block', FbSearchBlock);
+define('fb-meta-strip', FbMetaStrip);
