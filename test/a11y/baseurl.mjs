@@ -192,6 +192,36 @@ test('try-it asks for the base URL itself, and keeps focus when one arrives', as
   }
 });
 
+test('a host typed but not yet applied survives a trip to another tab', async () => {
+  const page = await open(`#/?src=${NO_SERVER}`);
+  try {
+    await page.evaluate(() => {
+      const op = window.__aw.store.state.schema.operations.find((o) => o.method === 'POST');
+      window.__aw.actions.selectOperation(op.id);
+    });
+    await page.waitForTimeout(600);
+    await showTab(page, 'tryit');
+
+    const field = page.locator('aw-try-it').getByRole('textbox', { name: 'Base URL' });
+    await field.fill('https://api.example.com');
+    await page.waitForTimeout(200);
+
+    // Not applied yet: leaving the tab must not hand the field back to the
+    // guess it started on, which would be a different host entirely.
+    await showTab(page, 'code');
+    await showTab(page, 'tryit');
+    assert.equal(await field.count(), 1);
+    assert.equal(await field.inputValue(), 'https://api.example.com');
+
+    await page.getByRole('button', { name: 'Use this' }).click();
+    await page.waitForTimeout(300);
+    assert.match(await page.locator('.tryit__status').textContent(), /https:\/\/api\.example\.com\/notes/);
+    assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test('the question is asked once, not on every operation opened after it', async () => {
   const page = await open(`#/?src=${NO_SERVER}`);
   try {

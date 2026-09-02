@@ -98,7 +98,7 @@ re-render, everything else patches attributes in place.
 | `aw-detail` | an operation, a component schema, or the empty state — an operation's sections are a tab set in every layout |
 | `aw-schema-tree` | a response body as nested `<details>` in nested `<ul>`s |
 | `aw-code-block` | the curl/fetch/python snippet and its copy button |
-| `aw-try-it` | the real request form and its result |
+| `aw-try-it` | the real request form and its result; the rows themselves are `tryit-fields.js` |
 | `aw-palette` | ⌘K — a real combobox over operations, schemas and commands |
 | `aw-auth-sheet` | the credential, where it is stored, and verification |
 | `aw-options` | theme, density, hint bar, and the base URL once one is needed |
@@ -107,10 +107,22 @@ re-render, everything else patches attributes in place.
 
 `aw-detail` hands its field tables and the whole component-schema view to
 `detail-fields.js` — one set of rows drawn one way, for parameters, request
-bodies and schemas alike. `aw-endpoint-list` hands the two strips above it to
-`list-strips.js`: `aw-deprecated-bar` and then `aw-tag-chips`. Neither is part
-of the keyboard model the list runs, and the list file had enough subjects in
-it already.
+bodies and schemas alike — and the Responses section to `detail-responses.js`,
+which is given the set of unfolded status codes rather than keeping it.
+`aw-endpoint-list` hands the two strips above it to `list-strips.js`:
+`aw-deprecated-bar` and then `aw-tag-chips`. Neither is part of the keyboard
+model the list runs, and the list file had enough subjects in it already. `aw-try-it` keeps the panel — what has been typed, what is being
+sent, what came back — and hands one row of the form at a time to
+`tryit-fields.js`, which is given the panel's own `values` and `errors` objects
+by reference so a keystroke lands where the sender will look for it.
+
+`aw-detail` builds a new element for each section on every render, with two
+exceptions: `aw-try-it` and `aw-code-block` hold something the reader made — a
+form part-filled, a snippet language chosen — so they are kept and re-attached
+rather than rebuilt. They are dropped when the document changes, which is the
+one time an emptied form is the right answer. Responses are rebuilt, but the
+answer they carry is not: `aw-detail` holds the set of unfolded codes for the
+operation on screen and hands it to the section each time.
 
 ---
 

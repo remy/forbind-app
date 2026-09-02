@@ -18,10 +18,10 @@
 
 import { AwElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
-import { verbLabel, verbClass, statusClass, fieldRows, payloadChildren, describeType } from '../lib/openapi.js';
-import { sampleValue } from '../lib/request.js';
-import { markdownBlock, markdownToText } from '../lib/markdown.js';
+import { verbLabel, verbClass, fieldRows } from '../lib/openapi.js';
+import { markdownBlock } from '../lib/markdown.js';
 import { paramTable, renderSchemaView } from './detail-fields.js';
+import { defaultOpenResponses, renderResponses } from './detail-responses.js';
 
 const NARROW = '(max-width: 48rem)';
 
@@ -40,10 +40,13 @@ class AwDetail extends AwElement {
   #tab = 'overview';
   #media = null;
   #onMediaChange = null;
-  /** The try-it panel, kept across renders — see #sectionTryIt. */
-  #tryIt = null;
-  /** The schema that panel was built for; a new document gets a new panel. */
-  #tryItFor = null;
+  /** Panels that hold the reader's own work, kept across renders — see #keptPanel. */
+  #panels = {};
+  /** The schema they were built for; a new document gets new panels. */
+  #panelsFor = null;
+  /** Which responses are unfolded, and the operation that was asked. */
+  #openResponses = null;
+  #openResponsesFor = null;
 
   connectedCallback() {
     this.#media = globalThis.matchMedia?.(NARROW);
@@ -358,140 +361,54 @@ class AwDetail extends AwElement {
   }
 
   /**
-   * Responses, opened up.
+   * Responses, opened up — drawn by `detail-responses.js`.
    *
-   * Collapsed, each one is the row the design draws: a status chip and its
-   * phrase. Opened, it is what the response actually contains — the shape of
-   * the body as a walkable set of fields, and an example built from the same
-   * schema. Every 2xx starts open, because that is the one you came to read;
-   * the rest wait to be asked for.
+   * Which of them are open is remembered here rather than there, because the
+   * section is rebuilt on every render of the pane and a disclosure the reader
+   * opened should still be open after a trip to another tab. A different
+   * operation is a different question, and starts from the default again.
    */
   #sectionResponses(state, op) {
-    if (!op.responses.length) {
-      return el('section', { class: 'detail__section', 'aria-label': 'Responses' }, [
-        el('p', { class: 'empty__body', text: 'This operation declares no responses.' }),
-      ]);
+    if (this.#openResponsesFor !== op) {
+      this.#openResponsesFor = op;
+      this.#openResponses = defaultOpenResponses(op);
     }
-
-    const success = op.responses.filter((r) => statusClass(r.code) === 'success');
-
-    return el('section', { class: 'detail__section', 'aria-label': 'Responses' }, [
-      el('ul', { class: 'response-list' }, op.responses.map((response) =>
-        el('li', {}, [this.#renderResponse(state, response, success.length === 1 && success[0] === response)]),
-      )),
-    ]);
-  }
-
-  #renderResponse(state, response, openByDefault) {
-    const klass = statusClass(response.code);
-    const hasBody = Boolean(response.schema);
-    const children = hasBody ? payloadChildren(state.schema.doc, response.schema) : null;
-    const typeLabel = hasBody ? describeType(state.schema.doc, response.schema).label : '';
-
-    let shape = 'no body';
-    if (hasBody) {
-      const count = children?.items.length ?? 0;
-      if (!children) shape = typeLabel;
-      else if (children.kind === 'variants') shape = `${typeLabel} · ${count} shapes`;
-      else shape = `${typeLabel} · ${count} ${count === 1 ? 'field' : 'fields'}`;
-    }
-
-    const summaryLine = el('summary', { class: 'response-summary' }, [
-      el('span', { class: `response-chip pill--${klass}`, text: response.code }),
-      el('span', { class: 'response-summary__text', text: markdownToText(response.description) || '—' }),
-      el('span', { class: 'response-summary__shape', text: shape }),
-    ]);
-
-    if (!hasBody) {
-      // Nothing to open, so it is a row rather than a disclosure that does
-      // nothing when you press it.
-      return el('div', { class: 'response-row' }, [
-        el('span', { class: `response-chip pill--${klass}`, text: response.code }),
-        el('span', { class: 'response-summary__text', text: markdownToText(response.description) || '—' }),
-        el('span', { class: 'response-summary__shape', text: shape }),
-      ]);
-    }
-
-    const tree = el('aw-schema-tree', {});
-    const label = `The ${response.code} response body`;
-    const example = exampleFor(state.schema.doc, response);
-
-    const wrapper = el('details', { class: 'response-detail', open: openByDefault ? true : null }, [
-      summaryLine,
-      el('div', { class: 'response-detail__body' }, [
-        el('div', { class: 'response-detail__meta' }, [
-          response.contentType
-            ? el('span', { class: 'chip chip--static', text: response.contentType })
-            : null,
-          response.schemaName
-            ? el('a', {
-                href: this.actions.hashFor({ view: 'schema', id: response.schemaName }),
-                text: response.schemaName,
-              })
-            : null,
-        ]),
-        el('div', { class: 'detail__section' }, [
-          el('h3', { class: 'label', text: 'Body' }),
-          tree,
-        ]),
-        example !== null
-          ? el('div', { class: 'detail__section' }, [
-              el('h3', { class: 'label', text: 'Example' }),
-              el('pre', { class: 'code-block', tabindex: '0', text: example }),
-            ])
-          : null,
-      ]),
-    ]);
-
-    // A closed response does not pay to describe a payload nobody has asked
-    // to see — and an operation can declare a dozen of them.
-    const describe = () => tree.describe(response.schema, label);
-    if (openByDefault) describe();
-    else wrapper.addEventListener('toggle', () => { if (wrapper.open) describe(); }, { once: true });
-
-    return wrapper;
+    return renderResponses(state, op, {
+      hashFor: (target) => this.actions.hashFor(target),
+      opened: this.#openResponses,
+    });
   }
 
   #sectionCode(state, op) {
-    const block = el('aw-code-block', {});
+    const block = this.#keptPanel(state, 'aw-code-block');
     block.operation = op;
     return el('section', { class: 'detail__section', 'aria-label': 'Request snippet' }, [block]);
   }
 
   /**
-   * The panel is kept, not rebuilt.
+   * A panel holding the reader's own work is kept, not rebuilt.
    *
-   * What has been typed into it lives on the element, so a fresh one is an
-   * emptied form — and this runs again on every re-render: switching tabs and
-   * back, pressing "Try this request" a second time, a credential arriving.
-   * None of those is a request to throw the reader's values away. The panel
-   * clears itself when the operation changes, which is the one time it should.
+   * What has been typed into Try it, and which language Code is showing, live
+   * on those elements, so a fresh one is an emptied form and a snippet back at
+   * curl — and this runs again on every re-render: switching tabs and back,
+   * pressing "Try this request" a second time, a credential arriving. None of
+   * those is a request to throw the reader's work away. The panels go when the
+   * document does, which is the one time they should.
    */
-  #sectionTryIt(state, op) {
-    if (this.#tryItFor !== state.schema) {
-      this.#tryIt = null;
-      this.#tryItFor = state.schema;
+  #keptPanel(state, tag, attrs = {}) {
+    if (this.#panelsFor !== state.schema) {
+      this.#panels = {};
+      this.#panelsFor = state.schema;
     }
-    this.#tryIt ??= el('aw-try-it', { id: 'try-it' });
-    this.#tryIt.operation = op;
-    return el('section', { class: 'detail__section', 'aria-label': 'Try it' }, [this.#tryIt]);
+    this.#panels[tag] ??= el(tag, attrs);
+    return this.#panels[tag];
   }
 
-  /* --- component schema view -------------------------------------------- */
-
-}
-
-/**
- * The example body: whatever the document offers, else one built from the
- * schema. Unlike a request draft this includes optional fields — a response
- * example is meant to show everything you might get back.
- */
-function exampleFor(doc, response) {
-  if (response.example !== undefined) return JSON.stringify(response.example, null, 2);
-  if (!response.schema) return null;
-  const value = sampleValue(doc, response.schema, { includeOptional: true });
-  if (value === null || value === undefined) return null;
-  return JSON.stringify(value, null, 2);
+  #sectionTryIt(state, op) {
+    const panel = this.#keptPanel(state, 'aw-try-it', { id: 'try-it' });
+    panel.operation = op;
+    return el('section', { class: 'detail__section', 'aria-label': 'Try it' }, [panel]);
+  }
 }
 
 define('aw-detail', AwDetail);

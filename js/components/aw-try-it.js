@@ -14,16 +14,18 @@
  * asked for here, in the panel, rather than only failing at send time — the
  * field appears above the parameters, because it is the first thing the
  * request needs and the reader is the only one who knows it.
+ *
+ * The rows of the form itself are in `tryit-fields.js`; this file owns the
+ * panel around them — what has been typed, what is being sent, what came back.
  */
 
 import { AwElement, define } from '../lib/element.js';
 import { el, replace, uid } from '../lib/dom.js';
 import { announce } from '../lib/announce.js';
-import { buildRequest, sampleValue, parameterExample } from '../lib/request.js';
+import { buildRequest, parameterExample } from '../lib/request.js';
 import { explainFailure, renderResult, formatBytes } from './tryit-result.js';
 import { confirmMutation, MUTATING } from './tryit-confirm.js';
-import { enumValues } from '../lib/enums.js';
-import { markdownBlock } from '../lib/markdown.js';
+import { bodyField, draftBody, fieldFor, seedDefaults } from './tryit-fields.js';
 
 /** The LIVE warning, which names the host the request is actually going to. */
 function liveSentence(op, host) {
@@ -44,6 +46,22 @@ class AwTryIt extends AwElement {
   #operationId = null;
   /** Keyed `${in}:${name}` — a required field that was left empty. */
   #errors = {};
+  /**
+   * Whether the body has been drafted from the schema yet. Seeding on "the
+   * box is empty" would put the draft back every time the panel re-rendered,
+   * which makes deleting a body a thing you cannot do.
+   */
+  #bodyDrafted = false;
+  /** The base URL field, kept so a half-typed host survives a re-render. */
+  #baseUrlField = null;
+
+  /** Back to an untouched form: a different operation, or the Reset button. */
+  #clear() {
+    this.#values = { path: {}, query: {}, header: {}, body: '' };
+    this.#result = null;
+    this.#errors = {};
+    this.#bodyDrafted = false;
+  }
 
   render(state) {
     if (!this.operation) {
@@ -53,16 +71,32 @@ class AwTryIt extends AwElement {
     // A different operation means the entered values belong to the old one.
     if (this.#operationId !== this.operation.id) {
       this.#operationId = this.operation.id;
-      this.#values = { path: {}, query: {}, header: {}, body: '' };
-      this.#result = null;
-      this.#errors = {};
+      this.#clear();
+      // The next operation gets a fresh field — that is aw-base-url's own
+      // rule, and by then the question has usually been answered. Reset does
+      // not do this: a base URL is not one of the fields it empties.
+      this.#baseUrlField = null;
     }
 
     const op = this.operation;
+    const doc = state.schema?.doc ?? {};
     const baseId = uid('try');
     // Seed before the preview is computed, so the URL under the button, the
     // curl block above it, and the dropdowns all say the same thing.
-    this.#seedDefaults(state, op);
+    seedDefaults(doc, op, this.#values);
+    // Drafted once. An emptied box after that is an edit, not an absence.
+    if (op.requestBody && !this.#bodyDrafted) {
+      this.#values.body = draftBody(doc, op);
+      this.#bodyDrafted = true;
+    }
+    const ctx = {
+      baseId,
+      doc,
+      values: this.#values,
+      errors: this.#errors,
+      root: this,
+      onEdit: () => this.#updatePreview(),
+    };
     const preview = this.#preview(state);
 
     const params = op.parameters.filter((p) => p.in !== 'cookie');
@@ -71,10 +105,13 @@ class AwTryIt extends AwElement {
 
     // Built rather than declared so the operation reaches it: an operation
     // with its own `servers` needs nothing here even when the document does.
-    const baseUrlField = el('aw-base-url', { variant: 'inline', '.operation': op });
+    // Kept, like this panel is, so a host typed but not yet applied is still
+    // there after a trip to another tab.
+    this.#baseUrlField ??= el('aw-base-url', { variant: 'inline' });
+    this.#baseUrlField.operation = op;
 
     replace(this, [
-      baseUrlField,
+      this.#baseUrlField,
 
       MUTATING.has(op.method)
         ? el('p', { class: 'tryit__warning' }, [
@@ -112,8 +149,8 @@ class AwTryIt extends AwElement {
         },
       }, [
         el('div', { class: 'tryit__fields' }, [
-          ...params.map((param) => this.#fieldFor(baseId, param)),
-          op.requestBody ? this.#bodyField(baseId, state, op) : null,
+          ...params.map((param) => fieldFor(param, ctx)),
+          op.requestBody ? bodyField(op, ctx) : null,
         ]),
 
         el('div', { class: 'tryit__actions' }, [
@@ -132,9 +169,7 @@ class AwTryIt extends AwElement {
             class: 'btn btn--lg',
             text: 'Reset',
             onclick: () => {
-              this.#values = { path: {}, query: {}, header: {}, body: '' };
-              this.#result = null;
-              this.#errors = {};
+              this.#clear();
               this.render(this.state);
               announce('Try-it fields reset.');
             },
@@ -186,155 +221,6 @@ class AwTryIt extends AwElement {
     }
   }
 
-  /**
-   * The values a parameter is allowed to take, if the schema says.
-   *
-   * Resolved through `$ref` and `allOf`, because a named enum pointed at from
-   * the parameter is the same promise as one written out in place — and a
-   * field with a fixed set of values should be a dropdown either way.
-   */
-  #enumFor(param) {
-    return enumValues(this.state.schema?.doc ?? {}, param.schema ?? {});
-  }
-
-  /**
-   * A required dropdown has to open on something, and the honest something is
-   * whatever the request builder would have used anyway — the schema's own
-   * `example` where it gives one, its first allowed value otherwise. Anything
-   * else and the form would contradict the curl block sitting above it.
-   *
-   * Optional parameters are left alone: "not sent" is what optional means, and
-   * it is what the builder does with them.
-   */
-  #seedDefaults(state, op) {
-    const doc = state.schema?.doc ?? {};
-    for (const param of op.parameters) {
-      if (!param.required || param.in === 'cookie') continue;
-      if (this.#values[param.in]?.[param.name]) continue;
-      const options = this.#enumFor(param);
-      if (!options) continue;
-      const suggested = parameterExample(doc, param);
-      this.#values[param.in] ??= {};
-      this.#values[param.in][param.name] = options.includes(suggested) ? suggested : options[0];
-    }
-  }
-
-  #fieldFor(baseId, param) {
-    const id = `${baseId}-${param.in}-${param.name}`;
-    const hintId = `${id}-hint`;
-    const errorId = `${id}-error`;
-    const key = `${param.in}:${param.name}`;
-    const error = this.#errors[key] ?? null;
-    const options = this.#enumFor(param);
-    const current = this.#values[param.in]?.[param.name] ?? '';
-
-    // When the values are a dropdown, listing them in the hint as well is just
-    // the same information twice.
-    const constraints = options
-      ? param.constraints.filter((note) => !note.startsWith('one of'))
-      : param.constraints;
-    // Two things, not one line. The facts about the field stay terse and
-    // `·`-joined; the description is prose the document wrote in markdown —
-    // often a table of what the field accepts — and it gets the room to be
-    // that, because flattened into the facts line it is unreadable.
-    const facts = [param.type.label, param.required ? 'required' : 'optional', ...constraints]
-      .filter(Boolean)
-      .join(' · ');
-    const prose = markdownBlock(param.description, { class: 'hint hint--prose' });
-    const proseId = `${id}-desc`;
-    if (prose) prose.id = proseId;
-
-    const describedBy = [hintId, prose ? proseId : null, error ? errorId : null].filter(Boolean).join(' ');
-
-    const onChange = (event) => {
-      this.#values[param.in] ??= {};
-      this.#values[param.in][param.name] = event.target.value;
-      if (this.#errors[key]) {
-        delete this.#errors[key];
-        event.target.removeAttribute('aria-invalid');
-        this.querySelector(`#${CSS.escape(errorId)}`)?.remove();
-        event.target.setAttribute('aria-describedby', [hintId, prose ? proseId : null].filter(Boolean).join(' '));
-      }
-      this.#updatePreview();
-    };
-
-    let control;
-    if (options) {
-      control = el('select', {
-        id,
-        'aria-describedby': describedBy,
-        'aria-invalid': error ? 'true' : null,
-        onchange: onChange,
-      }, [
-        // An optional parameter has to be able to stay unsent, so the empty
-        // choice is a real one and is named rather than left blank.
-        param.required ? null : el('option', { value: '', text: '— not sent —' }),
-        ...options.map((value) => el('option', { value, text: value })),
-      ]);
-      // #seedDefaults has already put a required parameter's value in place.
-      control.value = current;
-    } else {
-      const placeholder = param.in === 'path'
-        ? `{${param.name}}`
-        : String(sampleValue(this.state.schema.doc, param.schema ?? {}) ?? '');
-      control = el('input', {
-        id,
-        type: 'text',
-        autocomplete: 'off',
-        spellcheck: 'false',
-        placeholder: placeholder === 'string' ? '' : placeholder,
-        'aria-describedby': describedBy,
-        'aria-invalid': error ? 'true' : null,
-        'aria-required': param.required ? 'true' : null,
-        '.value': current,
-        oninput: onChange,
-      });
-    }
-
-    return el('div', { class: 'field-row' }, [
-      el('label', { for: id }, [
-        el('span', { text: param.name }),
-        el('span', { class: 'visually-hidden', text: ` (${param.in} parameter)` }),
-      ]),
-      control,
-      el('p', { class: 'hint', id: hintId, text: facts }),
-      prose,
-      error ? el('p', { class: 'hint hint--error', id: errorId }, [
-        el('span', { class: 'word word--fail', text: 'NEEDED' }),
-        el('span', { text: ` ${error}` }),
-      ]) : null,
-    ]);
-  }
-
-  #bodyField(baseId, state, op) {
-    const id = `${baseId}-body`;
-    const hintId = `${id}-hint`;
-    if (this.#values.body === '') {
-      const sample = op.requestBody.example ?? sampleValue(state.schema.doc, op.requestBody.schema ?? {});
-      this.#values.body = op.requestBody.contentType?.includes('json')
-        ? JSON.stringify(sample, null, 2)
-        : String(sample ?? '');
-    }
-    return el('div', { class: 'field-row' }, [
-      el('label', { for: id, text: 'Request body' }),
-      el('textarea', {
-        id,
-        spellcheck: 'false',
-        'aria-describedby': hintId,
-        '.value': this.#values.body,
-        oninput: (event) => {
-          this.#values.body = event.target.value;
-          this.#updatePreview();
-        },
-      }),
-      el('p', {
-        class: 'hint',
-        id: hintId,
-        text: `${op.requestBody.contentType ?? 'application/json'} · drafted from the schema, edit freely`,
-      }),
-    ]);
-  }
-
   /** Keep the URL preview honest without re-rendering the fields under the cursor. */
   #updatePreview() {
     const status = this.querySelector('.tryit__status');
@@ -356,7 +242,8 @@ class AwTryIt extends AwElement {
    * @returns {boolean} true if the request is worth sending
    */
   #validate() {
-    this.#errors = {};
+    // Emptied in place: the form's fields hold a reference to this object.
+    for (const stale of Object.keys(this.#errors)) delete this.#errors[stale];
     const doc = this.state.schema?.doc ?? {};
     for (const param of this.operation.parameters) {
       if (!param.required || param.in === 'cookie') continue;

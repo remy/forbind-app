@@ -313,6 +313,39 @@ test('what has been typed survives leaving the tab and coming back', async () =>
   }
 });
 
+test('a body deleted on purpose stays deleted, and Code keeps its language', async () => {
+  // Going Try it → Code → back is the ordinary way round the tab set, and
+  // both ends of it hold something the reader chose. An emptied body is an
+  // edit, not an absence waiting to be filled in again; the snippet language
+  // is an answer to a question already asked.
+  const page = await open();
+  try {
+    await showTab(page, 'tryit');
+    const body = page.locator('aw-try-it textarea').first();
+    await body.fill('');
+    await page.waitForTimeout(200);
+
+    await showTab(page, 'code');
+    const chosen = page.locator('.lang-tab').nth(1);
+    const language = await chosen.textContent();
+    await chosen.click();
+    await page.waitForTimeout(200);
+
+    await showTab(page, 'tryit');
+    assert.equal(await body.inputValue(), '', 'the schema draft was put back over a deliberate deletion');
+
+    await showTab(page, 'code');
+    assert.equal(
+      await page.locator('.lang-tab[aria-selected="true"]').textContent(),
+      language,
+      'the snippet language went back to curl on its own',
+    );
+    assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test('the phone\'s sticky action opens the Try it tab', async () => {
   const page = await open(`#/?src=${LOCAL}`, { viewport: { width: 390, height: 780 } });
   try {

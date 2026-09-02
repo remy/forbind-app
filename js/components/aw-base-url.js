@@ -59,6 +59,13 @@ class AwBaseUrl extends AwElement {
   #ids = null;
   /** Whether this element has already put the question on screen. */
   #offered = false;
+  /**
+   * What has been typed and not yet applied. The field is rebuilt on every
+   * render — a tab switch, a credential arriving — and a host half-typed into
+   * it is work, not noise, so it is remembered rather than replaced by the
+   * suggestion the field started on.
+   */
+  #draft = null;
 
   /** The gap this element is offering to fill, or null when there is none. */
   #gap(state) {
@@ -113,7 +120,8 @@ class AwBaseUrl extends AwElement {
       autocomplete: 'url',
       spellcheck: 'false',
       placeholder: 'https://api.example.com',
-      '.value': current || suggested,
+      oninput: (event) => { this.#draft = event.target.value; },
+      '.value': current || this.#draft || suggested,
       'aria-describedby': this.#error ? `${errorId} ${helpId}` : helpId,
       'aria-invalid': this.#error ? 'true' : null,
       onkeydown: (event) => {
@@ -166,6 +174,7 @@ class AwBaseUrl extends AwElement {
             text: 'Clear the base URL',
             onclick: () => {
               this.#error = null;
+              this.#draft = null;
               this.actions.clearBaseUrl();
               // Nothing else re-renders this when it was already empty.
               this.render(this.state);
@@ -181,6 +190,8 @@ class AwBaseUrl extends AwElement {
     const result = this.actions.setBaseUrl(value);
     this.#error = result.ok ? null : result.error;
     if (result.ok) {
+      // Applied, so the store holds it now and the draft has nothing to say.
+      this.#draft = null;
       // The store change re-renders every copy of this element; this one is
       // re-rendered here as well so the message under the field is right even
       // when the value did not actually change.

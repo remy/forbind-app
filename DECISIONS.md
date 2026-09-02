@@ -155,6 +155,32 @@ away on the tab list, the tab list is a single tab stop, and the panel is
 labelled by its tab, so nothing is hidden from a screen reader that was not
 already one arrow key away.
 
+**A tab that holds the reader's work is kept, not rebuilt.** Every section is
+built fresh on every render of the detail pane, which is the right default —
+there is no diffing here, and a section drawn from the schema cannot go stale
+if it is drawn again. Two sections are not that: Try it holds a part-filled
+form, and Code holds the language the reader picked. Rebuilding those on a tab
+switch is a silent undo of work nobody asked to lose, and the round trip that
+did it — Code, Try it, away, back — is the ordinary way round the tab set, not
+an edge case. So `aw-detail` keeps those two elements and re-attaches them,
+and drops them only when the document changes.
+
+Responses take the same rule by another route. The section is cheap to draw
+again and there is nothing typed into it, so it is still rebuilt — but which
+disclosures are unfolded is an answer the reader gave, so the set of open
+status codes is held by `aw-detail` and handed to the section on every render.
+Folding one shut is remembered as firmly as opening one; a different operation
+starts from its own default, which is the single success response where there
+is exactly one.
+
+The same rule applies inside the try-it panel, where "empty" is not the same as
+"untouched". The body used to be re-seeded from the schema whenever the box was
+found empty, which made deleting a body something you could not do; it is now
+drafted once and left alone. A base URL typed but not yet applied used to be
+replaced by the origin the schema was fetched from — a different host, put back
+under the reader's cursor — and is now remembered until it is applied or
+cleared.
+
 **The header `Try it` button is not repeated.** Try it is a tab, and on phones
 it is also the sticky footer action. Three controls for one job is two too many.
 

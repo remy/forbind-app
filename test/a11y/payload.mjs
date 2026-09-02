@@ -8,6 +8,52 @@ import assert from 'node:assert/strict';
 
 import { open, showTab } from './lib/harness.mjs';
 
+test('a response you opened is still open after a trip to another tab', async () => {
+  // The section is rebuilt on every render of the pane, and unfolding a
+  // response is an answer the reader gave — not a default to be restored over
+  // on the way back from Code or Try it.
+  const page = await open();
+  try {
+    await showTab(page, 'responses');
+    const codes = () => page.evaluate(() => [...document.querySelectorAll('details.response-detail[open]')]
+      .map((d) => d.querySelector('.response-chip').textContent));
+
+    // The one success starts open; opening an error response is a second one.
+    assert.deepEqual(await codes(), ['201']);
+    await page.locator('details.response-detail > summary.response-summary').nth(1).click();
+    await page.waitForTimeout(300);
+    const opened = await codes();
+    assert.equal(opened.length, 2);
+
+    await showTab(page, 'code');
+    await showTab(page, 'tryit');
+    await showTab(page, 'responses');
+    assert.deepEqual(await codes(), opened, 'the tab round trip folded the responses back up');
+    // And the body of the one that was opened is still described.
+    assert.ok(await page.locator('details.response-detail[open] aw-schema-tree ul').count() > 0);
+
+    // Closing is remembered the same way round.
+    await page.locator('details.response-detail > summary.response-summary').first().click();
+    await page.waitForTimeout(300);
+    await showTab(page, 'overview');
+    await showTab(page, 'responses');
+    assert.deepEqual(await codes(), opened.slice(1));
+
+    // A different operation is a different question, and starts from its own
+    // default rather than from the last one's answer.
+    await page.evaluate(() => {
+      const op = window.__aw.store.state.schema.operations.find((o) => o.path === '/v2/bookings' && o.method === 'GET');
+      window.__aw.actions.selectOperation(op.id);
+    });
+    await page.waitForTimeout(700);
+    await showTab(page, 'responses');
+    assert.deepEqual(await codes(), ['200']);
+    assert.deepEqual(page.problems, []);
+  } finally {
+    await page.close();
+  }
+});
+
 test('a response opens up to the shape of its payload', async () => {
   const page = await open();
   try {

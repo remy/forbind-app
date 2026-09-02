@@ -360,9 +360,13 @@ polite word-led message tied to the field, and takes focus — rather than
 sending `{bookingId}` to a real API.
 
 What you type stays typed. Moving to another section and back, or pressing the
-phone's *Try this request* again, keeps the form as you left it; only opening a
-different operation clears it. **Reset** beside *Send* is the way to empty it on
-purpose, and it says so through the live region.
+phone's *Try this request* again, keeps the form as you left it — including a
+body you deleted on purpose, and a base URL half-typed into the field above the
+parameters. Only opening a different operation clears it. **Reset** beside
+*Send* is the way to empty it on purpose, and it says so through the live
+region. The *Code* section keeps its language the same way: pick `fetch` and it
+is still `fetch` when you come back to it, and *Responses* keeps whichever ones
+you unfolded — or folded shut.
 
 A response that came back carries a **Copy response** button beside its body.
 It copies exactly what is on screen — pretty-printed if the body was JSON — and
