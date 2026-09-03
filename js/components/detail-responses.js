@@ -20,6 +20,7 @@ import { el } from '../lib/dom.js';
 import { statusClass, payloadChildren, describeType } from '../lib/openapi.js';
 import { sampleValue } from '../lib/request.js';
 import { markdownToText } from '../lib/markdown.js';
+import { languageFor, highlightInto } from '../lib/highlight.js';
 
 /**
  * The responses that are unfolded on arrival: the one success, when there is
@@ -85,6 +86,11 @@ function renderResponse(state, response, ctx) {
   const tree = el('fb-schema-tree', {});
   const label = `The ${response.code} response body`;
   const example = exampleFor(state.schema.doc, response);
+  // Coloured from the same `Content-Type` the chip above names, exactly as a
+  // live try-it result is — a documented example and a captured response are
+  // the same kind of text and read the same once they're on screen.
+  const exampleBlock = el('pre', { class: 'code-block', tabindex: '0' });
+  if (example !== null) highlightInto(example, languageFor(response.contentType), exampleBlock);
   const open = ctx.opened.has(response.code);
 
   const wrapper = el('details', { class: 'response-detail', open: open ? true : null }, [
@@ -108,7 +114,7 @@ function renderResponse(state, response, ctx) {
       example !== null
         ? el('div', { class: 'detail__section' }, [
             el('h3', { class: 'label', text: 'Example' }),
-            el('pre', { class: 'code-block', tabindex: '0', text: example }),
+            exampleBlock,
           ])
         : null,
     ]),
@@ -140,9 +146,17 @@ function renderResponse(state, response, ctx) {
  * The example body: whatever the document offers, else one built from the
  * schema. Unlike a request draft this includes optional fields — a response
  * example is meant to show everything you might get back.
+ *
+ * A document-supplied example is already text when it is a string — an XML or
+ * YAML body written into the spec that way — and `JSON.stringify`-ing that
+ * would quote and escape it into something that is no longer the example. Only
+ * a non-string value, doc-supplied or built from the schema, needs stringifying
+ * at all.
  */
 function exampleFor(doc, response) {
-  if (response.example !== undefined) return JSON.stringify(response.example, null, 2);
+  if (response.example !== undefined) {
+    return typeof response.example === 'string' ? response.example : JSON.stringify(response.example, null, 2);
+  }
   if (!response.schema) return null;
   const value = sampleValue(doc, response.schema, { includeOptional: true });
   if (value === null || value === undefined) return null;
