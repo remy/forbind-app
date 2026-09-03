@@ -87,6 +87,29 @@ export function sampleValue(doc, node, options = {}) {
   }
 }
 
+/**
+ * A schema's own declared default, and nothing sampleValue would invent in
+ * its place — so a form field can tell a reader "leave this blank and the
+ * server assumes this" apart from "here is roughly the shape of a value".
+ * Resolved through `$ref` and `allOf` the same way sampleValue is, since a
+ * default named in a shared piece of an `allOf` applies just as much as one
+ * written on the parameter's own schema.
+ *
+ * @returns {*} the default, or `undefined` if the schema does not declare one
+ */
+export function schemaDefault(doc, node) {
+  const { value: schema } = deref(doc, node ?? {});
+  if (!schema || typeof schema !== 'object') return undefined;
+  if (schema.default !== undefined) return schema.default;
+  if (Array.isArray(schema.allOf)) {
+    for (const part of schema.allOf) {
+      const value = schemaDefault(doc, part);
+      if (value !== undefined) return value;
+    }
+  }
+  return undefined;
+}
+
 function sampleString(schema) {
   switch (schema.format) {
     case 'date': return '2026-01-31';

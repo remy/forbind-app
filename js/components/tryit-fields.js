@@ -21,7 +21,7 @@
  */
 
 import { el } from '../lib/dom.js';
-import { sampleValue, parameterExample } from '../lib/request.js';
+import { sampleValue, parameterExample, schemaDefault } from '../lib/request.js';
 import { enumValues } from '../lib/enums.js';
 import { markdownBlock } from '../lib/markdown.js';
 
@@ -128,9 +128,15 @@ export function fieldFor(param, ctx) {
     // seedDefaults has already put a required parameter's value in place.
     control.value = current;
   } else {
-    const placeholder = param.in === 'path'
-      ? `{${param.name}}`
-      : String(sampleValue(doc, param.schema ?? {}) ?? '');
+    // A schema's own `default` is what the server assumes when the field is
+    // left empty, so it earns a placeholder that says that in as many words
+    // rather than blending in with an invented sample value.
+    const fallback = schemaDefault(doc, param.schema);
+    const placeholder = fallback !== undefined && typeof fallback !== 'object'
+      ? `defaults to "${fallback}"`
+      : param.in === 'path'
+        ? `{${param.name}}`
+        : String(sampleValue(doc, param.schema ?? {}) ?? '');
     control = el('input', {
       id,
       type: 'text',

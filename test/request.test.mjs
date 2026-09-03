@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildRequest, toCurl, toFetch, toPython, sampleValue, lineCount } from '../js/lib/request.js';
+import { buildRequest, toCurl, toFetch, toPython, sampleValue, schemaDefault, lineCount } from '../js/lib/request.js';
 import { normalise } from '../js/lib/openapi.js';
 import { sampleModel, op } from './helpers.mjs';
 
@@ -196,6 +196,22 @@ test('sampleValue prefers what the document says over anything invented', () => 
   assert.equal(sampleValue({}, { type: 'integer', minimum: 7 }), 7);
   assert.equal(sampleValue({}, { type: 'boolean' }), true);
   assert.deepEqual(sampleValue({}, { type: 'array', items: { type: 'integer' } }), [1]);
+});
+
+test('schemaDefault reports only what the schema itself declares', () => {
+  assert.equal(schemaDefault({}, { type: 'string', default: 'en-GB' }), 'en-GB');
+  // An example is not a default: it is illustrative, not what the server
+  // assumes when the field is left out.
+  assert.equal(schemaDefault({}, { type: 'string', example: 'en-GB' }), undefined);
+  assert.equal(schemaDefault({}, { type: 'string' }), undefined);
+  // A default named on one piece of an allOf still applies to the whole.
+  assert.equal(
+    schemaDefault({}, { allOf: [{ type: 'string' }, { default: 'metric' }] }),
+    'metric',
+  );
+  // $ref resolves the same way sampleValue's does.
+  const doc = { components: { schemas: { Unit: { type: 'string', default: 'kg' } } } };
+  assert.equal(schemaDefault(doc, { $ref: '#/components/schemas/Unit' }), 'kg');
 });
 
 test('an edited body wins over the drafted one', () => {
