@@ -12,14 +12,21 @@
   gap: var(--s-10);
   flex-wrap: wrap;
 }
-.detail__pill { font-size: var(--t-11); padding: var(--s-4) var(--s-7); }
+.detail__pill {
+  font-size: var(--t-11);
+  padding: var(--s-4) var(--s-7);
+}
 .detail__path {
   font: 500 var(--t-16) / 1.25 var(--font-mono);
   margin: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
-.detail__actions { margin-left: auto; display: flex; gap: var(--s-8); }
+.detail__actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--s-8);
+}
 
 .detail__lede {
   margin-top: var(--s-10);
@@ -28,7 +35,9 @@
   color: var(--ink-70);
   text-wrap: pretty;
 }
-.detail__lede code { font-size: 0.95em; }
+.detail__lede code {
+  font-size: 0.95em;
+}
 
 .detail__chips {
   display: flex;
@@ -41,14 +50,25 @@
   font-weight: 500;
   padding: var(--s-4) var(--s-7);
 }
-.detail__chips .chip:hover { background: transparent; }
+.detail__chips .chip:hover {
+  background: transparent;
+}
 
-.detail__body { padding: var(--s-16) var(--s-20) var(--s-32); }
+.detail__body {
+  padding: var(--s-16) var(--s-20) var(--s-32);
+}
 
 .detail__section + .detail__section,
-.detail__section .detail__section { margin-top: var(--s-22); }
-.detail__section > .label { display: block; margin-bottom: var(--s-9); }
-.detail__section > .detail__section:first-child { margin-top: var(--s-16); }
+.detail__section .detail__section {
+  margin-top: var(--s-22);
+}
+.detail__section > .label {
+  display: block;
+  margin-bottom: var(--s-9);
+}
+.detail__section > .detail__section:first-child {
+  margin-top: var(--s-16);
+}
 .detail__section-head {
   display: flex;
   align-items: center;
@@ -57,18 +77,35 @@
   margin-bottom: var(--s-9);
 }
 .detail__section-head h3,
-.detail__section-head h4 { margin: 0; }
+.detail__section-head h4 {
+  margin: 0;
+}
 
 /* The tab bar carries the rule beneath the header, so a tabbed header does
    not draw a second one above it. The component-schema view has no tabs and
    keeps its own. */
-.detail__header--tabbed { border-bottom: 0; padding-bottom: 0; }
+.detail__header--tabbed {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
 
 /* Roomy (1b) header sizes */
-[data-density='roomy'] .detail__path { font-size: var(--t-19); }
-[data-density='roomy'] .detail__pill { font-size: var(--t-11-5); padding: var(--s-5) var(--s-8); }
-[data-density='roomy'] .detail__body { padding-top: var(--s-4); }
-[data-density='roomy'] .detail__lede { max-width: 62ch; font-size: var(--t-13-5); line-height: var(--lh-prose); color: var(--ink); }
+[data-density='roomy'] .detail__path {
+  font-size: var(--t-19);
+}
+[data-density='roomy'] .detail__pill {
+  font-size: var(--t-11-5);
+  padding: var(--s-5) var(--s-8);
+}
+[data-density='roomy'] .detail__body {
+  padding-top: var(--s-4);
+}
+[data-density='roomy'] .detail__lede {
+  max-width: 62ch;
+  font-size: var(--t-13-5);
+  line-height: var(--lh-prose);
+  color: var(--ink);
+}
 
 /* --- tabs -------------------------------------------------------------- */
 .tabs {
@@ -87,19 +124,32 @@
   min-height: var(--h-36);
   transition: background-color var(--dur) var(--ease);
 }
-.tab:hover { background: var(--hover-surface); color: var(--ink); }
+.tab:hover {
+  background: var(--hover-surface);
+  color: var(--ink);
+}
 .tab[aria-selected='true'] {
   background: var(--ink);
   color: var(--paper);
   font-weight: 600;
 }
-.tab[aria-selected='true']:hover { background: var(--fill-hover); }
-.tabpanel:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab[aria-selected='true']:hover {
+  background: var(--fill-hover);
+}
+.tabpanel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 
 @media (forced-colors: active) {
-  .tab[aria-selected='true'] { border-bottom: 3px solid Highlight; }
+  .tab[aria-selected='true'] {
+    border-bottom: 3px solid Highlight;
+  }
   .field-row input:focus-visible,
-  .field-row textarea:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
+  .field-row textarea:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
 }
 
 /* --- fact grid ----------------------------------------------------------- */
@@ -113,19 +163,35 @@
   padding: var(--s-13) var(--s-15, 0.9375rem);
   border-right: var(--rule-w) solid var(--rule);
   border-bottom: var(--rule-w) solid var(--rule);
+  overflow-wrap: break-word;
+  hyphens: auto;
+  hyphenate-character: '↩︎';
 }
-.facts dt { font: 600 var(--t-9-5) / 1.3 var(--font-mono); letter-spacing: var(--ls-label-sm); text-transform: uppercase; color: var(--ink-55); }
-.facts dd { margin: var(--s-7) 0 0; font: 400 var(--t-12-5) / 1.4 var(--font-mono); }
+.facts dt {
+  font: 600 var(--t-9-5) / 1.3 var(--font-mono);
+  letter-spacing: var(--ls-label-sm);
+  text-transform: uppercase;
+  color: var(--ink-55);
+}
+.facts dd {
+  margin: var(--s-7) 0 0;
+  font: 400 var(--t-12-5) / 1.4 var(--font-mono);
+}
 
 /* --- parameter table ----------------------------------------------------- */
-.params { border: var(--rule-w) solid var(--rule); }
+.params {
+  border: var(--rule-w) solid var(--rule);
+}
 
 table.params {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
-table.params caption { text-align: left; padding: 0 0 var(--s-9); }
+table.params caption {
+  text-align: left;
+  padding: 0 0 var(--s-9);
+}
 table.params th,
 table.params td {
   padding: var(--s-7) var(--s-10);
@@ -143,20 +209,29 @@ table.params thead th {
   color: var(--ink-55);
 }
 table.params tbody tr:last-child th,
-table.params tbody tr:last-child td { border-bottom: 0; }
+table.params tbody tr:last-child td {
+  border-bottom: 0;
+}
 table.params tbody th {
   font: 400 var(--t-11-5) / 1.35 var(--font-mono);
   font-weight: 500;
 }
-table.params td { font: 400 var(--t-11-5) / 1.35 var(--font-mono); }
-table.params .col-type { color: var(--ink-70); }
+table.params td {
+  font: 400 var(--t-11-5) / 1.35 var(--font-mono);
+}
+table.params .col-type {
+  color: var(--ink-70);
+}
 
 /* The notes are a row of their own under the field, spanning the width, so a
    description that is a table or a fenced example is read at the width it was
    written for instead of a quarter of it. The field row above it drops its
    rule so the two read as the one entry they are. */
 table.params tbody tr.params__field--noted > th,
-table.params tbody tr.params__field--noted > td { border-bottom: 0; padding-bottom: var(--s-5); }
+table.params tbody tr.params__field--noted > td {
+  border-bottom: 0;
+  padding-bottom: var(--s-5);
+}
 table.params .col-notes {
   padding-top: 0;
   font: 400 var(--t-11-5) / 1.5 var(--font-sans);
@@ -164,38 +239,72 @@ table.params .col-notes {
 }
 /* The constraints, then the description under them — two lines in one cell
    rather than one run-on. */
-.col-notes__facts { display: block; }
-.col-notes__facts + .md { margin-top: var(--s-6); }
-.params-stack .col-notes__facts { display: inline; }
+.col-notes__facts {
+  display: block;
+}
+.col-notes__facts + .md {
+  margin-top: var(--s-6);
+}
+.params-stack .col-notes__facts {
+  display: inline;
+}
 
 /* "yes" is a word, never a colour and never an asterisk. */
-.req-yes { font-weight: 600; }
-.req-no { color: var(--ink-55); }
+.req-yes {
+  font-weight: 600;
+}
+.req-no {
+  color: var(--ink-55);
+}
 
-.params col.c-field { width: 42%; }
-.params col.c-type { width: 42%; }
-.params col.c-req { width: 16%; }
+.params col.c-field {
+  width: 42%;
+}
+.params col.c-type {
+  width: 42%;
+}
+.params col.c-req {
+  width: 16%;
+}
 
 /* Stacked definition rows replace the table on small screens — a table that
    is restyled with display:block loses its semantics, so the narrow layout is
    a real <dl> rather than a table pretending. */
-.params-stack { border: var(--rule-w) solid var(--rule); margin: 0; }
+.params-stack {
+  border: var(--rule-w) solid var(--rule);
+  margin: 0;
+}
 .params-stack > div {
   padding: var(--s-11, 0.6875rem) var(--s-12);
   border-bottom: var(--rule-w) solid var(--rule-softer);
 }
-.params-stack > div:last-child { border-bottom: 0; }
-.params-stack dt { font: 500 var(--t-12-5) / 1.3 var(--font-mono); overflow-wrap: anywhere; }
-.params-stack dd { margin: var(--s-5) 0 0; font: 400 var(--t-11-5) / 1.5 var(--font-sans); color: var(--ink-70); }
+.params-stack > div:last-child {
+  border-bottom: 0;
+}
+.params-stack dt {
+  font: 500 var(--t-12-5) / 1.3 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.params-stack dd {
+  margin: var(--s-5) 0 0;
+  font: 400 var(--t-11-5) / 1.5 var(--font-sans);
+  color: var(--ink-70);
+}
 
 /* --- responses ----------------------------------------------------------- */
-.responses { display: flex; flex-wrap: wrap; gap: var(--s-8); }
+.responses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-8);
+}
 .response-chip {
   padding: var(--s-5) var(--s-8);
   border: var(--rule-w) solid currentColor;
   font: 500 var(--t-11) / 1.3 var(--font-mono);
 }
-.response-list { border: var(--rule-w) solid var(--rule); }
+.response-list {
+  border: var(--rule-w) solid var(--rule);
+}
 .response-list > li {
   display: flex;
   gap: var(--s-12);
@@ -205,8 +314,12 @@ table.params .col-notes {
   border-bottom: var(--rule-w) solid var(--rule-softer);
   font: 400 var(--t-12) / 1.5 var(--font-sans);
 }
-.response-list > li:last-child { border-bottom: 0; }
-.response-list .response-chip { flex: none; }
+.response-list > li:last-child {
+  border-bottom: 0;
+}
+.response-list .response-chip {
+  flex: none;
+}
 
 /* --- code block ---------------------------------------------------------- */
 .codeblock__head {
@@ -216,7 +329,10 @@ table.params .col-notes {
   flex-wrap: wrap;
   margin-bottom: var(--s-9);
 }
-.lang-tabs { display: flex; gap: var(--s-8); }
+.lang-tabs {
+  display: flex;
+  gap: var(--s-8);
+}
 .lang-tab {
   padding: var(--s-3) var(--s-6);
   border: var(--rule-w) solid var(--border-quiet);
@@ -227,14 +343,21 @@ table.params .col-notes {
   min-height: var(--h-24);
   transition: background-color var(--dur) var(--ease);
 }
-.lang-tab:hover { background: var(--hover-surface); color: var(--ink); }
+.lang-tab:hover {
+  background: var(--hover-surface);
+  color: var(--ink);
+}
 .lang-tab[aria-selected='true'] {
   background: var(--ink);
   border-color: var(--ink);
   color: var(--paper);
 }
-.lang-tab[aria-selected='true']:hover { background: var(--fill-hover); }
-.codeblock__copy { margin-left: auto; }
+.lang-tab[aria-selected='true']:hover {
+  background: var(--fill-hover);
+}
+.codeblock__copy {
+  margin-left: auto;
+}
 .codeblock__copy[data-copied='true'] {
   background: var(--ink);
   color: var(--paper);
@@ -242,7 +365,9 @@ table.params .col-notes {
 }
 
 @media (forced-colors: active) {
-  .lang-tab[aria-selected='true'] { border: 2px solid Highlight; }
+  .lang-tab[aria-selected='true'] {
+    border: 2px solid Highlight;
+  }
 }
 
 /* --- try it -------------------------------------------------------------- */
@@ -257,14 +382,29 @@ table.params .col-notes {
   margin-bottom: var(--s-16);
 }
 
-.tryit__fields { display: grid; gap: var(--s-12); }
-.field-row { display: grid; gap: var(--s-6); }
+.tryit__fields {
+  display: grid;
+  gap: var(--s-12);
+}
+.field-row {
+  display: grid;
+  gap: var(--s-6);
+}
 /* The description under a field is prose the document wrote, so it gets the
    prose rules; the facts line above it stays a single terse line. */
-.hint--prose { display: block; }
-.hint--prose table { font-size: 0.95em; }
-.field-row label { font: 600 var(--t-11) / 1.3 var(--font-sans); }
-.field-row .hint { font: 400 var(--t-11) / 1.5 var(--font-sans); color: var(--ink-55); }
+.hint--prose {
+  display: block;
+}
+.hint--prose table {
+  font-size: 0.95em;
+}
+.field-row label {
+  font: 600 var(--t-11) / 1.3 var(--font-sans);
+}
+.field-row .hint {
+  font: 400 var(--t-11) / 1.5 var(--font-sans);
+  color: var(--ink-55);
+}
 .field-row input,
 .field-row textarea {
   width: 100%;
@@ -275,17 +415,32 @@ table.params .col-notes {
   color: var(--ink);
   min-height: var(--h-32);
 }
-.field-row textarea { min-height: 8rem; resize: vertical; }
+.field-row textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
 .field-row input:focus-visible,
 .field-row textarea:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 
-.tryit__actions { display: flex; gap: var(--s-10); align-items: center; flex-wrap: wrap; margin-top: var(--s-16); }
-.tryit__status { font: 400 var(--t-11-5) / 1.5 var(--font-sans); color: var(--ink-55); }
+.tryit__actions {
+  display: flex;
+  gap: var(--s-10);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--s-16);
+}
+.tryit__status {
+  font: 400 var(--t-11-5) / 1.5 var(--font-sans);
+  color: var(--ink-55);
+}
 
-.result { margin-top: var(--s-18); border: var(--rule-w) solid var(--rule); }
+.result {
+  margin-top: var(--s-18);
+  border: var(--rule-w) solid var(--rule);
+}
 .result__head {
   display: flex;
   gap: var(--s-10);
@@ -297,13 +452,21 @@ table.params .col-notes {
   font: 400 var(--t-11-5) / 1.4 var(--font-mono);
   color: var(--ink-55);
 }
-.result__body { padding: var(--s-12); }
+.result__body {
+  padding: var(--s-12);
+}
 /* A section is a stack — heading, the thing, the note under it — so the space
    between its parts is a gap on the column rather than a margin on each part
    that has to be undone at the ends. The step between sections is bigger than
    the step inside one, which is what says where a section stops. */
-.result__section { display: flex; flex-direction: column; gap: var(--s-8); }
-.result__section + .result__section { margin-top: var(--s-14); }
+.result__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-8);
+}
+.result__section + .result__section {
+  margin-top: var(--s-14);
+}
 .result__note {
   font: 400 var(--t-11-5) / 1.6 var(--font-sans);
   color: var(--ink-70);
@@ -315,18 +478,30 @@ table.params .col-notes {
   align-items: center;
   flex-wrap: wrap;
 }
-.result__section-head .label { margin: 0; }
-.result__copy { margin-left: auto; }
+.result__section-head .label {
+  margin: 0;
+}
+.result__copy {
+  margin-left: auto;
+}
 .result__copy[data-copied='true'] {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--ink);
 }
 
-.result--error { border-color: var(--delete-fg); }
-.result--error .result__head { background: var(--delete-bg); color: var(--delete-fg); }
+.result--error {
+  border-color: var(--delete-fg);
+}
+.result--error .result__head {
+  background: var(--delete-bg);
+  color: var(--delete-fg);
+}
 
-.kv { border: var(--rule-w) solid var(--rule); margin: 0; }
+.kv {
+  border: var(--rule-w) solid var(--rule);
+  margin: 0;
+}
 .kv > div {
   display: grid;
   grid-template-columns: minmax(8rem, 30%) minmax(0, 1fr);
@@ -334,12 +509,24 @@ table.params .col-notes {
   padding: var(--s-6) var(--s-10);
   border-bottom: var(--rule-w) solid var(--rule-softer);
 }
-.kv > div:last-child { border-bottom: 0; }
-.kv dt { font: 500 var(--t-11) / 1.4 var(--font-mono); color: var(--ink-55); overflow-wrap: anywhere; }
-.kv dd { margin: 0; font: 400 var(--t-11) / 1.4 var(--font-mono); overflow-wrap: anywhere; }
+.kv > div:last-child {
+  border-bottom: 0;
+}
+.kv dt {
+  font: 500 var(--t-11) / 1.4 var(--font-mono);
+  color: var(--ink-55);
+  overflow-wrap: anywhere;
+}
+.kv dd {
+  margin: 0;
+  font: 400 var(--t-11) / 1.4 var(--font-mono);
+  overflow-wrap: anywhere;
+}
 
 /* Sticky primary action on the pushed detail page (1f). */
-.sticky-action { display: none; }
+.sticky-action {
+  display: none;
+}
 @media (max-width: 48rem) {
   .sticky-action {
     display: block;
@@ -349,11 +536,23 @@ table.params .col-notes {
     border-top: var(--rule-w-strong) solid var(--rule-strong);
     background: var(--paper);
   }
-  .sticky-action .btn { width: 100%; height: var(--h-48); font-size: var(--t-13); }
-  .detail__header { padding: var(--s-18) var(--s-14) var(--s-14); }
-  .detail__body { padding: var(--s-16) var(--s-14) var(--s-24); }
-  .detail__path { font-size: var(--t-17); }
-  .tabs { margin: var(--s-16) var(--s-14) 0; }
+  .sticky-action .btn {
+    width: 100%;
+    height: var(--h-48);
+    font-size: var(--t-13);
+  }
+  .detail__header {
+    padding: var(--s-18) var(--s-14) var(--s-14);
+  }
+  .detail__body {
+    padding: var(--s-16) var(--s-14) var(--s-24);
+  }
+  .detail__path {
+    font-size: var(--t-17);
+  }
+  .tabs {
+    margin: var(--s-16) var(--s-14) 0;
+  }
 }
 
 /* Three-up segmented control, as drawn in 1f. */
@@ -376,7 +575,9 @@ table.params .col-notes {
     border-left: var(--rule-w) solid var(--ink);
     min-height: var(--h-44);
   }
-  .tabs--segmented .tab:first-child { border-left: 0; }
+  .tabs--segmented .tab:first-child {
+    border-left: 0;
+  }
 }
 
 /* Enum parameters are a dropdown rather than a free-text box, so the values
@@ -397,16 +598,28 @@ table.params .col-notes {
 }
 
 /* A field that stopped the request: the word carries it, not the colour. */
-.hint--error { color: var(--delete-fg); }
-.field-row [aria-invalid='true'] { border-color: var(--delete-fg); border-width: var(--rule-w-strong); }
+.hint--error {
+  color: var(--delete-fg);
+}
+.field-row [aria-invalid='true'] {
+  border-color: var(--delete-fg);
+  border-width: var(--rule-w-strong);
+}
 
 @media (max-width: 48rem) {
-  .field-row select { min-height: var(--h-44); }
+  .field-row select {
+    min-height: var(--h-44);
+  }
 }
 
 @media (forced-colors: active) {
-  .field-row select:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
-  .field-row [aria-invalid='true'] { border-style: dashed; }
+  .field-row select:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .field-row [aria-invalid='true'] {
+    border-style: dashed;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -424,17 +637,31 @@ table.params .col-notes {
   padding: var(--s-9) var(--s-12);
   font: 400 var(--t-12) / 1.5 var(--font-sans);
 }
-.response-summary { cursor: pointer; list-style-position: outside; }
-.response-summary::marker { color: var(--ink-55); }
-.response-summary:hover { background: var(--hover-surface); }
-.response-summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.response-summary__text { flex: 1 1 12ch; }
+.response-summary {
+  cursor: pointer;
+  list-style-position: outside;
+}
+.response-summary::marker {
+  color: var(--ink-55);
+}
+.response-summary:hover {
+  background: var(--hover-surface);
+}
+.response-summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.response-summary__text {
+  flex: 1 1 12ch;
+}
 .response-summary__shape {
   font: 400 var(--t-11) / 1.5 var(--font-mono);
   color: var(--ink-55);
   white-space: nowrap;
 }
-.response-row { color: var(--ink-70); }
+.response-row {
+  color: var(--ink-70);
+}
 
 .response-detail__body {
   padding: var(--s-4) var(--s-12) var(--s-16);
@@ -466,7 +693,9 @@ table.params .col-notes {
   font: 400 var(--t-11) / 1.6 var(--font-sans);
 }
 
-.schema-tree { margin: 0; }
+.schema-tree {
+  margin: 0;
+}
 /* Each level indents, and the rule makes the run of a branch visible without
    the indent alone having to carry it. */
 .schema-tree .schema-tree {
@@ -483,8 +712,12 @@ table.params .col-notes {
   cursor: pointer;
   list-style-position: outside;
 }
-.field-branch > summary::marker { color: var(--ink-55); }
-.field-branch > summary:hover .field-node__name { text-decoration: underline; }
+.field-branch > summary::marker {
+  color: var(--ink-55);
+}
+.field-branch > summary:hover .field-node__name {
+  text-decoration: underline;
+}
 .field-branch > summary:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -496,10 +729,21 @@ table.params .col-notes {
   align-items: baseline;
   gap: var(--s-8);
 }
-.field-node__name { font: 500 var(--t-12-5) / 1.4 var(--font-mono); overflow-wrap: anywhere; }
-.field-node__type { font: 400 var(--t-11-5) / 1.4 var(--font-mono); color: var(--ink-70); }
-.field-node__req { font: 400 var(--t-10-5) / 1.4 var(--font-mono); }
-.field-node__note { font: 400 var(--t-11) / 1.5 var(--font-sans); color: var(--ink-55); }
+.field-node__name {
+  font: 500 var(--t-12-5) / 1.4 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.field-node__type {
+  font: 400 var(--t-11-5) / 1.4 var(--font-mono);
+  color: var(--ink-70);
+}
+.field-node__req {
+  font: 400 var(--t-10-5) / 1.4 var(--font-mono);
+}
+.field-node__note {
+  font: 400 var(--t-11) / 1.5 var(--font-sans);
+  color: var(--ink-55);
+}
 .field-node__desc {
   font: 400 var(--t-11-5) / 1.5 var(--font-sans);
   color: var(--ink-70);
@@ -508,19 +752,31 @@ table.params .col-notes {
 }
 
 @media (max-width: 48rem) {
-  .schema-tree .schema-tree { margin-left: var(--s-4); padding-left: var(--s-8); }
-  .field-branch > summary { padding: var(--s-8) 0; min-height: var(--h-44); }
-  .field-node__desc { flex-basis: 100%; }
+  .schema-tree .schema-tree {
+    margin-left: var(--s-4);
+    padding-left: var(--s-8);
+  }
+  .field-branch > summary {
+    padding: var(--s-8) 0;
+    min-height: var(--h-44);
+  }
+  .field-node__desc {
+    flex-basis: 100%;
+  }
 }
 
 @media (forced-colors: active) {
   .response-summary:focus-visible,
-  .field-branch > summary:focus-visible { outline: 2px solid Highlight; }
+  .field-branch > summary:focus-visible {
+    outline: 2px solid Highlight;
+  }
 }
 
 /* One-of variants are alternatives, not members, so they are numbered rather
    than run together as if they all applied at once. */
-.schema-tree--variants > li + li { border-top: var(--rule-w) dashed var(--rule); }
+.schema-tree--variants > li + li {
+  border-top: var(--rule-w) dashed var(--rule);
+}
 
 .field-branch__source {
   margin: var(--s-4) 0 var(--s-8);
