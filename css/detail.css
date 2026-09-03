@@ -155,7 +155,7 @@
 /* --- fact grid ----------------------------------------------------------- */
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  /* grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); */
   margin-top: var(--s-20);
   border: var(--rule-w) solid var(--rule);
 }
