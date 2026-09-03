@@ -9,17 +9,26 @@
 /* ---------------------------------------------------------------------------
    Endpoint list
 --------------------------------------------------------------------------- */
-.list-scroll { position: relative; flex: 1; overflow-y: auto; min-height: 0; }
+.list-scroll {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
 
 /* Plain block flow: each <li> is a box and the row fills it. Nothing here is
    `display: contents`, which is the one thing that can quietly cost a list its
    listitem semantics. */
-.endpoints { display: block; }
-.endpoints > li { display: block; }
+.endpoints {
+  display: block;
+}
+.endpoints > li {
+  display: block;
+}
 
 .row {
   display: grid;
-  grid-template-columns: 4rem minmax(0, 1fr);
+  grid-template-columns: 2rem minmax(0, 1fr);
   gap: var(--s-10);
   align-items: baseline;
   padding: var(--s-9) var(--s-12);
@@ -29,7 +38,11 @@
   text-decoration: none;
   transition: background-color var(--dur) var(--ease);
 }
-.row:hover { background: var(--hover-surface); color: var(--ink); text-decoration: none; }
+.row:hover {
+  background: var(--hover-surface);
+  color: var(--ink);
+  text-decoration: none;
+}
 
 /* The ring is inset so it is never clipped by the pane edge. */
 .row:focus-visible {
@@ -42,15 +55,36 @@
   background: var(--accent-tint);
   border-left-color: var(--ink);
 }
-.row[aria-current='true']:hover { background: var(--accent-tint); }
+.row[aria-current='true']:hover {
+  background: var(--accent-tint);
+}
 
 /* The pill sits in its own column and fills it, so the paths line up. */
-.row > .pill { display: block; align-self: start; }
+.row > .pill {
+  display: block;
+  align-self: start;
+}
 
-.row__path { display: block; font: 500 var(--t-12-5) / 1.3 var(--font-mono); overflow-wrap: anywhere; }
-.row__summary { display: block; margin-top: var(--s-3); font: 400 var(--t-11-5) / 1.4 var(--font-sans); color: var(--ink-70); }
-.row__head { display: flex; align-items: baseline; gap: var(--s-10); flex-wrap: wrap; }
-.row__head .row__path { margin: 0; }
+.row__path {
+  display: block;
+  font: 500 var(--t-12-5) / 1.3 var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.row__summary {
+  display: block;
+  margin-top: var(--s-3);
+  font: 400 var(--t-11-5) / 1.4 var(--font-sans);
+  color: var(--ink-70);
+}
+.row__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-10);
+  flex-wrap: wrap;
+}
+.row__head .row__path {
+  margin: 0;
+}
 
 /* Deprecated rows are listed but stood down. The design called for opacity
    0.62; measured against the paper, that puts the 10px verb pill at 3.3:1 and
@@ -67,9 +101,16 @@
    The de-emphasis was never carrying the meaning anyway — the strikethrough,
    the neutral pill and the word "Deprecated" in the accessible name all say
    it. */
-.row--deprecated { opacity: 0.85; }
-.row--deprecated .row__path { text-decoration: line-through; }
-.row--deprecated:hover, .row--deprecated:focus-visible { opacity: 1; }
+.row--deprecated {
+  opacity: 0.85;
+}
+.row--deprecated .row__path {
+  text-decoration: line-through;
+}
+.row--deprecated:hover,
+.row--deprecated:focus-visible {
+  opacity: 1;
+}
 
 /* Roomy rows (1b) */
 [data-density='roomy'] .row {
@@ -77,11 +118,25 @@
   gap: var(--s-7);
   padding: var(--s-14) var(--s-18);
 }
-[data-density='roomy'] .row[aria-current='true'] { border-left: 4px solid var(--accent); }
-[data-density='roomy'] .row > .pill { display: inline-block; }
-[data-density='roomy'] .row__path { font-size: var(--t-14); }
-[data-density='roomy'] .row__summary { font-size: var(--t-12-5); line-height: 1.55; }
-.row__meta { display: flex; flex-wrap: wrap; gap: var(--s-7); margin-top: var(--s-9); }
+[data-density='roomy'] .row[aria-current='true'] {
+  border-left: 4px solid var(--accent);
+}
+[data-density='roomy'] .row > .pill {
+  display: inline-block;
+}
+[data-density='roomy'] .row__path {
+  font-size: var(--t-14);
+}
+[data-density='roomy'] .row__summary {
+  font-size: var(--t-12-5);
+  line-height: 1.55;
+}
+.row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-7);
+  margin-top: var(--s-9);
+}
 .row__meta .chip {
   cursor: default;
   padding: var(--s-3) var(--s-6);
@@ -89,7 +144,9 @@
   font-weight: 500;
   color: var(--ink-70);
 }
-.row__meta .chip:hover { background: transparent; }
+.row__meta .chip:hover {
+  background: transparent;
+}
 
 .group-head {
   padding: var(--s-9) var(--s-18);
@@ -111,12 +168,27 @@
 }
 
 @media (max-width: 48rem) {
-  .row { padding: var(--s-14); grid-template-columns: minmax(0, 1fr); gap: var(--s-6); }
-  .row > .pill { display: inline-block; }
-  .row__head { gap: var(--s-9); }
-  .row__path { font-size: var(--t-13); }
-  .row__summary { font-size: var(--t-12); line-height: 1.5; }
-  .row[aria-current='true'] { border-left: 4px solid var(--accent); }
+  .row {
+    padding: var(--s-14);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-6);
+  }
+  .row > .pill {
+    display: inline-block;
+  }
+  .row__head {
+    gap: var(--s-9);
+  }
+  .row__path {
+    font-size: var(--t-13);
+  }
+  .row__summary {
+    font-size: var(--t-12);
+    line-height: 1.5;
+  }
+  .row[aria-current='true'] {
+    border-left: 4px solid var(--accent);
+  }
 }
 
 /* --- the empty result state --------------------------------------------- */
@@ -124,8 +196,14 @@
   padding: var(--s-24) var(--s-18);
   max-width: 40ch;
 }
-.empty__title { font: 600 var(--t-14) / 1.4 var(--font-sans); margin-bottom: var(--s-8); }
-.empty__body { font: 400 var(--t-12-5) / var(--lh-body) var(--font-sans); color: var(--ink-70); }
+.empty__title {
+  font: 600 var(--t-14) / 1.4 var(--font-sans);
+  margin-bottom: var(--s-8);
+}
+.empty__body {
+  font: 400 var(--t-12-5) / var(--lh-body) var(--font-sans);
+  color: var(--ink-70);
+}
 
 /* --- keyboard hint bar --------------------------------------------------- */
 .hintbar {
@@ -159,8 +237,12 @@
   color: var(--ink-55);
 }
 @media (max-width: 48rem) {
-  .statusbar { display: flex; }
-  .hintbar { display: none; }
+  .statusbar {
+    display: flex;
+  }
+  .hintbar {
+    display: none;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -172,14 +254,25 @@
      forced colours a transparent border is repainted as a visible system
      colour, which would put a bar on all forty-seven rows. Painting the
      unselected ones in Canvas puts them back out of sight. */
-  .row { border-left-color: Canvas; }
-  .row[aria-current='true'] { border-left-color: Highlight; }
+  .row {
+    border-left-color: Canvas;
+  }
+  .row[aria-current='true'] {
+    border-left-color: Highlight;
+  }
 
   /* The focus ring is a box-shadow so it can sit inside the pane edge, and
      forced colours drop box-shadows entirely. An inset outline does the same
      job with a colour the system controls. */
-  .row:focus-visible { outline: 3px solid Highlight; outline-offset: -3px; }
+  .row:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
 
-  .pill { border: 1px solid currentColor; }
-  .group-head--first { border: 1px solid CanvasText; }
+  .pill {
+    border: 1px solid currentColor;
+  }
+  .group-head--first {
+    border: 1px solid CanvasText;
+  }
 }
