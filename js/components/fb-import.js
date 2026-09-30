@@ -157,11 +157,6 @@ class FbImport extends FbElement {
         ]),
 
         error ? this.#renderError(error) : null,
-
-        el('p', {
-          class: 'import__foot',
-          text: 'The drop zone is a real file input with a visible label — keyboard and drag both work, and the button is the primary path, not a fallback.',
-        }),
       ]),
     ]);
   }

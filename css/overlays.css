@@ -489,12 +489,6 @@ dialog.palette {
   background: var(--hover-surface);
 }
 
-.import__foot {
-  margin-top: var(--s-14);
-  font: 400 var(--t-11-5) / 1.6 var(--font-sans);
-  color: var(--ink-55);
-}
-
 /* --- page footer --------------------------------------------------------- */
 .site-foot {
   padding: var(--s-20);
