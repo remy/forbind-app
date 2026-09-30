@@ -58,7 +58,7 @@ credential never passes through anything of ours.
 loads it on arrival, with nothing to click:
 
 ```
-https://forbind.net/?url=https://api.example.com/openapi.yaml
+https://forbind.app/?url=https://api.example.com/openapi.yaml
 ```
 
 `?url=` is taken from the query string, where a link written by hand or
